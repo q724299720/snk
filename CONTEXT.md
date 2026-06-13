@@ -13,7 +13,7 @@ _Avoid_: ProductItem, DishItem, 商品条目, 菜品条目
 _Avoid_: 只删错误条目, 只修未来不修历史
 
 **Pending Review SLA**:
-`pending FoodItem` 在 MVP 阶段以异步人工审核为主，不阻塞用户当前记录流程。如果创建后 1 天内仍无人审核，则进入自动审核流程。
+`pending FoodItem` 在 MVP 阶段以异步人工审核为主，不阻塞用户当前记录流程。如果创建后 1 天内仍无人审核，则进入自动审核流程。自动审核只做保守动作，不直接大范围批准条目。
 _Avoid_: 主链路同步审核, 永久停留 pending 无处理
 
 **FoodRecord**:
