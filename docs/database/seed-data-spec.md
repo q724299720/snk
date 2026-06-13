@@ -47,6 +47,11 @@
 
 其他字段如 `brand`、`barcode`、`alias`、`search_keywords`、`tags`、图片均为选填，后续可由审核补全。
 
+其中分类字段规则为：
+
+- 一级分类 `category` 必选
+- 二级分类 `subcategory` 选填
+
 ## search_keywords 规则
 
 `search_keywords` 建议包含：
@@ -116,3 +121,4 @@ name,category,subcategory,brand,barcode,alias,search_keywords,tags,source,audit_
 | --- | --- | --- | --- |
 | 2026-06-13 | Codex | 新建冷启动种子数据字段规范与校验规则文档 | 作为 Phase 0 第一步，为后续整理首批数据和写导入脚本提供标准 |
 | 2026-06-13 | Codex | 明确手动创建 pending 条目的最小字段 | 已确认兜底创建流程只强制 `name + item_type + category` |
+| 2026-06-13 | Codex | 明确手动创建时分类字段的填写规则 | 已确认一级分类必选、二级分类选填 |
