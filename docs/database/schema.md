@@ -135,6 +135,25 @@
 - `tag_type`
 - `created_at`
 
+### ReviewConfigWord
+
+- `id`
+- `word`
+- `word_type`
+- `enabled`
+- `source`
+- `remark`
+- `updated_by`
+- `created_at`
+- `updated_at`
+
+字段说明：
+- `ReviewConfigWord` 用于承载审核规则依赖的小型手工词典
+- MVP 阶段优先用于“已知有效词”维护，支持后台热更新
+- `word_type` 在 MVP 阶段至少支持 `valid_food_word`
+- `enabled` 用于热切换词条是否生效，避免直接物理删除
+- `source` 可标记 `manual` 等来源，便于后续区分系统生成与人工维护
+
 ## 索引与约束建议
 
 - `FoodItem.name`、`alias`、`search_keywords` 建立模糊搜索相关索引
@@ -201,3 +220,4 @@
 | 2026-06-13 | Codex | 明确 pending 条目对创建者需展示待审核标记 | 已确认用户可见不等于正式生效，需清晰区分状态 |
 | 2026-06-13 | Codex | 明确创建者搜索时正式条目优先排序 | 已确认 pending 条目不应优先于稳定正式条目展示 |
 | 2026-06-13 | Codex | 明确绑定 pending 条目的记录也需显示待审核提示 | 已确认记录列表也应保持状态感知一致性 |
+| 2026-06-13 | Codex | 增加 `ReviewConfigWord` 配置表模型 | 已确认小型手工词典应落在数据库并支持后台热更新 |
