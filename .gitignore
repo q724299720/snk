@@ -1,0 +1,41 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Android / Gradle
+.gradle/
+local.properties
+captures/
+build/
+*/build/
+*.apk
+*.aab
+
+# Kotlin / Java
+out/
+*.class
+
+# Logs
+*.log
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+*.mobileprovision
+secrets/
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+
