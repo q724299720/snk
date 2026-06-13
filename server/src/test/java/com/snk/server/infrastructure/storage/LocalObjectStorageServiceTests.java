@@ -40,6 +40,26 @@ class LocalObjectStorageServiceTests {
 	}
 
 	@Test
+	void shouldBuildAbsoluteResourceUrlWhenPublicBaseUrlConfigured() {
+		StorageProperties properties = new StorageProperties();
+		properties.setRootPath(tempDir.toString());
+		properties.setPublicPath("/uploads");
+		properties.setPublicBaseUrl("https://snk.example.com/");
+		LocalObjectStorageService storageService = new LocalObjectStorageService(properties);
+
+		MockMultipartFile file = new MockMultipartFile(
+			"file",
+			"snk.png",
+			"image/png",
+			"png-content".getBytes()
+		);
+
+		StoredObject storedObject = storageService.storeImage(file);
+
+		assertThat(storedObject.resourceUrl()).startsWith("https://snk.example.com/uploads/images/");
+	}
+
+	@Test
 	void shouldRejectNonImageUpload() {
 		StorageProperties properties = new StorageProperties();
 		properties.setRootPath(tempDir.toString());

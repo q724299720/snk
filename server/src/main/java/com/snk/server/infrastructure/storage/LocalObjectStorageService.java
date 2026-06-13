@@ -63,7 +63,8 @@ public class LocalObjectStorageService implements ObjectStorageService {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store image.", exception);
 		}
 
-		String resourceUrl = normalizePublicPath(storageProperties.getPublicPath()) + "/" + objectKey;
+		String resourcePath = normalizePublicPath(storageProperties.getPublicPath()) + "/" + objectKey;
+		String resourceUrl = buildResourceUrl(resourcePath);
 		return new StoredObject(objectKey, resourceUrl, file.getContentType(), file.getSize());
 	}
 
@@ -110,5 +111,18 @@ public class LocalObjectStorageService implements ObjectStorageService {
 			normalized = normalized.substring(0, normalized.length() - 1);
 		}
 		return normalized;
+	}
+
+	private String buildResourceUrl(String resourcePath) {
+		String publicBaseUrl = storageProperties.getPublicBaseUrl();
+		if (publicBaseUrl == null || publicBaseUrl.isBlank()) {
+			return resourcePath;
+		}
+
+		String normalizedBaseUrl = publicBaseUrl.trim();
+		if (normalizedBaseUrl.endsWith("/")) {
+			normalizedBaseUrl = normalizedBaseUrl.substring(0, normalizedBaseUrl.length() - 1);
+		}
+		return normalizedBaseUrl + resourcePath;
 	}
 }

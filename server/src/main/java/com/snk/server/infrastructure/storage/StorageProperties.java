@@ -7,6 +7,7 @@ public class StorageProperties {
 
 	private String rootPath = "./runtime/storage";
 	private String publicPath = "/uploads";
+	private String publicBaseUrl;
 	private String imageDirectory = "images";
 	private long maxImageSizeBytes = 10L * 1024L * 1024L;
 
@@ -24,6 +25,14 @@ public class StorageProperties {
 
 	public void setPublicPath(String publicPath) {
 		this.publicPath = publicPath;
+	}
+
+	public String getPublicBaseUrl() {
+		return publicBaseUrl;
+	}
+
+	public void setPublicBaseUrl(String publicBaseUrl) {
+		this.publicBaseUrl = publicBaseUrl;
 	}
 
 	public String getImageDirectory() {
