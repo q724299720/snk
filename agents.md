@@ -23,6 +23,7 @@
 5. 每完成一个增量后立即执行对应测试或验证
 6. 如果修改了任何文档，必须同步更新该文档内的“变更记录”
 7. 如果修改了项目文件，必须提交到本地 Git，并推送到远程 GitHub
+8. 每一步完成后，必须向用户回报：`commit id`、修改内容、用户需要进行的操作、验证 / 测试方式
 
 如果任务与现有文档冲突，以 `agents.md` 的全局约束和 `docs/architecture/implementation-plan.md` 的阶段顺序为准。
 
@@ -49,15 +50,19 @@
 详细拆步、交付物和测试要求见：
 [docs/architecture/implementation-plan.md](docs/architecture/implementation-plan.md)
 
+当前从 `Phase 0` 开始逐步推进，不允许跨阶段跳做。
+
 ## 文档索引
 
 | 路径 | 作用 |
 | --- | --- |
 | `docs/product/prd.md` | 产品定位、用户、MVP、扩展范围、冷启动策略 |
+| `docs/product/food-taxonomy.md` | 首批食物分类、标签体系与冷启动数据范围定义 |
 | `docs/architecture/system-design.md` | 系统架构、技术选型、模块结构、安全与运维 |
 | `docs/architecture/implementation-plan.md` | 开发阶段拆解、模块化实施顺序、增量测试要求 |
 | `docs/api/api-contract.md` | App / 后台接口边界、识别链路接口职责 |
 | `docs/database/schema.md` | 数据模型、字段约束、索引与迁移策略 |
+| `docs/database/seed-data-spec.md` | 冷启动种子数据字段规范、最低规模和导入校验规则 |
 | `docs/recognition/recognition-plan.md` | 条形码、OCR、图像识别的策略与兜底流程 |
 | `docs/process/document-governance.md` | 文档维护规则、审计记录规则、协作约束 |
 | `docs/process/github-workflow.md` | GitHub 仓库创建、远程连接记录与日常提交流程 |
@@ -67,6 +72,7 @@
 按任务类型读取：
 
 - 产品或范围调整：`docs/product/prd.md`
+- 冷启动数据准备：`docs/product/food-taxonomy.md`、`docs/database/seed-data-spec.md`
 - 编码前的阶段确认：`docs/architecture/implementation-plan.md`
 - Android / 后端架构实现：`docs/architecture/system-design.md`
 - 写接口前：`docs/api/api-contract.md`
@@ -87,3 +93,4 @@
 | --- | --- | --- | --- |
 | 2026-06-13 | Codex | 重构 `agents.md` 为全局索引、执行规范和文档看板 | 按要求将细节拆分至独立文档，并建立可追溯工作流 |
 | 2026-06-13 | Codex | 增加 GitHub 提交约束与 GitHub 工作流文档索引 | 将后续每次修改提交远程仓库的要求纳入全局规则 |
+| 2026-06-13 | Codex | 增加逐步推进后的固定回报项，并补充冷启动数据文档索引 | 后续每一步都需要回报 commit id、改动、操作和测试方式 |
