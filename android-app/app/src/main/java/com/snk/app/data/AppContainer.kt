@@ -6,6 +6,8 @@ import com.snk.app.BuildConfig
 import com.snk.app.data.auth.AnonymousAuthApi
 import com.snk.app.data.auth.AnonymousSessionRepository
 import com.snk.app.data.auth.InstallationIdStore
+import com.snk.app.data.food.FoodSearchApi
+import com.snk.app.data.food.FoodSearchRepository
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -33,10 +35,15 @@ class AppContainer(context: Context) {
         .build()
 
     private val anonymousAuthApi = retrofit.create(AnonymousAuthApi::class.java)
+    private val foodSearchApi = retrofit.create(FoodSearchApi::class.java)
     private val installationIdStore = InstallationIdStore(context)
 
     val anonymousSessionRepository = AnonymousSessionRepository(
         api = anonymousAuthApi,
         installationIdStore = installationIdStore,
+    )
+
+    val foodSearchRepository = FoodSearchRepository(
+        api = foodSearchApi,
     )
 }

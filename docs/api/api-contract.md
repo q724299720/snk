@@ -27,6 +27,14 @@
 - `GET /api/foods/{id}`
 - `GET /api/foods/recommend`
 
+文本搜索当前约束：
+
+- `GET /api/foods/search?q=` 当前返回已审核通过的基础食物条目
+- 空白 `q` 直接返回 `400`
+- 当前响应包含 `items` 与 `qualitySignal`
+- `items[*]` 当前最小字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`
+- `qualitySignal` 当前最小取值：`strong / weak`
+
 ### 图片与识别
 
 - `POST /api/upload/image`
@@ -118,3 +126,4 @@
 | 2026-06-13 | Codex | 明确接口需返回候选质量信号 | 已确认兜底入口展示由后端信号与前端场景共同决定 |
 | 2026-06-13 | Codex | 增加匿名用户初始化接口与安装级复用约束 | 当前 Phase 1 已开始落地游客模式的最小服务端身份闭环 |
 | 2026-06-13 | Codex | 回填图片上传接口的 multipart 与返回约束 | 当前 Phase 1 已开始落地上传接口与本地对象存储适配 |
+| 2026-06-13 | Codex | 回填文本搜索接口的最小响应字段、质量信号与空查询约束 | 当前 Phase 2 已开始落地服务端文本搜索接口并被安卓搜索页真实消费 |
