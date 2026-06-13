@@ -35,6 +35,14 @@
 - `POST /api/recognition/tasks`
 - `GET /api/recognition/tasks/{id}`
 
+图片上传约束：
+
+- `POST /api/upload/image` 使用 `multipart/form-data`
+- 首版字段采用 `file`
+- 服务端当前返回 `objectKey`、`resourceUrl`、`contentType`、`size`
+- 首版仅接受图片 MIME 类型，不接受通用文件上传
+- 开发环境当前采用本地文件系统存储，对外暴露 `resourceUrl` 静态访问路径；后续可替换为 MinIO / S3
+
 ### 记录管理
 
 - `POST /api/records`
@@ -109,3 +117,4 @@
 | 2026-06-13 | Codex | 从 `agents.md` 拆出接口边界、OCR 分工和识别接口职责 | 防止本地 OCR 与服务端 OCR 边界不清 |
 | 2026-06-13 | Codex | 明确接口需返回候选质量信号 | 已确认兜底入口展示由后端信号与前端场景共同决定 |
 | 2026-06-13 | Codex | 增加匿名用户初始化接口与安装级复用约束 | 当前 Phase 1 已开始落地游客模式的最小服务端身份闭环 |
+| 2026-06-13 | Codex | 回填图片上传接口的 multipart 与返回约束 | 当前 Phase 1 已开始落地上传接口与本地对象存储适配 |

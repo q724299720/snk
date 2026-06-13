@@ -1,6 +1,10 @@
 spring:
   application:
     name: snk-server
+  servlet:
+    multipart:
+      max-file-size: ${SNK_UPLOAD_MAX_FILE_SIZE:10MB}
+      max-request-size: ${SNK_UPLOAD_MAX_REQUEST_SIZE:10MB}
   datasource:
     url: jdbc:postgresql://${SNK_DB_HOST:localhost}:${SNK_DB_PORT:5432}/${SNK_DB_NAME:snk}
     username: ${SNK_DB_USERNAME:snk}
@@ -36,3 +40,10 @@ management:
 logging:
   level:
     org.flywaydb: info
+
+snk:
+  storage:
+    root-path: ${SNK_STORAGE_ROOT:./runtime/storage}
+    public-path: ${SNK_STORAGE_PUBLIC_PATH:/uploads}
+    image-directory: ${SNK_STORAGE_IMAGE_DIRECTORY:images}
+    max-image-size-bytes: ${SNK_STORAGE_MAX_IMAGE_SIZE_BYTES:10485760}

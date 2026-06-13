@@ -8,14 +8,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.snk.server.domain.user.AnonymousAuthService;
 import com.snk.server.domain.user.AnonymousUserResult;
+import com.snk.server.infrastructure.storage.StorageProperties;
 import java.time.OffsetDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+@Import(AnonymousAuthControllerTests.ControllerTestConfiguration.class)
 @WebMvcTest(AnonymousAuthController.class)
 class AnonymousAuthControllerTests {
 
@@ -24,6 +29,15 @@ class AnonymousAuthControllerTests {
 
 	@MockBean
 	private AnonymousAuthService anonymousAuthService;
+
+	@TestConfiguration
+	static class ControllerTestConfiguration {
+
+		@Bean
+		StorageProperties storageProperties() {
+			return new StorageProperties();
+		}
+	}
 
 	@Test
 	void shouldInitializeAnonymousUser() throws Exception {
