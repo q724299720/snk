@@ -157,6 +157,7 @@
 - `enabled` 用于热切换词条是否生效，避免直接物理删除
 - 重新启用已停用词条时，应恢复同一条 `ReviewConfigWord` 记录，而不是新建新记录
 - `word` 文本修正属于同一条 `ReviewConfigWord` 记录上的普通更新
+- `word_type` 变更在 MVP 阶段同样属于同一条 `ReviewConfigWord` 记录上的普通更新
 - `source` 可标记 `manual` 等来源，便于后续区分系统生成与人工维护
 
 ### ReviewConfigWordAuditLog
@@ -175,6 +176,7 @@
 - 每次新增、编辑、启用、停用都追加新日志，不回写历史日志
 - 对已停用词条的重新启用，记录为原 `review_config_word_id` 上的新增日志事件，不生成新的词条主记录
 - 对 `word` 文本修正，记录为原 `review_config_word_id` 上的 `update` 事件，不拆成 `disable + create`
+- 对 `word_type` 变更，记录为原 `review_config_word_id` 上的 `update` 事件，不额外拆分迁移流程
 - `action_type` 在 MVP 阶段至少支持 `create / update / enable / disable`
 - `before_value` 与 `after_value` 采用结构化 JSON 快照，用于追踪具体改动内容，支撑误判排查和后续字段扩展
 - 对 `disable` 等状态变更，`after_value` 仍保存变更后的完整对象快照，而不是仅保存变更字段
@@ -255,5 +257,6 @@
 | 2026-06-13 | Codex | 明确停用类操作的 `after_value` 也保存完整快照 | 已确认状态变更日志不能退化成仅记录差异字段 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord` 重新启用时恢复原记录 | 已确认词典与日志都应围绕同一主记录连续演化 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord.word` 修正属于 `update` | 已确认轻量文本修正不应拆成停用旧词与新建新词 |
+| 2026-06-13 | Codex | 明确 `ReviewConfigWord.word_type` 变更属于 `update` | 已确认 MVP 阶段不单独处理跨类型迁移 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWordAuditLog` 长期保留 | 已确认 MVP 阶段不对词典审计日志做自动清理 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord` 不承载审核阈值参数 | 已确认阈值应继续由代码配置维护，避免后台规则漂移 |
