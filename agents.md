@@ -58,6 +58,7 @@
 | --- | --- |
 | `docs/product/prd.md` | 产品定位、用户、MVP、扩展范围、冷启动策略 |
 | `docs/product/food-taxonomy.md` | 首批食物分类、标签体系与冷启动数据范围定义 |
+| `docs/product/external-data-strategy.md` | 外部开放数据源选择、接入边界、批量导入与合规约束 |
 | `docs/architecture/system-design.md` | 系统架构、技术选型、模块结构、安全与运维 |
 | `docs/architecture/implementation-plan.md` | 开发阶段拆解、模块化实施顺序、增量测试要求 |
 | `docs/api/api-contract.md` | App / 后台接口边界、识别链路接口职责 |
@@ -73,6 +74,7 @@
 
 - 产品或范围调整：`docs/product/prd.md`
 - 冷启动数据准备：`docs/product/food-taxonomy.md`、`docs/database/seed-data-spec.md`
+- 外部数据源接入：`docs/product/external-data-strategy.md`
 - 编码前的阶段确认：`docs/architecture/implementation-plan.md`
 - Android / 后端架构实现：`docs/architecture/system-design.md`
 - 写接口前：`docs/api/api-contract.md`
@@ -94,3 +96,4 @@
 | 2026-06-13 | Codex | 重构 `agents.md` 为全局索引、执行规范和文档看板 | 按要求将细节拆分至独立文档，并建立可追溯工作流 |
 | 2026-06-13 | Codex | 增加 GitHub 提交约束与 GitHub 工作流文档索引 | 将后续每次修改提交远程仓库的要求纳入全局规则 |
 | 2026-06-13 | Codex | 增加逐步推进后的固定回报项，并补充冷启动数据文档索引 | 后续每一步都需要回报 commit id、改动、操作和测试方式 |
+| 2026-06-13 | Codex | 增加外部数据源策略文档索引与开发前必查入口 | Phase 0 已推进到外部开放数据源接入策略，需要纳入全局索引 |
