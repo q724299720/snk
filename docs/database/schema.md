@@ -116,10 +116,16 @@
 ## 索引与约束建议
 
 - `FoodItem.name`、`alias`、`search_keywords` 建立模糊搜索相关索引
-- `FoodItem.barcode` 建立唯一索引或高选择性索引
+- `FoodItem.barcode` 对 `packaged_product` 建立唯一索引或等价唯一约束
 - `FoodItem.audit_status` 建立筛选索引
 - `FoodRecord.user_id + record_time` 建立组合索引
 - 向量字段与图片 embedding 字段按 `pgvector` 能力设计索引
+
+## 唯一性规则
+
+- `packaged_product`：同一 `barcode` 视为同一个 `FoodItem`
+- `dish`：先按通用菜名建统一条目，不按店铺拆分
+- 店铺、价格、个体体验差异优先记录在 `FoodRecord`，而不是拆分新的 `FoodItem`
 
 ## 数据治理约束
 
@@ -138,3 +144,4 @@
 | --- | --- | --- | --- |
 | 2026-06-13 | Codex | 从 `agents.md` 拆出数据模型、迁移策略与索引建议 | 将数据库设计独立管理，便于后续迁移迭代 |
 | 2026-06-13 | Codex | 为 `FoodItem` 增加 `item_type` 语义约束 | 已确认目录实体统一建模，但需要类型字段区分包装食品与菜品 |
+| 2026-06-13 | Codex | 补充 `FoodItem` 唯一性规则 | 已确认包装食品按条形码唯一、菜品按通用菜名统一建模 |
