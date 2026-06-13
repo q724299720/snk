@@ -33,6 +33,7 @@
 
 - `id`
 - `name`
+- `item_type`
 - `alias`
 - `category`
 - `brand`
@@ -50,6 +51,7 @@
 
 字段说明：
 
+- `item_type`：统一目录实体的语义类型，建议首批支持 `packaged_product / dish / drink / fruit`
 - `search_keywords`：用于沉淀别名、OCR 扫描文本、包装关键词，提高模糊搜索召回率
 - `report_count`：用于累计用户报错 / 纠错次数，辅助后台识别低质量 UGC 条目
 
@@ -135,3 +137,4 @@
 | 日期 | 修改人 | 变更范围 | 原因 |
 | --- | --- | --- | --- |
 | 2026-06-13 | Codex | 从 `agents.md` 拆出数据模型、迁移策略与索引建议 | 将数据库设计独立管理，便于后续迁移迭代 |
+| 2026-06-13 | Codex | 为 `FoodItem` 增加 `item_type` 语义约束 | 已确认目录实体统一建模，但需要类型字段区分包装食品与菜品 |
