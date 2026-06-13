@@ -27,6 +27,7 @@
 | 字段 | 必填 | 说明 |
 | --- | --- | --- |
 | `name` | 是 | 主展示名 |
+| `item_type` | 是 | `packaged_product / dish / fruit`，与 `FoodItem` 建模保持一致 |
 | `category` | 是 | 一级分类 |
 | `subcategory` | 否 | 二级分类 |
 | `brand` | 否 | 品牌 |
@@ -142,8 +143,20 @@
 建议列顺序：
 
 ```text
-name,category,subcategory,brand,barcode,alias,search_keywords,tags,source,audit_status
+name,item_type,category,subcategory,brand,barcode,alias,search_keywords,tags,source,audit_status
 ```
+
+## 当前仓库启动样本
+
+当前仓库提供一份 `Phase 0 / Step 3` 用的起步样本：
+
+- `data/seed/food-items-sample.csv`
+
+使用约束：
+
+- 该文件用于字段对齐、导入脚本开发和最小搜索验证
+- 文件中的条形码样本默认按演示数据处理，正式导入生产库前应替换为真实可校验数据
+- 后续批量扩充时，仍需满足本文件中的字段规范与导入校验规则
 
 ## Phase 0 Step 1 验收标准
 
@@ -170,3 +183,4 @@ name,category,subcategory,brand,barcode,alias,search_keywords,tags,source,audit_
 | 2026-06-13 | Codex | 明确小型手工词典由数据库配置表热更新维护 | 已确认该词典需要在线调整，不应依赖客户端或服务端发版 |
 | 2026-06-13 | Codex | 明确热更新词典保存后立刻生效 | 已确认不需要增加词典缓存延迟刷新机制 |
 | 2026-06-13 | Codex | 明确自动拒绝阈值不进入热更新词典配置 | 已确认 MVP 阶段只允许在线维护词典，不在线调整阈值 |
+| 2026-06-13 | Codex | 为种子数据补充 `item_type` 字段并登记仓库启动样本路径 | 对齐既有 `FoodItem` 建模，支撑 Phase 0 样本整理与后续导入脚本开发 |
