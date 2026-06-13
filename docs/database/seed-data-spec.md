@@ -63,6 +63,12 @@
 - MVP 手动创建表单中直接提供可选 `brand` 输入框
 - 对包装食品条目，用户若能补充品牌，将显著提升审核、搜索和去重质量
 
+关键词字段规则为：
+
+- `search_keywords` 不暴露给普通用户手动填写
+- 系统根据 `name + brand + category + subcategory` 自动生成基础关键词
+- 后台审核时允许人工修正或补充关键词
+
 ## search_keywords 规则
 
 `search_keywords` 建议包含：
@@ -135,3 +141,4 @@ name,category,subcategory,brand,barcode,alias,search_keywords,tags,source,audit_
 | 2026-06-13 | Codex | 明确手动创建时分类字段的填写规则 | 已确认一级分类必选、二级分类选填 |
 | 2026-06-13 | Codex | 明确手动创建时图片为选填 | 已确认失败兜底链路不应强制要求图片 |
 | 2026-06-13 | Codex | 明确手动创建时 `brand` 为可选直出字段 | 已确认品牌对包装食品审核和去重有高价值，应直接暴露在表单中 |
+| 2026-06-13 | Codex | 明确 `search_keywords` 由系统自动生成 | 已确认关键词是系统字段，不应增加普通用户输入负担 |
