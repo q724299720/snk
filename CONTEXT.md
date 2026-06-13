@@ -5,7 +5,7 @@
 ## Language
 
 **FoodItem**:
-系统中统一的可被搜索、识别、记录和审核的目录实体，既可以表示包装食品商品，也可以表示菜品或其他可食用对象。`item_type` 在 MVP 阶段仅保留 `packaged_product / dish / fruit` 三种核心语义类型，而不是和分类体系重复。对于 `packaged_product`，同一条形码视为同一目录实体；无条形码但明显属于包装食品的条目，仍归类为 `packaged_product`。包装饮料也归入 `packaged_product`；现制饮品归入 `dish`。对于 `dish`，先按通用菜名建统一条目，不按店铺拆分。`pending` 状态的条目仅创建者和审核后台可见，对其他普通用户不可见。包装食品若只是新旧包装、封面或文案变化，不新建条目，而是在同一 `FoodItem` 下吸收图片、别名和关键词变化。
+系统中统一的可被搜索、识别、记录和审核的目录实体，既可以表示包装食品商品，也可以表示菜品或其他可食用对象。`item_type` 在 MVP 阶段仅保留 `packaged_product / dish / fruit` 三种核心语义类型，而不是和分类体系重复，其中 `fruit` 保留为独立类型而不并入 `dish`。对于 `packaged_product`，同一条形码视为同一目录实体；无条形码但明显属于包装食品的条目，仍归类为 `packaged_product`。包装饮料也归入 `packaged_product`；现制饮品归入 `dish`。对于 `dish`，先按通用菜名建统一条目，不按店铺拆分。`pending` 状态的条目仅创建者和审核后台可见，对其他普通用户不可见。包装食品若只是新旧包装、封面或文案变化，不新建条目，而是在同一 `FoodItem` 下吸收图片、别名和关键词变化。
 _Avoid_: ProductItem, DishItem, 商品条目, 菜品条目
 
 **FoodRecord**:

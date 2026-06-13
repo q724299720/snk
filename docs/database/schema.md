@@ -52,6 +52,7 @@
 字段说明：
 
 - `item_type`：统一目录实体的语义类型，MVP 阶段仅保留 `packaged_product / dish / fruit`
+- `fruit` 在 MVP 阶段保留为独立类型，不并入 `dish`
 - 无条形码但明显属于包装食品的条目，仍使用 `packaged_product`
 - 包装饮料归入 `packaged_product`，现制饮品归入 `dish`
 - `search_keywords`：用于沉淀别名、OCR 扫描文本、包装关键词，提高模糊搜索召回率
@@ -173,3 +174,4 @@
 | 2026-06-13 | Codex | 明确同条形码包装演化不新建条目 | 已确认包装变化应被同一目录条目吸收，而不是拆分多个商品 |
 | 2026-06-13 | Codex | 明确无条码包装食品仍归属 `packaged_product` | 已确认条形码不是包装食品类型判断的唯一前提 |
 | 2026-06-13 | Codex | 收敛 `item_type` 并明确饮料归属规则 | 已确认 `drink` 不单列为类型，包装饮料与现制饮品按不同语义归类 |
+| 2026-06-13 | Codex | 明确保留 `fruit` 为独立 `item_type` | 已确认水果在 MVP 阶段具有独立语义，不并入 `dish` |
