@@ -151,11 +151,29 @@
 - `ReviewConfigWord` 用于承载审核规则依赖的小型手工词典
 - MVP 阶段优先用于“已知有效词”维护，支持后台热更新
 - 词典变更在数据库提交后立即生效，后续审核任务按最新生效数据读取
-- 词典后台修改必须具备可追溯审计能力，至少能追踪谁在什么时候改了什么
+- 词典后台修改必须具备可追溯审计能力，并采用独立的追加式变更日志保留历史
 - 该表不承载自动拒绝阈值等规则参数，相关阈值继续由服务端代码配置维护
 - `word_type` 在 MVP 阶段至少支持 `valid_food_word`
 - `enabled` 用于热切换词条是否生效，避免直接物理删除
 - `source` 可标记 `manual` 等来源，便于后续区分系统生成与人工维护
+
+### ReviewConfigWordAuditLog
+
+- `id`
+- `review_config_word_id`
+- `action_type`
+- `before_value`
+- `after_value`
+- `operator_id`
+- `operator_name`
+- `created_at`
+
+字段说明：
+- `ReviewConfigWordAuditLog` 用于记录词典后台修改的追加式变更日志
+- 每次新增、编辑、启用、停用都追加新日志，不回写历史日志
+- `action_type` 在 MVP 阶段至少支持 `create / update / enable / disable`
+- `before_value` 与 `after_value` 用于追踪具体改动内容，支撑误判排查
+- `operator_id` 与 `operator_name` 用于保留最小可追溯操作人信息
 
 ## 索引与约束建议
 
@@ -226,4 +244,5 @@
 | 2026-06-13 | Codex | 增加 `ReviewConfigWord` 配置表模型 | 已确认小型手工词典应落在数据库并支持后台热更新 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord` 更新后立刻生效 | 已确认审核任务无需等待缓存刷新即可读取最新词典 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord` 需要可追溯审计 | 已确认后台词典治理必须保留操作历史以追查误判来源 |
+| 2026-06-13 | Codex | 增加 `ReviewConfigWordAuditLog` 追加式日志模型 | 已确认词典审计需要保留前后值与完整变更历史 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord` 不承载审核阈值参数 | 已确认阈值应继续由代码配置维护，避免后台规则漂移 |
