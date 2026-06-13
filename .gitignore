@@ -39,3 +39,5 @@ node_modules/
 __pycache__/
 *.pyc
 
+# Local seed import outputs
+data/seed/openfoodfacts-import-preview.csv

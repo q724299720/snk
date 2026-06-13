@@ -64,6 +64,7 @@
 | `docs/api/api-contract.md` | App / 后台接口边界、识别链路接口职责 |
 | `docs/database/schema.md` | 数据模型、字段约束、索引与迁移策略 |
 | `docs/database/seed-data-spec.md` | 冷启动种子数据字段规范、最低规模和导入校验规则 |
+| `docs/database/import-script-plan.md` | 冷启动种子数据导入脚本方案、目录约定与脚本骨架说明 |
 | `docs/recognition/recognition-plan.md` | 条形码、OCR、图像识别的策略与兜底流程 |
 | `docs/process/document-governance.md` | 文档维护规则、审计记录规则、协作约束 |
 | `docs/process/github-workflow.md` | GitHub 仓库创建、远程连接记录与日常提交流程 |
@@ -75,6 +76,7 @@
 - 产品或范围调整：`docs/product/prd.md`
 - 冷启动数据准备：`docs/product/food-taxonomy.md`、`docs/database/seed-data-spec.md`
 - 外部数据源接入：`docs/product/external-data-strategy.md`
+- 写导入脚本前：`docs/database/import-script-plan.md`
 - 编码前的阶段确认：`docs/architecture/implementation-plan.md`
 - Android / 后端架构实现：`docs/architecture/system-design.md`
 - 写接口前：`docs/api/api-contract.md`
@@ -97,3 +99,4 @@
 | 2026-06-13 | Codex | 增加 GitHub 提交约束与 GitHub 工作流文档索引 | 将后续每次修改提交远程仓库的要求纳入全局规则 |
 | 2026-06-13 | Codex | 增加逐步推进后的固定回报项，并补充冷启动数据文档索引 | 后续每一步都需要回报 commit id、改动、操作和测试方式 |
 | 2026-06-13 | Codex | 增加外部数据源策略文档索引与开发前必查入口 | Phase 0 已推进到外部开放数据源接入策略，需要纳入全局索引 |
+| 2026-06-13 | Codex | 增加导入脚本方案文档索引与开发前必查入口 | Phase 0 已推进到种子数据导入脚本方案，需要纳入全局索引 |

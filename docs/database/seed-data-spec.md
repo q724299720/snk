@@ -151,12 +151,15 @@ name,item_type,category,subcategory,brand,barcode,alias,search_keywords,tags,sou
 当前仓库提供一份 `Phase 0 / Step 3` 用的起步样本：
 
 - `data/seed/food-items-sample.csv`
+- `data/seed/openfoodfacts-barcodes-template.csv`
+- `tools/seed/import-openfoodfacts-barcodes.ps1`
 
 使用约束：
 
 - 该文件用于字段对齐、导入脚本开发和最小搜索验证
 - 文件中的条形码样本默认按演示数据处理，正式导入生产库前应替换为真实可校验数据
 - 后续批量扩充时，仍需满足本文件中的字段规范与导入校验规则
+- Open Food Facts 条码输入模板与导入脚本骨架的使用细节，单独维护在 `docs/database/import-script-plan.md`
 
 ## Phase 0 Step 1 验收标准
 
@@ -184,3 +187,4 @@ name,item_type,category,subcategory,brand,barcode,alias,search_keywords,tags,sou
 | 2026-06-13 | Codex | 明确热更新词典保存后立刻生效 | 已确认不需要增加词典缓存延迟刷新机制 |
 | 2026-06-13 | Codex | 明确自动拒绝阈值不进入热更新词典配置 | 已确认 MVP 阶段只允许在线维护词典，不在线调整阈值 |
 | 2026-06-13 | Codex | 为种子数据补充 `item_type` 字段并登记仓库启动样本路径 | 对齐既有 `FoodItem` 建模，支撑 Phase 0 样本整理与后续导入脚本开发 |
+| 2026-06-13 | Codex | 补充导入脚本骨架与条码输入模板路径 | Phase 0 已进入导入脚本方案阶段，需要将仓库内脚本产物纳入种子数据规范 |

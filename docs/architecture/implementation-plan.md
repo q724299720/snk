@@ -175,7 +175,7 @@
 
 ## 阶段与文档映射
 
-- `Phase 0`：`docs/product/prd.md`、`docs/product/external-data-strategy.md`、`docs/database/schema.md`
+- `Phase 0`：`docs/product/prd.md`、`docs/product/external-data-strategy.md`、`docs/database/seed-data-spec.md`、`docs/database/import-script-plan.md`
 - `Phase 1`：`docs/architecture/system-design.md`、`docs/database/schema.md`、`docs/api/api-contract.md`
 - `Phase 2`：`docs/architecture/system-design.md`、`docs/api/api-contract.md`
 - `Phase 3`：`docs/recognition/recognition-plan.md`、`docs/api/api-contract.md`
@@ -204,3 +204,4 @@
 | 2026-06-13 | Codex | 明确极短乱码采用组合判断 | 已确认自动拒绝需要结合长度、有效词和语义感知而非单阈值 |
 | 2026-06-13 | Codex | 补充 Phase 1 / Phase 4 的审核词典迁移与审计测试要求 | 已确认评审词典配置表、立即生效和追加式日志属于既定实施范围，需体现在正式计划中 |
 | 2026-06-13 | Codex | 更新 Phase 0 文档映射以纳入外部数据源策略文档 | Phase 0 已新增独立的外部开放数据源接入策略，需要进入阶段必读清单 |
+| 2026-06-13 | Codex | 更新 Phase 0 文档映射以纳入种子导入脚本方案 | Phase 0 已新增导入脚本方案与脚本骨架，需要进入阶段必读清单 |
