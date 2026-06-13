@@ -15,15 +15,23 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.snk.app.SnkApplication
+import com.snk.app.data.auth.AnonymousSessionResult
 
 private sealed class SnkDestination(
     val route: String,
@@ -45,6 +53,18 @@ private val destinations = listOf(
 
 @Composable
 fun SnkApp() {
+    val application = LocalContext.current.applicationContext as SnkApplication
+    var retryToken by remember { mutableIntStateOf(0) }
+    val sessionState by produceState<SessionUiState>(
+        initialValue = SessionUiState.Loading,
+        key1 = retryToken,
+    ) {
+        value = when (val result = application.container.anonymousSessionRepository.ensureSession()) {
+            is AnonymousSessionResult.Remote -> SessionUiState.Remote(result.session)
+            is AnonymousSessionResult.Cached -> SessionUiState.Cached(result.session, result.reason)
+            is AnonymousSessionResult.Failure -> SessionUiState.Failure(result.reason)
+        }
+    }
     val navController = rememberNavController()
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
@@ -93,13 +113,16 @@ fun SnkApp() {
                     HomeScreen()
                 }
                 composable(SnkDestination.Search.route) {
-                    SearchScreen()
+                    SearchScreen(sessionState = sessionState)
                 }
                 composable(SnkDestination.Drafts.route) {
                     DraftsScreen()
                 }
                 composable(SnkDestination.Profile.route) {
-                    ProfileScreen()
+                    ProfileScreen(
+                        sessionState = sessionState,
+                        onRetry = { retryToken++ },
+                    )
                 }
             }
         }

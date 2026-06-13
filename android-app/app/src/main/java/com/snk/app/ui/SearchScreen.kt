@@ -27,7 +27,7 @@ import com.snk.app.BuildConfig
 private val recentQueries = listOf("乐事黄瓜味", "抹茶蛋糕", "拿铁", "牛肉汉堡")
 
 @Composable
-fun SearchScreen() {
+fun SearchScreen(sessionState: SessionUiState) {
     var query by remember { mutableStateOf("") }
 
     Column(
@@ -87,6 +87,16 @@ fun SearchScreen() {
                 )
                 Text(
                     text = "下一增量会在这里接匿名用户初始化、搜索接口和最近搜索本地缓存。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF5B4A42),
+                )
+                Text(
+                    text = when (sessionState) {
+                        SessionUiState.Loading -> "游客身份初始化中..."
+                        is SessionUiState.Remote -> "当前游客 user_id: ${sessionState.session.userId}"
+                        is SessionUiState.Cached -> "离线沿用缓存游客 user_id: ${sessionState.session.userId}"
+                        is SessionUiState.Failure -> sessionState.reason
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF5B4A42),
                 )
