@@ -74,6 +74,7 @@
 ## 服务端技术选型
 
 - 主服务语言：Java 21 + Spring Boot
+- 构建工具：Gradle Wrapper
 - API 风格：RESTful API
 - ORM：Spring Data JPA / MyBatis Plus
 - 数据库迁移：Flyway 或 Liquibase
@@ -195,6 +196,13 @@ server/
 
 MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 `pgvector` 查询实现。
 
+当前仓库 Phase 1 首个落地产物：
+
+- `server/` 已初始化为单模块 Spring Boot + Gradle Wrapper 工程
+- Flyway 迁移目录固定为 `server/src/main/resources/db/migration`
+- 当前已落地 PostgreSQL 扩展初始化与审核词典基础表迁移脚本
+- 当前测试通过“禁用数据源自动配置的最小启动测试”验证工程骨架可构建
+
 ## 安全与运维基线
 
 ### 安全
@@ -249,3 +257,4 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-13 | Codex | 明确 `source` 变更也属于同记录 update | 已确认词典轻量字段变更在 MVP 阶段统一走 update 语义 |
 | 2026-06-13 | Codex | 明确词典审计日志长期保留 | 已确认此类日志量小但排查价值高，MVP 阶段不做自动清理 |
 | 2026-06-13 | Codex | 明确自动拒绝阈值继续留在代码配置 | 已确认 MVP 阶段需限制后台热更新范围，避免审核规则过度可变 |
+| 2026-06-13 | Codex | 回填服务端构建工具与 Phase 1 首个落地产物 | 当前仓库已初始化 `server/` 工程并落地 Flyway 迁移目录与审核词典基础迁移 |

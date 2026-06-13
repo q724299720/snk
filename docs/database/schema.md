@@ -137,6 +137,7 @@
 
 ### ReviewConfigWord
 
+- 物理表名：`review_config_words`
 - `id`
 - `word`
 - `word_type`
@@ -160,9 +161,12 @@
 - `word_type` 变更在 MVP 阶段同样属于同一条 `ReviewConfigWord` 记录上的普通更新
 - `source` 字段变更在 MVP 阶段同样属于同一条 `ReviewConfigWord` 记录上的普通更新
 - `source` 可标记 `manual` 等来源，便于后续区分系统生成与人工维护
+- `word` 与 `word_type` 的组合在数据库层应保持唯一
+- `updated_by` 在首版迁移中按轻量字符串字段落地，避免过早绑定后台用户表主键形态
 
 ### ReviewConfigWordAuditLog
 
+- 物理表名：`review_config_word_audit_logs`
 - `id`
 - `review_config_word_id`
 - `action_type`
@@ -181,6 +185,7 @@
 - 对 `source` 变更，记录为原 `review_config_word_id` 上的 `update` 事件
 - `action_type` 在 MVP 阶段至少支持 `create / update / enable / disable`
 - `before_value` 与 `after_value` 采用结构化 JSON 快照，用于追踪具体改动内容，支撑误判排查和后续字段扩展
+- `before_value` 与 `after_value` 在 PostgreSQL 中优先采用 `jsonb`
 - 对 `disable` 等状态变更，`after_value` 仍保存变更后的完整对象快照，而不是仅保存变更字段
 - `operator_id` 与 `operator_name` 用于保留最小可追溯操作人信息
 - `ReviewConfigWordAuditLog` 在 MVP 阶段长期保留，不设置自动清理任务
@@ -263,3 +268,4 @@
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord.source` 变更属于 `update` | 已确认词典来源字段变更也统一按 update 治理 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWordAuditLog` 长期保留 | 已确认 MVP 阶段不对词典审计日志做自动清理 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord` 不承载审核阈值参数 | 已确认阈值应继续由代码配置维护，避免后台规则漂移 |
+| 2026-06-13 | Codex | 回填审核词典物理表名与 JSONB 落地约束 | 当前 Phase 1 已实现首批 Flyway 迁移，需要让文档与实际物理模型保持一致 |
