@@ -52,6 +52,11 @@
 - 一级分类 `category` 必选
 - 二级分类 `subcategory` 选填
 
+图片字段规则为：
+
+- 图片选填，不作为手动创建 `pending FoodItem` 的必需条件
+- 若用户提供图片，可用于后续审核、OCR 补全和条目纠错
+
 ## search_keywords 规则
 
 `search_keywords` 建议包含：
@@ -122,3 +127,4 @@ name,category,subcategory,brand,barcode,alias,search_keywords,tags,source,audit_
 | 2026-06-13 | Codex | 新建冷启动种子数据字段规范与校验规则文档 | 作为 Phase 0 第一步，为后续整理首批数据和写导入脚本提供标准 |
 | 2026-06-13 | Codex | 明确手动创建 pending 条目的最小字段 | 已确认兜底创建流程只强制 `name + item_type + category` |
 | 2026-06-13 | Codex | 明确手动创建时分类字段的填写规则 | 已确认一级分类必选、二级分类选填 |
+| 2026-06-13 | Codex | 明确手动创建时图片为选填 | 已确认失败兜底链路不应强制要求图片 |
