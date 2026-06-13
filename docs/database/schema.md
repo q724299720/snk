@@ -172,7 +172,7 @@
 - `ReviewConfigWordAuditLog` 用于记录词典后台修改的追加式变更日志
 - 每次新增、编辑、启用、停用都追加新日志，不回写历史日志
 - `action_type` 在 MVP 阶段至少支持 `create / update / enable / disable`
-- `before_value` 与 `after_value` 用于追踪具体改动内容，支撑误判排查
+- `before_value` 与 `after_value` 采用结构化 JSON 快照，用于追踪具体改动内容，支撑误判排查和后续字段扩展
 - `operator_id` 与 `operator_name` 用于保留最小可追溯操作人信息
 
 ## 索引与约束建议
@@ -245,4 +245,5 @@
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord` 更新后立刻生效 | 已确认审核任务无需等待缓存刷新即可读取最新词典 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord` 需要可追溯审计 | 已确认后台词典治理必须保留操作历史以追查误判来源 |
 | 2026-06-13 | Codex | 增加 `ReviewConfigWordAuditLog` 追加式日志模型 | 已确认词典审计需要保留前后值与完整变更历史 |
+| 2026-06-13 | Codex | 明确 `ReviewConfigWordAuditLog` 前后值采用 JSON 快照 | 已确认日志字段需要兼容后续词典字段扩展 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord` 不承载审核阈值参数 | 已确认阈值应继续由代码配置维护，避免后台规则漂移 |
