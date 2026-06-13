@@ -25,15 +25,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.snk.app.SnkApplication
 import com.snk.app.BuildConfig
+import com.snk.app.SnkApplication
+import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodSearchResult
 import kotlinx.coroutines.launch
 
 private val recentQueries = listOf("乐事黄瓜味", "抹茶蛋糕", "拿铁", "牛肉汉堡")
 
 @Composable
-fun SearchScreen(sessionState: SessionUiState) {
+fun SearchScreen(
+    sessionState: SessionUiState,
+    onCreateRecord: (FoodSearchItem) -> Unit,
+) {
     val application = LocalContext.current.applicationContext as SnkApplication
     val coroutineScope = rememberCoroutineScope()
     var query by remember { mutableStateOf("") }
@@ -62,7 +66,7 @@ fun SearchScreen(sessionState: SessionUiState) {
             color = Color(0xFF2B1E18),
         )
         Text(
-            text = "当前基线版本先打通搜索入口和游客闭环，后续接入服务端真实搜索。",
+            text = "当前已打通游客身份和远程搜索，接下来从命中结果直接创建记录。",
             style = MaterialTheme.typography.bodyLarge,
             color = Color(0xFF5B4A42),
         )
@@ -101,17 +105,12 @@ fun SearchScreen(sessionState: SessionUiState) {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    text = "服务端占位配置",
+                    text = "服务端连接",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = "Base URL: ${BuildConfig.API_BASE_URL}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF5B4A42),
-                )
-                Text(
-                    text = "下一增量会在这里接匿名用户初始化、搜索接口和最近搜索本地缓存。",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF5B4A42),
                 )
@@ -130,6 +129,7 @@ fun SearchScreen(sessionState: SessionUiState) {
         SearchResultsCard(
             searchState = searchState,
             isSearching = isSearching,
+            onCreateRecord = onCreateRecord,
         )
     }
 }
@@ -138,6 +138,7 @@ fun SearchScreen(sessionState: SessionUiState) {
 private fun SearchResultsCard(
     searchState: FoodSearchResult?,
     isSearching: Boolean,
+    onCreateRecord: (FoodSearchItem) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -199,7 +200,7 @@ private fun SearchResultsCard(
                         ) {
                             Column(
                                 modifier = Modifier.padding(14.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 Text(
                                     text = item.name,
@@ -227,6 +228,12 @@ private fun SearchResultsCard(
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = Color(0xFF8A5A44),
                                     )
+                                }
+                                Button(
+                                    onClick = { onCreateRecord(item) },
+                                    shape = RoundedCornerShape(14.dp),
+                                ) {
+                                    Text("记一笔")
                                 }
                             }
                         }

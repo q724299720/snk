@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -25,6 +26,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import com.snk.app.data.food.FoodSearchItem
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -55,6 +57,7 @@ private val destinations = listOf(
 fun SnkApp() {
     val application = LocalContext.current.applicationContext as SnkApplication
     var retryToken by remember { mutableIntStateOf(0) }
+    var selectedFood: FoodSearchItem? by remember { mutableStateOf(null) }
     val sessionState by produceState<SessionUiState>(
         initialValue = SessionUiState.Loading,
         key1 = retryToken,
@@ -68,27 +71,30 @@ fun SnkApp() {
     val navController = rememberNavController()
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
+    val showBottomBar = currentRoute != "record_create"
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                destinations.forEach { destination ->
-                    NavigationBarItem(
-                        selected = currentRoute == destination.route,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+            if (showBottomBar) {
+                NavigationBar {
+                    destinations.forEach { destination ->
+                        NavigationBarItem(
+                            selected = currentRoute == destination.route,
+                            onClick = {
+                                navController.navigate(destination.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(destination.icon, contentDescription = destination.label) },
-                        label = { Text(destination.label) },
-                    )
+                            },
+                            icon = { Icon(destination.icon, contentDescription = destination.label) },
+                            label = { Text(destination.label) },
+                        )
+                    }
                 }
-            }
+            } 
         },
     ) { innerPadding ->
         Box(
@@ -113,7 +119,13 @@ fun SnkApp() {
                     HomeScreen()
                 }
                 composable(SnkDestination.Search.route) {
-                    SearchScreen(sessionState = sessionState)
+                    SearchScreen(
+                        sessionState = sessionState,
+                        onCreateRecord = { item ->
+                            selectedFood = item
+                            navController.navigate("record_create")
+                        },
+                    )
                 }
                 composable(SnkDestination.Drafts.route) {
                     DraftsScreen()
@@ -123,6 +135,27 @@ fun SnkApp() {
                         sessionState = sessionState,
                         onRetry = { retryToken++ },
                     )
+                }
+                composable("record_create") {
+                    val food = selectedFood
+                    if (food == null) {
+                        SearchScreen(
+                            sessionState = sessionState,
+                            onCreateRecord = { item ->
+                                selectedFood = item
+                                navController.navigate("record_create")
+                            },
+                        )
+                    } else {
+                        RecordCreateScreen(
+                            selectedFood = food,
+                            sessionState = sessionState,
+                            foodRecordRepository = application.container.foodRecordRepository,
+                            onBackToSearch = {
+                                navController.popBackStack()
+                            },
+                        )
+                    }
                 }
             }
         }

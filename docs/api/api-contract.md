@@ -59,6 +59,14 @@
 - `PUT /api/records/{id}`
 - `DELETE /api/records/{id}`
 
+记录创建当前约束：
+
+- `POST /api/records` 当前最小请求字段包含：`userId`、`foodItemId`、`sourceType`、`isPublic`、`rating`
+- `comment`、`recordTime` 当前为可选字段
+- 当前 `rating` 允许范围为 `1-5`
+- 当前 MVP 主路径由安卓端以 `text_search` 作为 `sourceType` 创建记录
+- 当前成功响应返回：`id`、`userId`、`foodItemId`、`sourceType`、`isPublic`、`rating`、`comment`、`recordTime`、`createdAt`
+
 ### 标签与分类
 
 - `GET /api/tags`
@@ -127,3 +135,4 @@
 | 2026-06-13 | Codex | 增加匿名用户初始化接口与安装级复用约束 | 当前 Phase 1 已开始落地游客模式的最小服务端身份闭环 |
 | 2026-06-13 | Codex | 回填图片上传接口的 multipart 与返回约束 | 当前 Phase 1 已开始落地上传接口与本地对象存储适配 |
 | 2026-06-13 | Codex | 回填文本搜索接口的最小响应字段、质量信号与空查询约束 | 当前 Phase 2 已开始落地服务端文本搜索接口并被安卓搜索页真实消费 |
+| 2026-06-13 | Codex | 回填记录创建接口的最小请求字段与成功响应约束 | 当前 Phase 2 已开始落地搜索命中后的远程记录创建闭环 |

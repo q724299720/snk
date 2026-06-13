@@ -1,6 +1,7 @@
 package com.snk.server;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
+import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
 import com.snk.server.infrastructure.persistence.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +17,9 @@ class ServerApplicationTests {
 
 	@MockBean
 	private FoodItemRepository foodItemRepository;
+
+	@MockBean
+	private FoodRecordRepository foodRecordRepository;
 
 	@Test
 	void contextLoads() {
