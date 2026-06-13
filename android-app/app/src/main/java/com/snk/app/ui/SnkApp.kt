@@ -1,0 +1,107 @@
+package com.snk.app.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.ManageSearch
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+
+private sealed class SnkDestination(
+    val route: String,
+    val label: String,
+    val icon: ImageVector,
+) {
+    data object Home : SnkDestination("home", "首页", Icons.Outlined.Home)
+    data object Search : SnkDestination("search", "搜索", Icons.Outlined.ManageSearch)
+    data object Drafts : SnkDestination("drafts", "草稿", Icons.Outlined.BookmarkBorder)
+    data object Profile : SnkDestination("profile", "我的", Icons.Outlined.Person)
+}
+
+private val destinations = listOf(
+    SnkDestination.Home,
+    SnkDestination.Search,
+    SnkDestination.Drafts,
+    SnkDestination.Profile,
+)
+
+@Composable
+fun SnkApp() {
+    val navController = rememberNavController()
+    val navBackStackEntry = navController.currentBackStackEntryAsState().value
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                destinations.forEach { destination ->
+                    NavigationBarItem(
+                        selected = currentRoute == destination.route,
+                        onClick = {
+                            navController.navigate(destination.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(destination.icon, contentDescription = destination.label) },
+                        label = { Text(destination.label) },
+                    )
+                }
+            }
+        },
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFFFFF4E8),
+                            Color(0xFFFFFBF7),
+                            Color(0xFFF7F4EF),
+                        ),
+                    ),
+                )
+                .padding(innerPadding),
+        ) {
+            NavHost(
+                navController = navController,
+                startDestination = SnkDestination.Home.route,
+            ) {
+                composable(SnkDestination.Home.route) {
+                    HomeScreen()
+                }
+                composable(SnkDestination.Search.route) {
+                    SearchScreen()
+                }
+                composable(SnkDestination.Drafts.route) {
+                    DraftsScreen()
+                }
+                composable(SnkDestination.Profile.route) {
+                    ProfileScreen()
+                }
+            }
+        }
+    }
+}

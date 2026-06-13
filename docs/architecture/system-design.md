@@ -245,6 +245,15 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - API 日志与链路追踪
 - 识别失败率与外部数据导入告警
 
+## 当前仓库落地状态
+
+当前仓库 Phase 2 第一个落地产物：
+
+- 已初始化 `android-app/` Gradle Wrapper 与 Android Application 工程
+- 已落地 Jetpack Compose 单模块基线与首屏应用壳
+- 已加入首页、搜索、草稿、游客身份四个入口页，作为后续游客闭环、搜索、草稿补传的承载层
+- 已预留服务端 `API_BASE_URL` 配置位，供下一增量接匿名初始化与搜索接口
+
 ## 变更记录维护规则
 
 - 每次修改本文件时，必须在下方追加一条记录
@@ -280,3 +289,4 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-13 | Codex | 补充 Docker 不可用时的集成测试降级说明 | 当前环境无法启动 Docker Engine，需要让测试策略与真实环境约束保持一致 |
 | 2026-06-13 | Codex | 回填 Phase 1 第三个落地产物 | 当前仓库已开始落地游客模式的最小服务端身份闭环 |
 | 2026-06-13 | Codex | 回填 Phase 1 第四个落地产物 | 当前仓库已开始落地上传接口与开发环境对象存储适配 |
+| 2026-06-13 | Codex | 回填 Phase 2 第一个落地产物 | 当前仓库已开始落地安卓端基础工程与导航应用壳，作为后续游客闭环、搜索与草稿能力的基座 |
