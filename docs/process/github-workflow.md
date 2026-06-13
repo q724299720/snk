@@ -30,6 +30,7 @@
 | 远程仓库 URL | `https://github.com/q724299720/snk.git` |
 | 默认分支 | `main` |
 | 认证方式 | `HTTPS（当前已配置，不记录密码）` |
+| Git HTTPS 代理 | `http://127.0.0.1:10809` |
 | 本地 Git 仓库状态 | `已初始化，已首次提交并已推送到 origin/main` |
 | Git 提交身份 | `已配置：q724299720 / 724299720@qq.com` |
 
@@ -82,6 +83,29 @@ git remote -v
 
 - 只记录仓库 URL，不记录 HTTPS 密码或 Token
 - 若后续从 HTTPS 切换到 SSH，需要同步更新本文件中的远程 URL 和认证方式
+
+## Git 代理设置
+
+当前环境已为 Git 配置以下代理，用于解决 HTTPS 推送连通性问题：
+
+```powershell
+git config --global http.proxy http://127.0.0.1:10809
+git config --global https.proxy http://127.0.0.1:10809
+```
+
+检查命令：
+
+```powershell
+git config --global --get http.proxy
+git config --global --get https.proxy
+```
+
+如果后续不再需要代理，可取消：
+
+```powershell
+git config --global --unset http.proxy
+git config --global --unset https.proxy
+```
 
 当前项目已配置：
 
@@ -160,3 +184,4 @@ git push
 | 2026-06-13 | Codex | 回填 GitHub 仓库所有者、远程 URL 与当前连接状态 | 用户已提供远程仓库地址，需要纳入可追溯连接记录 |
 | 2026-06-13 | Codex | 更新 Git 提交身份状态 | 用户已提供显示名和邮箱，已完成本机 Git 身份配置 |
 | 2026-06-13 | Codex | 更新本地 Git 仓库状态为已首次推送 | 首次提交与推送已完成，需要使连接记录与真实状态一致 |
+| 2026-06-13 | Codex | 记录 Git HTTP/HTTPS 代理设置 | 本地代理已用于修复 GitHub HTTPS 推送连通性问题 |
