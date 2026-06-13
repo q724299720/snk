@@ -139,6 +139,11 @@
 - `FoodRecord.user_id + record_time` 建立组合索引
 - 向量字段与图片 embedding 字段按 `pgvector` 能力设计索引
 
+展示与排序约束：
+
+- 用户侧最近记录默认按 `record_time DESC` 排序
+- `created_at` 主要用于审计、排查和数据追踪，不作为用户主列表的默认排序字段
+
 ## 唯一性规则
 
 - `packaged_product`：同一 `barcode` 视为同一个 `FoodItem`
@@ -178,3 +183,4 @@
 | 2026-06-13 | Codex | 收敛 `item_type` 并明确饮料归属规则 | 已确认 `drink` 不单列为类型，包装饮料与现制饮品按不同语义归类 |
 | 2026-06-13 | Codex | 明确保留 `fruit` 为独立 `item_type` | 已确认水果在 MVP 阶段具有独立语义，不并入 `dish` |
 | 2026-06-13 | Codex | 明确后台需要支持条目合并和记录迁移 | 已确认错误 pending 条目不能只删除，需修正历史记录归属 |
+| 2026-06-13 | Codex | 明确最近记录按 `record_time` 排序 | 已确认用户侧记录时间感知优先于系统创建时间 |
