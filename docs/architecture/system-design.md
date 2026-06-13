@@ -203,6 +203,12 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 当前已落地 PostgreSQL 扩展初始化与审核词典基础表迁移脚本
 - 当前测试通过“禁用数据源自动配置的最小启动测试”验证工程骨架可构建
 
+当前仓库 Phase 1 第二个落地产物：
+
+- 已补充 `users`、`food_items`、`food_images`、`food_records`、`food_record_images`、`recognition_tasks`、`tags` 的首版 Flyway 迁移
+- 已增加基于 PostgreSQL Testcontainers 的迁移集成测试，用于验证核心表、约束和 `pg_trgm` 扩展可成功建库
+- 当本机 Docker Engine 不可用时，该集成测试自动跳过，不阻塞常规单测
+
 ## 安全与运维基线
 
 ### 安全
@@ -258,3 +264,5 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-13 | Codex | 明确词典审计日志长期保留 | 已确认此类日志量小但排查价值高，MVP 阶段不做自动清理 |
 | 2026-06-13 | Codex | 明确自动拒绝阈值继续留在代码配置 | 已确认 MVP 阶段需限制后台热更新范围，避免审核规则过度可变 |
 | 2026-06-13 | Codex | 回填服务端构建工具与 Phase 1 首个落地产物 | 当前仓库已初始化 `server/` 工程并落地 Flyway 迁移目录与审核词典基础迁移 |
+| 2026-06-13 | Codex | 回填 Phase 1 第二个落地产物 | 当前仓库已新增核心业务表迁移与 PostgreSQL 容器集成测试 |
+| 2026-06-13 | Codex | 补充 Docker 不可用时的集成测试降级说明 | 当前环境无法启动 Docker Engine，需要让测试策略与真实环境约束保持一致 |

@@ -21,6 +21,7 @@
 
 ### User
 
+- 物理表名：`users`
 - `id`
 - `nickname`
 - `avatar`
@@ -31,11 +32,13 @@
 
 ### FoodItem
 
+- 物理表名：`food_items`
 - `id`
 - `name`
 - `item_type`
 - `alias`
 - `category`
+- `subcategory`
 - `brand`
 - `barcode`
 - `source`：`system / user_generated / external_api`
@@ -60,6 +63,7 @@
 
 ### FoodImage
 
+- 物理表名：`food_images`
 - `id`
 - `food_item_id`
 - `image_url`
@@ -76,6 +80,7 @@
 
 ### FoodRecord
 
+- 物理表名：`food_records`
 - `id`
 - `user_id`
 - `food_item_id`
@@ -110,6 +115,7 @@
 
 ### FoodRecordImage
 
+- 物理表名：`food_record_images`
 - `id`
 - `record_id`
 - `image_url`
@@ -118,6 +124,7 @@
 
 ### RecognitionTask
 
+- 物理表名：`recognition_tasks`
 - `id`
 - `user_id`
 - `input_image_url`
@@ -130,6 +137,7 @@
 
 ### Tag
 
+- 物理表名：`tags`
 - `id`
 - `name`
 - `tag_type`
@@ -197,6 +205,7 @@
 - `FoodItem.audit_status` 建立筛选索引
 - `FoodRecord.user_id + record_time` 建立组合索引
 - 向量字段与图片 embedding 字段按 `pgvector` 能力设计索引
+- 当前首版迁移已为 `FoodItem.name / alias / search_keywords` 落地 `pg_trgm` GIN 索引
 
 展示与排序约束：
 
@@ -269,3 +278,5 @@
 | 2026-06-13 | Codex | 明确 `ReviewConfigWordAuditLog` 长期保留 | 已确认 MVP 阶段不对词典审计日志做自动清理 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord` 不承载审核阈值参数 | 已确认阈值应继续由代码配置维护，避免后台规则漂移 |
 | 2026-06-13 | Codex | 回填审核词典物理表名与 JSONB 落地约束 | 当前 Phase 1 已实现首批 Flyway 迁移，需要让文档与实际物理模型保持一致 |
+| 2026-06-13 | Codex | 回填核心业务表物理表名与 `subcategory` 字段 | 当前 Phase 1 已新增核心表迁移，需要让文档与实际表结构保持一致 |
+| 2026-06-13 | Codex | 回填首版 `pg_trgm` 索引落地情况 | 当前 Phase 1 已将文本搜索相关索引写入 Flyway 迁移，文档需同步反映 |
