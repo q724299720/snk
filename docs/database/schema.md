@@ -27,8 +27,15 @@
 - `avatar`
 - `phone / email`
 - `auth_provider`
+- `anonymous_installation_id`
+- `last_seen_at`
 - `created_at`
 - `status`
+
+字段说明：
+
+- `anonymous_installation_id` 仅用于匿名用户初始化和安装级复用，同一匿名安装标识在数据库层保持唯一
+- `last_seen_at` 用于记录匿名用户最近一次成功初始化或访问时间
 
 ### FoodItem
 
@@ -280,3 +287,4 @@
 | 2026-06-13 | Codex | 回填审核词典物理表名与 JSONB 落地约束 | 当前 Phase 1 已实现首批 Flyway 迁移，需要让文档与实际物理模型保持一致 |
 | 2026-06-13 | Codex | 回填核心业务表物理表名与 `subcategory` 字段 | 当前 Phase 1 已新增核心表迁移，需要让文档与实际表结构保持一致 |
 | 2026-06-13 | Codex | 回填首版 `pg_trgm` 索引落地情况 | 当前 Phase 1 已将文本搜索相关索引写入 Flyway 迁移，文档需同步反映 |
+| 2026-06-13 | Codex | 为 `users` 补充匿名安装标识与最近访问时间字段 | 当前 Phase 1 已开始落地匿名用户初始化接口，需要让数据库模型与实现对齐 |

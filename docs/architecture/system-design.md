@@ -209,6 +209,12 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 已增加基于 PostgreSQL Testcontainers 的迁移集成测试，用于验证核心表、约束和 `pg_trgm` 扩展可成功建库
 - 当本机 Docker Engine 不可用时，该集成测试自动跳过，不阻塞常规单测
 
+当前仓库 Phase 1 第三个落地产物：
+
+- 已落地 `POST /api/auth/anonymous` 匿名初始化接口
+- 已落地 `installationId -> 匿名 user_id` 的服务端复用逻辑
+- 已增加控制器与服务层自动化测试，验证匿名用户新建与复用行为
+
 ## 安全与运维基线
 
 ### 安全
@@ -266,3 +272,4 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-13 | Codex | 回填服务端构建工具与 Phase 1 首个落地产物 | 当前仓库已初始化 `server/` 工程并落地 Flyway 迁移目录与审核词典基础迁移 |
 | 2026-06-13 | Codex | 回填 Phase 1 第二个落地产物 | 当前仓库已新增核心业务表迁移与 PostgreSQL 容器集成测试 |
 | 2026-06-13 | Codex | 补充 Docker 不可用时的集成测试降级说明 | 当前环境无法启动 Docker Engine，需要让测试策略与真实环境约束保持一致 |
+| 2026-06-13 | Codex | 回填 Phase 1 第三个落地产物 | 当前仓库已开始落地游客模式的最小服务端身份闭环 |

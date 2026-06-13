@@ -8,9 +8,17 @@
 
 ### 认证
 
+- `POST /api/auth/anonymous`
 - `POST /api/auth/login`
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
+
+游客模式初始化约束：
+
+- `POST /api/auth/anonymous` 作为 MVP 首个实际落地的认证入口
+- 客户端上传安装级 `installationId`
+- 服务端对同一 `installationId` 复用同一匿名 `user_id`
+- 卸载重装后若 `installationId` 变化，服务端视为新匿名用户
 
 ### 食物搜索
 
@@ -100,3 +108,4 @@
 | --- | --- | --- | --- |
 | 2026-06-13 | Codex | 从 `agents.md` 拆出接口边界、OCR 分工和识别接口职责 | 防止本地 OCR 与服务端 OCR 边界不清 |
 | 2026-06-13 | Codex | 明确接口需返回候选质量信号 | 已确认兜底入口展示由后端信号与前端场景共同决定 |
+| 2026-06-13 | Codex | 增加匿名用户初始化接口与安装级复用约束 | 当前 Phase 1 已开始落地游客模式的最小服务端身份闭环 |
