@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 
 @ExtendWith(MockitoExtension.class)
 class FoodModerationServiceTests {
@@ -68,6 +69,38 @@ class FoodModerationServiceTests {
 
 		assertThat(item.auditStatus()).isEqualTo("rejected");
 		assertThat(entity.getAuditStatus()).isEqualTo("rejected");
+	}
+
+	@Test
+	void shouldListFoodItemsWithFiltersAndLimit() {
+		FoodItemEntity first = foodItem(10L, "Alpha Crackers", 0);
+		first.setAuditStatus("approved");
+		first.setBrand("Alpha");
+		first.setSearchKeywords("alpha crackers snack");
+		FoodItemEntity second = foodItem(11L, "Beta Chips", 0);
+		second.setAuditStatus("pending");
+		second.setBrand("Beta");
+		second.setSearchKeywords("beta chips snack");
+		when(foodItemRepository.findAll(any(Sort.class))).thenReturn(List.of(second, first));
+
+		List<FoodModerationService.FoodModerationItem> items = foodModerationService.listFoodItems("approved", "alpha", 10);
+
+		assertThat(items).hasSize(1);
+		assertThat(items.getFirst().name()).isEqualTo("Alpha Crackers");
+		assertThat(items.getFirst().auditStatus()).isEqualTo("approved");
+	}
+
+	@Test
+	void shouldGetFoodItemById() {
+		FoodItemEntity entity = foodItem(12L, "Detail Target", 3);
+		entity.setAuditStatus("pending");
+		when(foodItemRepository.findById(12L)).thenReturn(java.util.Optional.of(entity));
+
+		FoodModerationService.FoodModerationItem item = foodModerationService.getFoodItem(12L);
+
+		assertThat(item.id()).isEqualTo(12L);
+		assertThat(item.name()).isEqualTo("Detail Target");
+		assertThat(item.reportCount()).isEqualTo(3);
 	}
 
 	private FoodItemEntity foodItem(Long id, String name, int reportCount) {

@@ -22,6 +22,23 @@ public class AdminFoodItemController {
 		this.foodModerationService = foodModerationService;
 	}
 
+	@GetMapping
+	public List<AdminFoodItemResponse> listFoodItems(
+		@RequestParam(value = "auditStatus", required = false) String auditStatus,
+		@RequestParam(value = "q", required = false) String query,
+		@RequestParam(value = "limit", defaultValue = "20") int limit
+	) {
+		return foodModerationService.listFoodItems(auditStatus, query, limit)
+			.stream()
+			.map(AdminFoodItemResponse::from)
+			.toList();
+	}
+
+	@GetMapping("/{foodItemId}")
+	public AdminFoodItemResponse getFoodItem(@PathVariable("foodItemId") Long foodItemId) {
+		return AdminFoodItemResponse.from(foodModerationService.getFoodItem(foodItemId));
+	}
+
 	@GetMapping("/pending")
 	public List<AdminFoodItemResponse> listPendingItems() {
 		return foodModerationService.listPendingItems()

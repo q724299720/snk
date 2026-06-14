@@ -295,6 +295,7 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 已在服务端引入 `ImageRecognitionTaskProvider` 抽象与 `snk.recognition.image.*` 配置项，当前默认 `disabled`，开发期可切到 `stub`
 - 已在安卓端 OCR 页面接通“上传图片 -> 创建识别任务 -> 候选确认 -> 手动创建”回退链路，并复用统一候选确认页
 - 已补充后台治理基础能力的最小落地：`GET /api/admin/food-items/pending`、`GET /api/admin/food-items/reported`、`POST /api/admin/food-items/{foodItemId}/approve`、`POST /api/admin/food-items/{foodItemId}/reject`
+- 已补充后台食物条目管理能力的最小落地：`GET /api/admin/food-items`、`GET /api/admin/food-items/{foodItemId}`
 - 已补充审核词典后台能力的最小落地：`GET /api/admin/review-config-words`、`POST /api/admin/review-config-words`、`PUT /api/admin/review-config-words/{wordId}`、`POST /api/admin/review-config-words/{wordId}/enable`、`POST /api/admin/review-config-words/{wordId}/disable`、`GET /api/admin/review-config-words/{wordId}/audit-logs`
 - 已补充识别任务监控能力的最小落地：`GET /api/admin/recognition-tasks`、`GET /api/admin/recognition-tasks/{taskId}`
 - 已补充 `pending` 超时自动审核服务：超过 24 小时的待审条目按保守规则扫描，仅对明显垃圾数据执行拒绝
@@ -350,3 +351,4 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-14 | Codex | 回填 Phase 4 的 pending 超时自动审核服务 | 当前仓库已补上 24 小时后保守自动拒绝机制，避免待审条目无限悬挂 |
 | 2026-06-14 | Codex | 回填审核词典后台 CRUD / 启停 / 审计日志接口 | 当前仓库已落地审核词典配置、启停和历史追踪闭环 |
 | 2026-06-14 | Codex | 回填识别任务监控接口 | 当前仓库已落地后台查看识别失败与异常任务的最小闭环 |
+| 2026-06-14 | Codex | 回填食物条目管理列表 / 详情接口 | 当前仓库已落地后台食物条目基础管理闭环 |

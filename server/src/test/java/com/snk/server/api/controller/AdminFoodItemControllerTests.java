@@ -41,6 +41,32 @@ class AdminFoodItemControllerTests {
 	}
 
 	@Test
+	void shouldListFoodItems() throws Exception {
+		when(foodModerationService.listFoodItems(eq("approved"), eq("alpha"), eq(10)))
+			.thenReturn(List.of(moderationItem(7L, "Alpha Chips", 2, "approved")));
+
+		mockMvc.perform(get("/api/admin/food-items")
+			.param("auditStatus", "approved")
+			.param("q", "alpha")
+			.param("limit", "10"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].name").value("Alpha Chips"))
+			.andExpect(jsonPath("$[0].auditStatus").value("approved"));
+	}
+
+	@Test
+	void shouldReturnFoodItemDetail() throws Exception {
+		when(foodModerationService.getFoodItem(8L))
+			.thenReturn(moderationItem(8L, "Detail Item", 1, "pending"));
+
+		mockMvc.perform(get("/api/admin/food-items/8"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.id").value(8))
+			.andExpect(jsonPath("$.name").value("Detail Item"))
+			.andExpect(jsonPath("$.auditStatus").value("pending"));
+	}
+
+	@Test
 	void shouldReturnPendingItems() throws Exception {
 		when(foodModerationService.listPendingItems())
 			.thenReturn(List.of(moderationItem(1L, "Pending Item", 0, "pending")));

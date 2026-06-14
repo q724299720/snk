@@ -4,6 +4,7 @@ import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,27 @@ public class FoodModerationService {
 			.stream()
 			.map(this::toModerationItem)
 			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<FoodModerationItem> listFoodItems(String auditStatus, String query, int limit) {
+		int normalizedLimit = Math.min(Math.max(limit, 1), 100);
+		String normalizedAuditStatus = normalizeOptional(auditStatus);
+		String normalizedQuery = normalizeOptional(query);
+		return foodItemRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+			.stream()
+			.filter(entity -> normalizedAuditStatus == null || normalizedAuditStatus.equals(entity.getAuditStatus()))
+			.filter(entity -> normalizedQuery == null || matchesQuery(entity, normalizedQuery))
+			.limit(normalizedLimit)
+			.map(this::toModerationItem)
+			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public FoodModerationItem getFoodItem(Long foodItemId) {
+		FoodItemEntity entity = foodItemRepository.findById(foodItemId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food item not found."));
+		return toModerationItem(entity);
 	}
 
 	@Transactional
@@ -68,6 +90,28 @@ public class FoodModerationService {
 			entity.getCreatedAt(),
 			entity.getUpdatedAt()
 		);
+	}
+
+	private boolean matchesQuery(FoodItemEntity entity, String query) {
+		String lowerQuery = query.toLowerCase();
+		return contains(entity.getName(), lowerQuery)
+			|| contains(entity.getBrand(), lowerQuery)
+			|| contains(entity.getCategory(), lowerQuery)
+			|| contains(entity.getSubcategory(), lowerQuery)
+			|| contains(entity.getBarcode(), lowerQuery)
+			|| contains(entity.getSearchKeywords(), lowerQuery);
+	}
+
+	private boolean contains(String value, String lowerQuery) {
+		return value != null && value.toLowerCase().contains(lowerQuery);
+	}
+
+	private String normalizeOptional(String value) {
+		if (value == null) {
+			return null;
+		}
+		String normalized = value.trim();
+		return normalized.isBlank() ? null : normalized;
 	}
 
 	public record FoodModerationItem(
