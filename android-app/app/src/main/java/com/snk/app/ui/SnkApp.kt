@@ -53,6 +53,13 @@ private val destinations = listOf(
     SnkDestination.Profile,
 )
 
+private fun SessionUiState.userIdOrNull(): Long? = when (this) {
+    is SessionUiState.Remote -> session.userId
+    is SessionUiState.Cached -> session.userId
+    SessionUiState.Loading -> null
+    is SessionUiState.Failure -> null
+}
+
 @Composable
 fun SnkApp() {
     val application = LocalContext.current.applicationContext as SnkApplication
@@ -261,6 +268,7 @@ fun SnkApp() {
                 }
                 composable("ocr_recognition") {
                     OcrRecognitionScreen(
+                        sessionUserId = sessionState.userIdOrNull(),
                         onCandidatesMatched = { state ->
                             candidateConfirmationState = state
                             navController.navigate("candidate_confirm") {

@@ -7,6 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.snk.server.domain.food.FoodSearchItem;
+import com.snk.server.domain.recognition.ImageRecognitionCandidateSnapshot;
+import com.snk.server.domain.recognition.RecognitionTaskResult;
+import com.snk.server.domain.recognition.RecognitionTaskService;
 import com.snk.server.domain.recognition.ServerOcrRecognitionResult;
 import com.snk.server.domain.recognition.ServerOcrRecognitionService;
 import com.snk.server.infrastructure.storage.StorageProperties;
@@ -33,6 +36,9 @@ class RecognitionControllerTests {
 
 	@MockBean
 	private ServerOcrRecognitionService serverOcrRecognitionService;
+
+	@MockBean
+	private RecognitionTaskService recognitionTaskService;
 
 	@TestConfiguration
 	static class ControllerTestConfiguration {
@@ -103,5 +109,77 @@ class RecognitionControllerTests {
 
 		mockMvc.perform(multipart("/api/recognition/ocr").file(file))
 			.andExpect(status().isServiceUnavailable());
+	}
+
+	@Test
+	void shouldCreateRecognitionTask() throws Exception {
+		when(recognitionTaskService.createTask(any()))
+			.thenReturn(
+				new RecognitionTaskResult(
+					18L,
+					2L,
+					"/uploads/images/demo.png",
+					"completed",
+					List.of(
+						new ImageRecognitionCandidateSnapshot(
+							11L,
+							"Lays Cucumber Chips",
+							"packaged_product",
+							"snack",
+							"chips",
+							"Lays",
+							"6900000000011",
+							null,
+							"approved"
+						)
+					),
+					11L,
+					new java.math.BigDecimal("0.8500"),
+					java.time.OffsetDateTime.parse("2026-06-14T12:00:00Z"),
+					java.time.OffsetDateTime.parse("2026-06-14T12:00:02Z"),
+					null
+				)
+			);
+
+		mockMvc.perform(
+			org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/recognition/tasks")
+				.contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+				.content(
+					"""
+					{
+					  "userId": 2,
+					  "inputImageUrl": "/uploads/images/demo.png"
+					}
+					"""
+				)
+		)
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.status").value("completed"))
+			.andExpect(jsonPath("$.topCandidates[0].name").value("Lays Cucumber Chips"))
+			.andExpect(jsonPath("$.selectedFoodItemId").value(11));
+	}
+
+	@Test
+	void shouldGetRecognitionTask() throws Exception {
+		when(recognitionTaskService.getTask(18L))
+			.thenReturn(
+				new RecognitionTaskResult(
+					18L,
+					2L,
+					"/uploads/images/demo.png",
+					"failed",
+					List.of(),
+					null,
+					null,
+					java.time.OffsetDateTime.parse("2026-06-14T12:00:00Z"),
+					java.time.OffsetDateTime.parse("2026-06-14T12:00:01Z"),
+					"image recognition provider is not configured"
+				)
+			);
+
+		mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/recognition/tasks/18"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("failed"))
+			.andExpect(jsonPath("$.statusReason").value("image recognition provider is not configured"));
 	}
 }

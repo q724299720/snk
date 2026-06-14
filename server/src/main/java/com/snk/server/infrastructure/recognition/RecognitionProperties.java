@@ -6,9 +6,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class RecognitionProperties {
 
 	private final Ocr ocr = new Ocr();
+	private final Image image = new Image();
 
 	public Ocr getOcr() {
 		return ocr;
+	}
+
+	public Image getImage() {
+		return image;
 	}
 
 	public static class Ocr {
@@ -30,6 +35,28 @@ public class RecognitionProperties {
 
 		public void setStubText(String stubText) {
 			this.stubText = stubText;
+		}
+	}
+
+	public static class Image {
+
+		private String provider = "disabled";
+		private String stubQuery;
+
+		public String getProvider() {
+			return provider;
+		}
+
+		public void setProvider(String provider) {
+			this.provider = provider;
+		}
+
+		public String getStubQuery() {
+			return stubQuery;
+		}
+
+		public void setStubQuery(String stubQuery) {
+			this.stubQuery = stubQuery;
 		}
 	}
 }

@@ -6,9 +6,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okio.Buffer
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okio.Buffer
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -59,11 +59,11 @@ class FoodSearchRepositoryTest {
                       "items": [
                         {
                           "id": 1,
-                          "name": "乐事黄瓜味薯片",
+                          "name": "Lays Cucumber Chips",
                           "itemType": "packaged_product",
                           "category": "snack",
                           "subcategory": "chips",
-                          "brand": "乐事",
+                          "brand": "Lays",
                           "barcode": "6900000000011",
                           "coverImageUrl": null,
                           "auditStatus": "approved"
@@ -74,13 +74,13 @@ class FoodSearchRepositoryTest {
                 ),
         )
 
-        val result = repository.search("乐事")
+        val result = repository.search("Lays")
 
         assertTrue(result is FoodSearchResult.Success)
         val success = result as FoodSearchResult.Success
         assertEquals("strong", success.qualitySignal)
         assertEquals(1, success.items.size)
-        assertEquals("乐事黄瓜味薯片", success.items.first().name)
+        assertEquals("Lays Cucumber Chips", success.items.first().name)
         assertEquals("approved", success.items.first().auditStatus)
     }
 
@@ -93,11 +93,11 @@ class FoodSearchRepositoryTest {
                     """
                     {
                       "id": 1,
-                      "name": "乐事黄瓜味薯片",
+                      "name": "Lays Cucumber Chips",
                       "itemType": "packaged_product",
                       "category": "snack",
                       "subcategory": "chips",
-                      "brand": "乐事",
+                      "brand": "Lays",
                       "barcode": "6900000000011",
                       "coverImageUrl": null,
                       "auditStatus": "approved"
@@ -109,7 +109,7 @@ class FoodSearchRepositoryTest {
         val result = repository.lookupByBarcode("6900000000011")
 
         assertTrue(result is FoodBarcodeLookupResult.Success)
-        assertEquals("乐事黄瓜味薯片", (result as FoodBarcodeLookupResult.Success).item.name)
+        assertEquals("Lays Cucumber Chips", (result as FoodBarcodeLookupResult.Success).item.name)
     }
 
     @Test
@@ -138,7 +138,7 @@ class FoodSearchRepositoryTest {
                     """
                     {
                       "id": 9,
-                      "name": "杨枝鲜花饼",
+                      "name": "Mango Cake",
                       "itemType": "dish",
                       "category": "dessert",
                       "subcategory": "cake",
@@ -153,7 +153,7 @@ class FoodSearchRepositoryTest {
 
         val result = repository.createManualFoodItem(
             userId = 2L,
-            name = "杨枝鲜花饼",
+            name = "Mango Cake",
             itemType = "packaged_product",
             category = "snack",
             subcategory = "chips",
@@ -175,14 +175,7 @@ class FoodSearchRepositoryTest {
         server.enqueue(
             MockResponse()
                 .setHeader("Content-Type", "application/json")
-                .setBody(
-                    """
-                    {
-                      "qualitySignal": "weak",
-                      "items": []
-                    }
-                    """.trimIndent(),
-                ),
+                .setBody("""{"qualitySignal":"weak","items":[]}"""),
         )
         server.enqueue(
             MockResponse()
@@ -194,11 +187,11 @@ class FoodSearchRepositoryTest {
                       "items": [
                         {
                           "id": 1,
-                          "name": "乐事黄瓜味薯片",
+                          "name": "LaysCucumberChips",
                           "itemType": "packaged_product",
                           "category": "snack",
                           "subcategory": "chips",
-                          "brand": "乐事",
+                          "brand": "Lays",
                           "barcode": "6900000000011",
                           "coverImageUrl": null,
                           "auditStatus": "approved"
@@ -209,15 +202,15 @@ class FoodSearchRepositoryTest {
                 ),
         )
 
-        val result = repository.searchByRecognizedText("乐事\n黄瓜味 薯片")
+        val result = repository.searchByRecognizedText("Lays\nCucumber Chips")
 
         assertTrue(result is FoodOcrSearchResult.Success)
         val success = result as FoodOcrSearchResult.Success
-        assertEquals("乐事 黄瓜味 薯片", success.attemptedQueries.first())
-        assertEquals("乐事黄瓜味薯片", success.matchedQuery)
-        assertEquals("乐事黄瓜味薯片", success.result.items.first().name)
-        assertEquals("/api/foods/search?q=%E4%B9%90%E4%BA%8B%20%E9%BB%84%E7%93%9C%E5%91%B3%20%E8%96%AF%E7%89%87", server.takeRequest().path)
-        assertEquals("/api/foods/search?q=%E4%B9%90%E4%BA%8B%E9%BB%84%E7%93%9C%E5%91%B3%E8%96%AF%E7%89%87", server.takeRequest().path)
+        assertEquals("Lays Cucumber Chips", success.attemptedQueries.first())
+        assertEquals("LaysCucumberChips", success.matchedQuery)
+        assertEquals("LaysCucumberChips", success.result.items.first().name)
+        assertEquals("/api/foods/search?q=Lays%20Cucumber%20Chips", server.takeRequest().path)
+        assertEquals("/api/foods/search?q=LaysCucumberChips", server.takeRequest().path)
     }
 
     @Test
@@ -233,7 +226,7 @@ class FoodSearchRepositoryTest {
                 .setBody("""{"qualitySignal":"weak","items":[]}"""),
         )
 
-        val result = repository.searchByRecognizedText("乐事 黄瓜味")
+        val result = repository.searchByRecognizedText("Lays Cucumber")
 
         assertTrue(result is FoodOcrSearchResult.NoMatch)
     }
@@ -246,18 +239,18 @@ class FoodSearchRepositoryTest {
                 .setBody(
                     """
                     {
-                      "recognizedText": "乐事 黄瓜味 薯片",
-                      "attemptedQueries": ["乐事 黄瓜味 薯片", "乐事黄瓜味薯片"],
-                      "matchedQuery": "乐事黄瓜味薯片",
+                      "recognizedText": "Lays Cucumber Chips",
+                      "attemptedQueries": ["Lays Cucumber Chips", "LaysCucumberChips"],
+                      "matchedQuery": "LaysCucumberChips",
                       "qualitySignal": "strong",
                       "items": [
                         {
                           "id": 1,
-                          "name": "乐事黄瓜味薯片",
+                          "name": "LaysCucumberChips",
                           "itemType": "packaged_product",
                           "category": "snack",
                           "subcategory": "chips",
-                          "brand": "乐事",
+                          "brand": "Lays",
                           "barcode": "6900000000011",
                           "coverImageUrl": null,
                           "auditStatus": "approved"
@@ -272,18 +265,90 @@ class FoodSearchRepositoryTest {
             imageBytes = "png-content".toByteArray(),
             fileName = "chips.png",
             contentType = "image/png",
-            clientRecognizedText = "乐事 黄瓜味 薯片",
+            clientRecognizedText = "Lays Cucumber Chips",
         )
 
         assertTrue(result is FoodOcrSearchResult.Success)
         val success = result as FoodOcrSearchResult.Success
-        assertEquals("乐事黄瓜味薯片", success.matchedQuery)
-        assertEquals("乐事黄瓜味薯片", success.result.items.first().name)
+        assertEquals("LaysCucumberChips", success.matchedQuery)
+        assertEquals("LaysCucumberChips", success.result.items.first().name)
         val request = server.takeRequest()
         assertEquals("/api/recognition/ocr", request.path)
         val body = Buffer().write(request.body.readByteArray()).readUtf8()
         assertTrue(body.contains("name=\"clientRecognizedText\""))
-        assertTrue(body.contains("乐事 黄瓜味 薯片"))
+        assertTrue(body.contains("Lays Cucumber Chips"))
         assertTrue(body.contains("filename=\"chips.png\""))
+    }
+
+    @Test
+    fun `searchByImageRecognition uploads image and returns candidates when backend succeeds`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(201)
+                .setBody(
+                    """
+                    {
+                      "objectKey": "images/demo.png",
+                      "resourceUrl": "https://snk.qiuxinmin.cn/uploads/images/demo.png",
+                      "contentType": "image/png",
+                      "size": 11
+                    }
+                    """.trimIndent(),
+                ),
+        )
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(201)
+                .setBody(
+                    """
+                    {
+                      "id": 18,
+                      "userId": 2,
+                      "inputImageUrl": "https://snk.qiuxinmin.cn/uploads/images/demo.png",
+                      "status": "completed",
+                      "topCandidates": [
+                        {
+                          "id": 1,
+                          "name": "Lays Cucumber Chips",
+                          "itemType": "packaged_product",
+                          "category": "snack",
+                          "subcategory": "chips",
+                          "brand": "Lays",
+                          "barcode": "6900000000011",
+                          "coverImageUrl": null,
+                          "auditStatus": "approved"
+                        }
+                      ],
+                      "selectedFoodItemId": 1,
+                      "confidence": "0.8500",
+                      "createdAt": "2026-06-14T12:00:00Z",
+                      "finishedAt": "2026-06-14T12:00:01Z",
+                      "statusReason": null
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.searchByImageRecognition(
+            userId = 2L,
+            imageBytes = "png-content".toByteArray(),
+            fileName = "chips.png",
+            contentType = "image/png",
+        )
+
+        assertTrue(result is FoodImageRecognitionResult.Success)
+        val success = result as FoodImageRecognitionResult.Success
+        assertEquals("0.8500", success.confidence)
+        assertEquals("Lays Cucumber Chips", success.result.items.first().name)
+
+        val uploadRequest = server.takeRequest()
+        assertEquals("/api/upload/image", uploadRequest.path)
+        val createTaskRequest = server.takeRequest()
+        assertEquals("/api/recognition/tasks", createTaskRequest.path)
+        val body = Buffer().write(createTaskRequest.body.readByteArray()).readUtf8()
+        assertTrue(body.contains("\"userId\":2"))
+        assertTrue(body.contains("\"inputImageUrl\":\"https://snk.qiuxinmin.cn/uploads/images/demo.png\""))
     }
 }

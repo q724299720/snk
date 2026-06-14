@@ -1,6 +1,7 @@
 package com.snk.app.data.food
 
 import java.io.IOException
+import kotlinx.coroutines.delay
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -159,6 +160,42 @@ class FoodSearchRepository(
             )
         }
     }
+
+    suspend fun searchByImageRecognition(
+        userId: Long,
+        imageBytes: ByteArray,
+        fileName: String,
+        contentType: String,
+    ): FoodImageRecognitionResult {
+        if (imageBytes.isEmpty()) {
+            return FoodImageRecognitionResult.Failure("没有可上传的图片内容，暂时无法继续图片识别。")
+        }
+
+        return try {
+            val imagePart = MultipartBody.Part.createFormData(
+                "file",
+                fileName,
+                imageBytes.toRequestBody(contentType.toMediaTypeOrNull()),
+            )
+            val uploadResponse = api.uploadImage(imagePart)
+            var task = api.createRecognitionTask(
+                CreateRecognitionTaskRequest(
+                    userId = userId,
+                    inputImageUrl = uploadResponse.resourceUrl,
+                ),
+            )
+            repeat(3) {
+                if (!task.status.equals("processing", ignoreCase = true)) {
+                    return@repeat
+                }
+                delay(300)
+                task = api.getRecognitionTask(task.id)
+            }
+            task.toImageRecognitionResult()
+        } catch (exception: Exception) {
+            FoodImageRecognitionResult.Failure(exception.asImageRecognitionMessage())
+        }
+    }
 }
 
 data class FoodSearchItem(
@@ -204,6 +241,21 @@ sealed interface FoodOcrSearchResult {
         val attemptedQueries: List<String>,
         val message: String,
     ) : FoodOcrSearchResult
+}
+
+sealed interface FoodImageRecognitionResult {
+    data class Success(
+        val imageUrl: String,
+        val confidence: String?,
+        val result: FoodSearchResult.Success,
+    ) : FoodImageRecognitionResult
+
+    data class NoMatch(
+        val imageUrl: String,
+        val confidence: String?,
+    ) : FoodImageRecognitionResult
+
+    data class Failure(val message: String) : FoodImageRecognitionResult
 }
 
 sealed interface FoodSearchResult {
@@ -252,4 +304,47 @@ private fun Exception.asServerOcrMessage(): String = when (this) {
         "服务端 OCR 暂时不可用，请稍后重试。"
     }
     else -> "服务端 OCR 识别失败，请稍后重试。"
+}
+
+private fun RecognitionTaskResponse.toImageRecognitionResult(): FoodImageRecognitionResult {
+    val mappedItems = topCandidates.map(FoodSearchItemResponse::toModel)
+    return when {
+        status.equals("completed", ignoreCase = true) && mappedItems.isNotEmpty() -> {
+            FoodImageRecognitionResult.Success(
+                imageUrl = inputImageUrl,
+                confidence = confidence,
+                result = FoodSearchResult.Success(
+                    items = mappedItems,
+                    qualitySignal = if (mappedItems.size == 1) "strong" else "weak",
+                ),
+            )
+        }
+
+        status.equals("completed", ignoreCase = true) -> {
+            FoodImageRecognitionResult.NoMatch(
+                imageUrl = inputImageUrl,
+                confidence = confidence,
+            )
+        }
+
+        status.equals("failed", ignoreCase = true) -> {
+            FoodImageRecognitionResult.Failure(
+                statusReason?.ifBlank { null } ?: "图片识别任务执行失败，请稍后重试。",
+            )
+        }
+
+        else -> {
+            FoodImageRecognitionResult.Failure("图片识别任务仍在处理中，请稍后重试。")
+        }
+    }
+}
+
+private fun Exception.asImageRecognitionMessage(): String = when (this) {
+    is IOException -> "无法连接服务端图片识别链路，请稍后再试或直接手动创建。"
+    is HttpException -> if (code() == 503) {
+        "服务端图片识别尚未配置，当前先使用手动创建兜底。"
+    } else {
+        "服务端图片识别暂时不可用，请稍后重试。"
+    }
+    else -> "图片识别失败，请稍后重试。"
 }

@@ -7,8 +7,8 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
-import retrofit2.http.Path
 import retrofit2.http.Part
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface FoodSearchApi {
@@ -33,6 +33,22 @@ interface FoodSearchApi {
         @Part file: MultipartBody.Part,
         @Part("clientRecognizedText") clientRecognizedText: String? = null,
     ): OcrRecognitionResponse
+
+    @Multipart
+    @POST("/api/upload/image")
+    suspend fun uploadImage(
+        @Part file: MultipartBody.Part,
+    ): UploadImageResponse
+
+    @POST("/api/recognition/tasks")
+    suspend fun createRecognitionTask(
+        @Body request: CreateRecognitionTaskRequest,
+    ): RecognitionTaskResponse
+
+    @GET("/api/recognition/tasks/{taskId}")
+    suspend fun getRecognitionTask(
+        @Path("taskId") taskId: Long,
+    ): RecognitionTaskResponse
 }
 
 @Serializable
@@ -95,4 +111,48 @@ data class OcrRecognitionResponse(
     val qualitySignal: String = "weak",
     @SerialName("items")
     val items: List<FoodSearchItemResponse> = emptyList(),
+)
+
+@Serializable
+data class UploadImageResponse(
+    @SerialName("objectKey")
+    val objectKey: String,
+    @SerialName("resourceUrl")
+    val resourceUrl: String,
+    @SerialName("contentType")
+    val contentType: String,
+    @SerialName("size")
+    val size: Long,
+)
+
+@Serializable
+data class CreateRecognitionTaskRequest(
+    @SerialName("userId")
+    val userId: Long,
+    @SerialName("inputImageUrl")
+    val inputImageUrl: String,
+)
+
+@Serializable
+data class RecognitionTaskResponse(
+    @SerialName("id")
+    val id: Long,
+    @SerialName("userId")
+    val userId: Long,
+    @SerialName("inputImageUrl")
+    val inputImageUrl: String,
+    @SerialName("status")
+    val status: String,
+    @SerialName("topCandidates")
+    val topCandidates: List<FoodSearchItemResponse> = emptyList(),
+    @SerialName("selectedFoodItemId")
+    val selectedFoodItemId: Long? = null,
+    @SerialName("confidence")
+    val confidence: String? = null,
+    @SerialName("createdAt")
+    val createdAt: String? = null,
+    @SerialName("finishedAt")
+    val finishedAt: String? = null,
+    @SerialName("statusReason")
+    val statusReason: String? = null,
 )

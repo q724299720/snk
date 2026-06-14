@@ -2,7 +2,10 @@ package com.snk.server;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
 import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
+import com.snk.server.infrastructure.persistence.recognition.RecognitionTaskRepository;
 import com.snk.server.infrastructure.persistence.user.UserRepository;
+import com.snk.server.domain.food.FoodSearchService;
+import com.snk.server.domain.recognition.ImageRecognitionTaskProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -20,6 +23,15 @@ class ServerApplicationTests {
 
 	@MockBean
 	private FoodRecordRepository foodRecordRepository;
+
+	@MockBean
+	private RecognitionTaskRepository recognitionTaskRepository;
+
+	@MockBean
+	private FoodSearchService foodSearchService;
+
+	@MockBean
+	private ImageRecognitionTaskProvider imageRecognitionTaskProvider;
 
 	@Test
 	void contextLoads() {

@@ -61,3 +61,6 @@ snk:
     ocr:
       provider: ${SNK_RECOGNITION_OCR_PROVIDER:disabled}
       stub-text: ${SNK_RECOGNITION_OCR_STUB_TEXT:}
+    image:
+      provider: ${SNK_RECOGNITION_IMAGE_PROVIDER:disabled}
+      stub-query: ${SNK_RECOGNITION_IMAGE_STUB_QUERY:}

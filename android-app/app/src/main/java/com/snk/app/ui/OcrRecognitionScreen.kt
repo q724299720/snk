@@ -34,6 +34,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
 import com.snk.app.SnkApplication
+import com.snk.app.data.food.FoodImageRecognitionResult
 import com.snk.app.data.food.FoodOcrSearchResult
 import com.snk.app.data.food.FoodSearchResult
 import java.io.IOException
@@ -45,6 +46,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 
 @Composable
 fun OcrRecognitionScreen(
+    sessionUserId: Long?,
     onCandidatesMatched: (CandidateConfirmationState) -> Unit,
     onOpenManualCreate: (String) -> Unit,
     onBack: () -> Unit,
@@ -60,7 +62,63 @@ fun OcrRecognitionScreen(
     var canOpenManualCreate by remember { mutableStateOf(false) }
     var manualCreateSeedName by remember { mutableStateOf("") }
     var statusMessage by remember {
-        mutableStateOf("先从相册选择一张零食或美食图片，本地识别出文字后会自动搜索。")
+        mutableStateOf("先从相册选择一张零食或美食图片，系统会按 本地 OCR -> 服务端 OCR -> 图片识别 的顺序自动尝试。")
+    }
+
+    suspend fun runImageRecognitionFallback(
+        imagePayload: ImagePayload,
+        fallbackReason: String,
+        manualSeedName: String,
+    ) {
+        val userId = sessionUserId
+        if (userId == null) {
+            searchState = FoodSearchResult.Failure("匿名身份尚未就绪，无法继续服务端图片识别。")
+            canOpenManualCreate = true
+            manualCreateSeedName = manualSeedName
+            statusMessage = "匿名身份尚未就绪，当前请直接手动创建。"
+            return
+        }
+
+        statusMessage = fallbackReason
+        when (
+            val result = application.container.foodSearchRepository.searchByImageRecognition(
+                userId = userId,
+                imageBytes = imagePayload.bytes,
+                fileName = imagePayload.fileName,
+                contentType = imagePayload.contentType,
+            )
+        ) {
+            is FoodImageRecognitionResult.Success -> {
+                searchState = result.result
+                statusMessage = "图片识别已召回候选，正在进入确认页。"
+                onCandidatesMatched(
+                    CandidateConfirmationState(
+                        sourceLabel = "图片识别候选确认",
+                        title = "请确认图片识别到的食物条目",
+                        description = "本地 OCR 和服务端 OCR 都未稳定命中后，已继续使用图片识别召回候选，请确认正确条目后再进入记录页面。",
+                        items = result.result.items,
+                        qualitySignal = result.result.qualitySignal,
+                        sourceType = "image_search",
+                        matchedQuery = result.imageUrl,
+                        manualCreateSeedName = manualSeedName,
+                    ),
+                )
+            }
+
+            is FoodImageRecognitionResult.NoMatch -> {
+                searchState = FoodSearchResult.Success(emptyList(), "weak")
+                canOpenManualCreate = true
+                manualCreateSeedName = manualSeedName
+                statusMessage = "图片识别也没有返回可靠候选，当前可直接手动创建待审核条目。"
+            }
+
+            is FoodImageRecognitionResult.Failure -> {
+                searchState = FoodSearchResult.Failure(result.message)
+                canOpenManualCreate = true
+                manualCreateSeedName = manualSeedName
+                statusMessage = result.message
+            }
+        }
     }
 
     suspend fun runServerOcrFallback(
@@ -75,7 +133,7 @@ fun OcrRecognitionScreen(
             searchState = FoodSearchResult.Failure("无法读取上传图片，当前请直接手动创建。")
             canOpenManualCreate = true
             manualCreateSeedName = clientRecognizedText.orEmpty()
-            statusMessage = "读取图片失败，当前无法继续服务端 OCR，请直接手动创建。"
+            statusMessage = "读取图片失败，当前无法继续服务端识别，请直接手动创建。"
             return
         }
 
@@ -97,7 +155,7 @@ fun OcrRecognitionScreen(
                     CandidateConfirmationState(
                         sourceLabel = "服务端 OCR 候选确认",
                         title = "请确认识别到的食物条目",
-                        description = "本地 OCR 未完成命中后，已继续走服务端 OCR 文本召回，确认正确后再进入记一笔页面。",
+                        description = "本地 OCR 未完成命中后，已继续走服务端 OCR 文本召回，确认正确后再进入记录页面。",
                         items = result.result.items,
                         qualitySignal = result.result.qualitySignal,
                         sourceType = "image_search",
@@ -114,18 +172,22 @@ fun OcrRecognitionScreen(
                 attemptedQueries.clear()
                 attemptedQueries.addAll(result.attemptedQueries)
                 searchState = FoodSearchResult.Success(emptyList(), "weak")
-                canOpenManualCreate = true
-                manualCreateSeedName = result.attemptedQueries.firstOrNull()
-                    ?: result.recognizedText.ifBlank { clientRecognizedText.orEmpty() }
-                statusMessage = "服务端 OCR 也没有命中条目，当前可直接手动创建待审核条目。"
+                runImageRecognitionFallback(
+                    imagePayload = imagePayload,
+                    fallbackReason = "服务端 OCR 也没有命中条目，正在继续尝试图片识别。",
+                    manualSeedName = result.attemptedQueries.firstOrNull()
+                        ?: result.recognizedText.ifBlank { clientRecognizedText.orEmpty() },
+                )
             }
 
             is FoodOcrSearchResult.Failure -> {
                 recognizedText = result.recognizedText.ifBlank { clientRecognizedText ?: "" }.ifBlank { null }
                 searchState = FoodSearchResult.Failure(result.message)
-                canOpenManualCreate = true
-                manualCreateSeedName = clientRecognizedText.orEmpty()
-                statusMessage = result.message
+                runImageRecognitionFallback(
+                    imagePayload = imagePayload,
+                    fallbackReason = "服务端 OCR 失败，正在继续尝试图片识别。",
+                    manualSeedName = clientRecognizedText.orEmpty(),
+                )
             }
         }
     }
@@ -161,7 +223,7 @@ fun OcrRecognitionScreen(
                         CandidateConfirmationState(
                             sourceLabel = "OCR 候选确认",
                             title = "请确认识别到的食物条目",
-                            description = "已先走本地 OCR 文本召回，确认正确后再进入记一笔页面。",
+                            description = "已先走本地 OCR 文本召回，确认正确后再进入记录页面。",
                             items = result.result.items,
                             qualitySignal = result.result.qualitySignal,
                             sourceType = "image_search",
@@ -182,7 +244,6 @@ fun OcrRecognitionScreen(
                         clientRecognizedText = result.recognizedText,
                         fallbackReason = "本地 OCR 已提取文字但没有命中条目，正在继续服务端 OCR 兜底。",
                     )
-                    return
                 }
 
                 is FoodOcrSearchResult.Failure -> {
@@ -193,7 +254,6 @@ fun OcrRecognitionScreen(
                         clientRecognizedText = result.recognizedText,
                         fallbackReason = "本地 OCR 识别失败，正在切到服务端 OCR 兜底。",
                     )
-                    return
                 }
             }
         } catch (exception: IOException) {
@@ -236,7 +296,7 @@ fun OcrRecognitionScreen(
             color = Color(0xFF2B1E18),
         )
         Text(
-            text = "这一阶段先走本地 OCR 文本召回，不命中时再进入后续的服务端 OCR 和图像识别兜底。",
+            text = "这一阶段先走本地 OCR 文本召回，不命中时再进入后续的服务端 OCR 和图片识别兜底。",
             style = MaterialTheme.typography.bodyLarge,
             color = Color(0xFF5B4A42),
         )
