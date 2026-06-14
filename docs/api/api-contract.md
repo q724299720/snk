@@ -102,6 +102,14 @@
 - 标签体系管理
 - 识别任务监控
 - 统计报表
+- `GET /api/admin/food-items/pending`
+- `GET /api/admin/food-items/reported?minReportCount=`
+
+后台条目治理当前约定：
+
+- `pending` 列表返回当前待审核食物条目，按创建时间倒序
+- `reported` 列表返回报错次数达到阈值的食物条目，默认阈值为 `1`
+- 后台返回字段至少包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`source`、`auditStatus`、`reportCount`、`createdByUserId`、`createdAt`、`updatedAt`
 
 ## OCR 与识别接口边界
 
@@ -178,3 +186,4 @@
 | 2026-06-14 | Codex | 补充手动创建条目的可选 `barcode` 入参与扫码未命中的前端流转 | Phase 3 需覆盖包装食品扫码未命中的 UGC 沉淀场景 |
 | 2026-06-14 | Codex | 补充服务端 OCR 接口的 multipart 入参、响应字段与 provider 降级语义 | Phase 3 已落地本地 OCR 失败后的服务端 OCR 回退链路 |
 | 2026-06-14 | Codex | 补充图片识别任务接口的上传前置约束、响应字段与客户端轮询语义 | Phase 3 已落地图片上传后创建识别任务并回退到候选确认页的闭环 |
+| 2026-06-14 | Codex | 补充后台 pending / reported 条目列表接口 | Phase 4 已开始落地后台治理的最小可见能力 |

@@ -294,6 +294,7 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 已落地 `RecognitionTaskService`、`RecognitionTaskRepository` 与 `POST /api/recognition/tasks` / `GET /api/recognition/tasks/{id}` 图片识别任务接口
 - 已在服务端引入 `ImageRecognitionTaskProvider` 抽象与 `snk.recognition.image.*` 配置项，当前默认 `disabled`，开发期可切到 `stub`
 - 已在安卓端 OCR 页面接通“上传图片 -> 创建识别任务 -> 候选确认 -> 手动创建”回退链路，并复用统一候选确认页
+- 已补充后台治理基础能力的最小落地：`GET /api/admin/food-items/pending` 与 `GET /api/admin/food-items/reported`
 
 ## 变更记录维护规则
 
@@ -339,3 +340,4 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-14 | Codex | 回填 Phase 2 第五个落地产物 | 当前仓库已落地 Room 草稿存储、WorkManager 自动补传与草稿页重试闭环 |
 | 2026-06-14 | Codex | 回填 Phase 3 的服务端 OCR 兜底接口与客户端自动回退链路 | 当前仓库已具备本地 OCR 失败后的服务端 OCR 回退能力，并预留 provider 配置扩展点 |
 | 2026-06-14 | Codex | 回填 Phase 3 的图片识别任务接口与客户端自动回退链路 | 当前仓库已具备上传图片后创建识别任务、统一导入候选确认页并最终回退到手动创建的闭环 |
+| 2026-06-14 | Codex | 回填 Phase 4 的后台 pending / reported 条目列表能力 | 当前仓库已开始落地后台治理的最小可见能力，便于查看待审核与报错条目 |

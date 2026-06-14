@@ -1,0 +1,38 @@
+package com.snk.server.api.controller;
+
+import com.snk.server.api.dto.AdminFoodItemResponse;
+import com.snk.server.domain.food.FoodModerationService;
+import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/admin/food-items")
+public class AdminFoodItemController {
+
+	private final FoodModerationService foodModerationService;
+
+	public AdminFoodItemController(FoodModerationService foodModerationService) {
+		this.foodModerationService = foodModerationService;
+	}
+
+	@GetMapping("/pending")
+	public List<AdminFoodItemResponse> listPendingItems() {
+		return foodModerationService.listPendingItems()
+			.stream()
+			.map(AdminFoodItemResponse::from)
+			.toList();
+	}
+
+	@GetMapping("/reported")
+	public List<AdminFoodItemResponse> listReportedItems(
+		@RequestParam(value = "minReportCount", defaultValue = "1") int minReportCount
+	) {
+		return foodModerationService.listReportedItems(minReportCount)
+			.stream()
+			.map(AdminFoodItemResponse::from)
+			.toList();
+	}
+}
