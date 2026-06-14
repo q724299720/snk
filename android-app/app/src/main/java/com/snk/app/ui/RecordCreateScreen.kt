@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import android.content.Intent
 import com.snk.app.SnkApplication
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodSearchResult
@@ -44,6 +45,7 @@ fun RecordCreateScreen(
     onOpenDrafts: () -> Unit,
 ) {
     val application = LocalContext.current.applicationContext as SnkApplication
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var rating by remember { mutableIntStateOf(4) }
     var comment by remember { mutableStateOf("") }
@@ -250,6 +252,28 @@ fun RecordCreateScreen(
                             color = Color(0xFF5B4A42),
                         )
                         Button(
+                            onClick = {
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_SUBJECT, "SNK 记录分享")
+                                    putExtra(
+                                        Intent.EXTRA_TEXT,
+                                        buildRecordShareText(
+                                            foodName = selectedFood.name,
+                                            rating = rating,
+                                            comment = comment,
+                                            recordId = result.recordId,
+                                            recordTime = result.recordTime,
+                                        ),
+                                    )
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, "分享这条记录"))
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                        ) {
+                            Text("分享记录")
+                        }
+                        Button(
                             onClick = onBackToSearch,
                             shape = RoundedCornerShape(16.dp),
                         ) {
@@ -294,5 +318,34 @@ fun RecordCreateScreen(
                 }
             }
         }
+    }
+}
+
+internal fun buildRecordShareText(
+    foodName: String,
+    rating: Int,
+    comment: String,
+    recordId: Long,
+    recordTime: String,
+): String {
+    val normalizedComment = comment.trim()
+    return buildString {
+        append("SNK 记录分享\n")
+        append("食物：")
+        append(foodName)
+        append('\n')
+        append("评分：")
+        append(rating)
+        append(" 分\n")
+        if (normalizedComment.isNotBlank()) {
+            append("备注：")
+            append(normalizedComment)
+            append('\n')
+        }
+        append("record_id：")
+        append(recordId)
+        append('\n')
+        append("record_time：")
+        append(recordTime)
     }
 }
