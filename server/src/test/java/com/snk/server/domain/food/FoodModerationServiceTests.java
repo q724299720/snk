@@ -1,6 +1,7 @@
 package com.snk.server.domain.food;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
@@ -43,6 +44,30 @@ class FoodModerationServiceTests {
 
 		assertThat(items).hasSize(1);
 		assertThat(items.getFirst().reportCount()).isEqualTo(4);
+	}
+
+	@Test
+	void shouldApproveFoodItem() {
+		FoodItemEntity entity = foodItem(4L, "Approval Target", 2);
+		when(foodItemRepository.findById(4L)).thenReturn(java.util.Optional.of(entity));
+		when(foodItemRepository.save(any(FoodItemEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		FoodModerationService.FoodModerationItem item = foodModerationService.approveFoodItem(4L);
+
+		assertThat(item.auditStatus()).isEqualTo("approved");
+		assertThat(entity.getAuditStatus()).isEqualTo("approved");
+	}
+
+	@Test
+	void shouldRejectFoodItem() {
+		FoodItemEntity entity = foodItem(5L, "Reject Target", 1);
+		when(foodItemRepository.findById(5L)).thenReturn(java.util.Optional.of(entity));
+		when(foodItemRepository.save(any(FoodItemEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		FoodModerationService.FoodModerationItem item = foodModerationService.rejectFoodItem(5L);
+
+		assertThat(item.auditStatus()).isEqualTo("rejected");
+		assertThat(entity.getAuditStatus()).isEqualTo("rejected");
 	}
 
 	private FoodItemEntity foodItem(Long id, String name, int reportCount) {

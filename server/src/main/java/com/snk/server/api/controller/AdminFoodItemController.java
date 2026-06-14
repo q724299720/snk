@@ -3,9 +3,13 @@ package com.snk.server.api.controller;
 import com.snk.server.api.dto.AdminFoodItemResponse;
 import com.snk.server.domain.food.FoodModerationService;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -34,5 +38,17 @@ public class AdminFoodItemController {
 			.stream()
 			.map(AdminFoodItemResponse::from)
 			.toList();
+	}
+
+	@PostMapping("/{foodItemId}/approve")
+	@ResponseStatus(HttpStatus.OK)
+	public AdminFoodItemResponse approveFoodItem(@PathVariable("foodItemId") Long foodItemId) {
+		return AdminFoodItemResponse.from(foodModerationService.approveFoodItem(foodItemId));
+	}
+
+	@PostMapping("/{foodItemId}/reject")
+	@ResponseStatus(HttpStatus.OK)
+	public AdminFoodItemResponse rejectFoodItem(@PathVariable("foodItemId") Long foodItemId) {
+		return AdminFoodItemResponse.from(foodModerationService.rejectFoodItem(foodItemId));
 	}
 }

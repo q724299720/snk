@@ -3,6 +3,7 @@ package com.snk.server.api.controller;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -60,6 +61,28 @@ class AdminFoodItemControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].name").value("Reported Item"))
 			.andExpect(jsonPath("$[0].reportCount").value(3));
+	}
+
+	@Test
+	void shouldApproveFoodItem() throws Exception {
+		when(foodModerationService.approveFoodItem(3L))
+			.thenReturn(moderationItem(3L, "Approved Item", 1, "approved"));
+
+		mockMvc.perform(post("/api/admin/food-items/3/approve"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.name").value("Approved Item"))
+			.andExpect(jsonPath("$.auditStatus").value("approved"));
+	}
+
+	@Test
+	void shouldRejectFoodItem() throws Exception {
+		when(foodModerationService.rejectFoodItem(4L))
+			.thenReturn(moderationItem(4L, "Rejected Item", 2, "rejected"));
+
+		mockMvc.perform(post("/api/admin/food-items/4/reject"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.name").value("Rejected Item"))
+			.andExpect(jsonPath("$.auditStatus").value("rejected"));
 	}
 
 	private FoodModerationItem moderationItem(Long id, String name, int reportCount, String auditStatus) {

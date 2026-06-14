@@ -4,8 +4,10 @@ import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class FoodModerationService {
@@ -31,6 +33,22 @@ public class FoodModerationService {
 			.stream()
 			.map(this::toModerationItem)
 			.toList();
+	}
+
+	@Transactional
+	public FoodModerationItem approveFoodItem(Long foodItemId) {
+		FoodItemEntity entity = foodItemRepository.findById(foodItemId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food item not found."));
+		entity.setAuditStatus("approved");
+		return toModerationItem(foodItemRepository.save(entity));
+	}
+
+	@Transactional
+	public FoodModerationItem rejectFoodItem(Long foodItemId) {
+		FoodItemEntity entity = foodItemRepository.findById(foodItemId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food item not found."));
+		entity.setAuditStatus("rejected");
+		return toModerationItem(foodItemRepository.save(entity));
 	}
 
 	private FoodModerationItem toModerationItem(FoodItemEntity entity) {

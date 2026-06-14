@@ -294,7 +294,7 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 已落地 `RecognitionTaskService`、`RecognitionTaskRepository` 与 `POST /api/recognition/tasks` / `GET /api/recognition/tasks/{id}` 图片识别任务接口
 - 已在服务端引入 `ImageRecognitionTaskProvider` 抽象与 `snk.recognition.image.*` 配置项，当前默认 `disabled`，开发期可切到 `stub`
 - 已在安卓端 OCR 页面接通“上传图片 -> 创建识别任务 -> 候选确认 -> 手动创建”回退链路，并复用统一候选确认页
-- 已补充后台治理基础能力的最小落地：`GET /api/admin/food-items/pending` 与 `GET /api/admin/food-items/reported`
+- 已补充后台治理基础能力的最小落地：`GET /api/admin/food-items/pending`、`GET /api/admin/food-items/reported`、`POST /api/admin/food-items/{foodItemId}/approve`、`POST /api/admin/food-items/{foodItemId}/reject`
 - 已补充用户报错信号接口：`POST /api/foods/{foodItemId}/report`，用于累加 `report_count`
 
 ## 变更记录维护规则
@@ -343,3 +343,4 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-14 | Codex | 回填 Phase 3 的图片识别任务接口与客户端自动回退链路 | 当前仓库已具备上传图片后创建识别任务、统一导入候选确认页并最终回退到手动创建的闭环 |
 | 2026-06-14 | Codex | 回填 Phase 4 的后台 pending / reported 条目列表能力 | 当前仓库已开始落地后台治理的最小可见能力，便于查看待审核与报错条目 |
 | 2026-06-14 | Codex | 回填 Phase 4 的用户报错信号接口 | 当前仓库已开始落地 `report_count` 累加入口，作为后续纠错治理的基础数据源 |
+| 2026-06-14 | Codex | 回填 Phase 4 的后台审核通过 / 驳回动作 | 当前仓库已补齐后台审核动作，形成从查看队列到处理条目的完整闭环 |

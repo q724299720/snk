@@ -104,6 +104,8 @@
 - 统计报表
 - `GET /api/admin/food-items/pending`
 - `GET /api/admin/food-items/reported?minReportCount=`
+- `POST /api/admin/food-items/{foodItemId}/approve`
+- `POST /api/admin/food-items/{foodItemId}/reject`
 - `POST /api/foods/{foodItemId}/report`
 
 后台条目治理当前约定：
@@ -111,6 +113,8 @@
 - `pending` 列表返回当前待审核食物条目，按创建时间倒序
 - `reported` 列表返回报错次数达到阈值的食物条目，默认阈值为 `1`
 - 后台返回字段至少包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`source`、`auditStatus`、`reportCount`、`createdByUserId`、`createdAt`、`updatedAt`
+- `approve` 会将条目标记为 `approved`，并允许继续进入全局搜索
+- `reject` 会将条目标记为 `rejected`，并阻止进入全局搜索
 
 用户报错接口当前约定：
 
@@ -196,3 +200,4 @@
 | 2026-06-14 | Codex | 补充图片识别任务接口的上传前置约束、响应字段与客户端轮询语义 | Phase 3 已落地图片上传后创建识别任务并回退到候选确认页的闭环 |
 | 2026-06-14 | Codex | 补充后台 pending / reported 条目列表接口 | Phase 4 已开始落地后台治理的最小可见能力 |
 | 2026-06-14 | Codex | 补充用户报错接口与 `report_count` 累加语义 | Phase 4 已开始落地报错 / 纠错处理流程的最小后端信号 |
+| 2026-06-14 | Codex | 补充后台审核通过 / 驳回接口 | Phase 4 需要具备可执行的审核动作，形成列表到处理的完整闭环 |
