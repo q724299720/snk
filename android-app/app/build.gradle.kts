@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.kapt")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
@@ -67,6 +68,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.3")
     implementation("androidx.activity:activity-compose:1.11.0")
     implementation("androidx.navigation:navigation-compose:2.9.4")
+    implementation("androidx.room:room-ktx:2.7.2")
+    implementation("androidx.room:room-runtime:2.7.2")
+    implementation("androidx.work:work-runtime-ktx:2.10.2")
     implementation("com.google.android.material:material:1.13.0")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
@@ -79,6 +83,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    kapt("androidx.room:room-compiler:2.7.2")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

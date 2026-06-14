@@ -9,6 +9,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -78,5 +79,23 @@ class FoodRecordRepositoryTest {
 
         assertTrue(result is FoodRecordCreateResult.Success)
         assertEquals(55L, (result as FoodRecordCreateResult.Success).recordId)
+    }
+
+    @Test
+    fun `createRecord returns network failure when backend is unreachable`() = runTest {
+        server.shutdown()
+
+        val result = repository.createRecord(
+            userId = 100,
+            foodItemId = 200,
+            rating = 5,
+            comment = "很好吃",
+        )
+
+        assertTrue(result is FoodRecordCreateResult.Failure)
+        assertSame(
+            FoodRecordCreateFailureReason.NETWORK,
+            (result as FoodRecordCreateResult.Failure).reason,
+        )
     }
 }

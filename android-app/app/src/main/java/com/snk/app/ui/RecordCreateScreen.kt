@@ -25,21 +25,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.snk.app.data.food.FoodSearchItem
-import com.snk.app.data.record.FoodRecordCreateResult
-import com.snk.app.data.record.FoodRecordRepository
+import com.snk.app.data.record.FoodRecordSubmissionCoordinator
+import com.snk.app.data.record.FoodRecordSubmissionResult
 import kotlinx.coroutines.launch
 
 @Composable
 fun RecordCreateScreen(
     selectedFood: FoodSearchItem,
     sessionState: SessionUiState,
-    foodRecordRepository: FoodRecordRepository,
+    submissionCoordinator: FoodRecordSubmissionCoordinator,
     onBackToSearch: () -> Unit,
+    onOpenDrafts: () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     var rating by remember { mutableIntStateOf(4) }
     var comment by remember { mutableStateOf("") }
-    var submitState by remember { mutableStateOf<FoodRecordCreateResult?>(null) }
+    var submitState by remember { mutableStateOf<FoodRecordSubmissionResult?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
 
     Column(
@@ -141,9 +142,9 @@ fun RecordCreateScreen(
 
                 coroutineScope.launch {
                     isSubmitting = true
-                    submitState = foodRecordRepository.createRecord(
+                    submitState = submissionCoordinator.submit(
                         userId = userId,
-                        foodItemId = selectedFood.id,
+                        selectedFood = selectedFood,
                         rating = rating,
                         comment = comment,
                     )
@@ -157,7 +158,7 @@ fun RecordCreateScreen(
         }
         when (val result = submitState) {
             null -> Unit
-            is FoodRecordCreateResult.Failure -> {
+            is FoodRecordSubmissionResult.Failure -> {
                 Text(
                     text = result.message,
                     style = MaterialTheme.typography.bodyMedium,
@@ -165,7 +166,7 @@ fun RecordCreateScreen(
                 )
             }
 
-            is FoodRecordCreateResult.Success -> {
+            is FoodRecordSubmissionResult.Submitted -> {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
@@ -190,6 +191,41 @@ fun RecordCreateScreen(
                             shape = RoundedCornerShape(16.dp),
                         ) {
                             Text("返回搜索")
+                        }
+                    }
+                }
+            }
+
+            is FoodRecordSubmissionResult.SavedToDraft -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F2E8)),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = "已转存草稿",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = "draft_id: ${result.draft.id}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF5B4A42),
+                        )
+                        Text(
+                            text = "当前无法连接服务端，网络恢复后会自动补传。",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF5B4A42),
+                        )
+                        Button(
+                            onClick = onOpenDrafts,
+                            shape = RoundedCornerShape(16.dp),
+                        ) {
+                            Text("查看草稿")
                         }
                     }
                 }

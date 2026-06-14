@@ -5,16 +5,19 @@ import retrofit2.HttpException
 
 class FoodRecordRepository(
     private val api: FoodRecordApi,
-) {
-    suspend fun createRecord(
+) : RemoteFoodRecordWriter {
+    override suspend fun createRecord(
         userId: Long,
         foodItemId: Long,
         rating: Int,
         comment: String,
-        sourceType: String = "text_search",
+        sourceType: String,
     ): FoodRecordCreateResult {
         if (rating !in 1..5) {
-            return FoodRecordCreateResult.Failure("评分必须在 1 到 5 之间。")
+            return FoodRecordCreateResult.Failure(
+                reason = FoodRecordCreateFailureReason.UNKNOWN,
+                message = "评分必须在 1 到 5 之间。",
+            )
         }
 
         return try {
@@ -33,9 +36,18 @@ class FoodRecordRepository(
                 recordTime = response.recordTime,
             )
         } catch (exception: Exception) {
-            FoodRecordCreateResult.Failure(exception.asUserFacingMessage())
+            FoodRecordCreateResult.Failure(
+                reason = exception.asFailureReason(),
+                message = exception.asUserFacingMessage(),
+            )
         }
     }
+}
+
+enum class FoodRecordCreateFailureReason {
+    NETWORK,
+    SERVER,
+    UNKNOWN,
 }
 
 sealed interface FoodRecordCreateResult {
@@ -44,11 +56,20 @@ sealed interface FoodRecordCreateResult {
         val recordTime: String,
     ) : FoodRecordCreateResult
 
-    data class Failure(val message: String) : FoodRecordCreateResult
+    data class Failure(
+        val reason: FoodRecordCreateFailureReason,
+        val message: String,
+    ) : FoodRecordCreateResult
 }
 
 private fun Exception.asUserFacingMessage(): String = when (this) {
     is IOException -> "无法连接服务端，记录暂时没有提交成功。"
     is HttpException -> "服务端拒绝了这次记录提交。"
     else -> "保存记录失败，请稍后重试。"
+}
+
+private fun Exception.asFailureReason(): FoodRecordCreateFailureReason = when (this) {
+    is IOException -> FoodRecordCreateFailureReason.NETWORK
+    is HttpException -> FoodRecordCreateFailureReason.SERVER
+    else -> FoodRecordCreateFailureReason.UNKNOWN
 }

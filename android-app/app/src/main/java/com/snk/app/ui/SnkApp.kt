@@ -150,9 +150,13 @@ fun SnkApp() {
                         RecordCreateScreen(
                             selectedFood = food,
                             sessionState = sessionState,
-                            foodRecordRepository = application.container.foodRecordRepository,
+                            submissionCoordinator = application.container.foodRecordSubmissionCoordinator,
                             onBackToSearch = {
                                 navController.popBackStack()
+                            },
+                            onOpenDrafts = {
+                                navController.popBackStack()
+                                navController.navigate(SnkDestination.Drafts.route)
                             },
                         )
                     }
