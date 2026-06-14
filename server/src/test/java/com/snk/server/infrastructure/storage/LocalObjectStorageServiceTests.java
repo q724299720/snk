@@ -44,7 +44,7 @@ class LocalObjectStorageServiceTests {
 		StorageProperties properties = new StorageProperties();
 		properties.setRootPath(tempDir.toString());
 		properties.setPublicPath("/uploads");
-		properties.setPublicBaseUrl("https://snk.example.com/");
+		properties.setPublicBaseUrl("https://snk.qiuxinmin.cn/");
 		LocalObjectStorageService storageService = new LocalObjectStorageService(properties);
 
 		MockMultipartFile file = new MockMultipartFile(
@@ -56,7 +56,7 @@ class LocalObjectStorageServiceTests {
 
 		StoredObject storedObject = storageService.storeImage(file);
 
-		assertThat(storedObject.resourceUrl()).startsWith("https://snk.example.com/uploads/images/");
+		assertThat(storedObject.resourceUrl()).startsWith("https://snk.qiuxinmin.cn/uploads/images/");
 	}
 
 	@Test

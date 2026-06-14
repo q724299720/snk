@@ -48,7 +48,7 @@
 - `POST /api/upload/image` 使用 `multipart/form-data`
 - 首版字段采用 `file`
 - 服务端当前返回 `objectKey`、`resourceUrl`、`contentType`、`size`
-- `resourceUrl` 在未配置公网前缀时可返回相对路径；配置 `SNK_STORAGE_PUBLIC_BASE_URL` 后应返回可被真机直接访问的绝对地址
+- `resourceUrl` 在未配置公网前缀时可返回相对路径；配置 `SNK_STORAGE_PUBLIC_BASE_URL` 后应返回可被真机直接访问的绝对地址，当前部署目标为 `https://snk.qiuxinmin.cn`
 - 首版仅接受图片 MIME 类型，不接受通用文件上传
 - 开发环境当前采用本地文件系统存储，对外暴露 `resourceUrl` 静态访问路径；后续可替换为 MinIO / S3
 
@@ -138,3 +138,4 @@
 | 2026-06-13 | Codex | 回填文本搜索接口的最小响应字段、质量信号与空查询约束 | 当前 Phase 2 已开始落地服务端文本搜索接口并被安卓搜索页真实消费 |
 | 2026-06-13 | Codex | 回填记录创建接口的最小请求字段与成功响应约束 | 当前 Phase 2 已开始落地搜索命中后的远程记录创建闭环 |
 | 2026-06-13 | Codex | 补充图片上传 `resourceUrl` 的相对/绝对地址约束 | 真机联调与宝塔反向代理部署需要稳定的外部可访问资源地址策略 |
+| 2026-06-14 | Codex | 补充当前生产域名 | 已确认图片资源与 App 真机访问统一使用 `https://snk.qiuxinmin.cn` |

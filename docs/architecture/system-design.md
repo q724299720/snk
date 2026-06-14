@@ -219,7 +219,7 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 
 - 已落地 `POST /api/upload/image` 上传接口
 - 已落地开发环境本地文件系统对象存储适配，并通过 `/uploads/**` 暴露静态访问路径
-- 已支持通过 `SNK_STORAGE_PUBLIC_BASE_URL` 生成绝对 `resourceUrl`，便于宝塔 / Nginx 反向代理后的真机访问
+- 已支持通过 `SNK_STORAGE_PUBLIC_BASE_URL` 生成绝对 `resourceUrl`，当前默认公网域名为 `https://snk.qiuxinmin.cn`
 - 已增加上传控制器与本地存储服务测试，验证图片写入与非法文件拒绝行为
 
 ## 安全与运维基线
@@ -254,7 +254,7 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 已初始化 `android-app/` Gradle Wrapper 与 Android Application 工程
 - 已落地 Jetpack Compose 单模块基线与首屏应用壳
 - 已加入首页、搜索、草稿、游客身份四个入口页，作为后续游客闭环、搜索、草稿补传的承载层
-- 已预留服务端 `API_BASE_URL` 配置位，供下一增量接匿名初始化与搜索接口
+- 已将默认服务端 `API_BASE_URL` 指向 `https://snk.qiuxinmin.cn/`，供真机直接联调
 
 当前仓库 Phase 2 第二个落地产物：
 
@@ -318,3 +318,4 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-13 | Codex | 回填 Phase 2 第三个落地产物 | 当前仓库已落地服务端文本搜索接口、样例种子数据与安卓端真实搜索结果展示 |
 | 2026-06-13 | Codex | 回填 Phase 2 第四个落地产物 | 当前仓库已落地搜索命中后的记录创建接口与安卓端评分提交页 |
 | 2026-06-13 | Codex | 补充反向代理与绝对资源地址配置约束 | 真机联调与宝塔部署需要稳定的转发头处理和外部资源地址生成策略 |
+| 2026-06-14 | Codex | 回填正式公网域名到服务端资源地址与安卓默认接口地址 | 已确认统一使用 `https://snk.qiuxinmin.cn` 做服务器部署与真机联调 |
