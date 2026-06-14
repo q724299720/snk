@@ -46,6 +46,9 @@ public class FoodRecordEntity {
 	@Column
 	private String comment;
 
+	@Column(name = "like_count", nullable = false)
+	private int likeCount;
+
 	@Column
 	private BigDecimal price;
 
@@ -133,6 +136,14 @@ public class FoodRecordEntity {
 
 	public void setComment(String comment) {
 		this.comment = comment;
+	}
+
+	public int getLikeCount() {
+		return likeCount;
+	}
+
+	public void setLikeCount(int likeCount) {
+		this.likeCount = likeCount;
 	}
 
 	public BigDecimal getPrice() {

@@ -34,10 +34,25 @@ class FoodRecordRepository(
             FoodRecordCreateResult.Success(
                 recordId = response.id,
                 recordTime = response.recordTime,
+                likeCount = response.likeCount,
             )
         } catch (exception: Exception) {
             FoodRecordCreateResult.Failure(
                 reason = exception.asFailureReason(),
+                message = exception.asUserFacingMessage(),
+            )
+        }
+    }
+
+    suspend fun likeRecord(recordId: Long): FoodRecordLikeResult {
+        return try {
+            val response = api.likeRecord(recordId)
+            FoodRecordLikeResult.Success(
+                likeCount = response.likeCount,
+            )
+        } catch (exception: Exception) {
+            FoodRecordLikeResult.Failure(
+                reason = exception.asLikeFailureReason(),
                 message = exception.asUserFacingMessage(),
             )
         }
@@ -54,12 +69,30 @@ sealed interface FoodRecordCreateResult {
     data class Success(
         val recordId: Long,
         val recordTime: String,
+        val likeCount: Int,
     ) : FoodRecordCreateResult
 
     data class Failure(
         val reason: FoodRecordCreateFailureReason,
         val message: String,
     ) : FoodRecordCreateResult
+}
+
+enum class FoodRecordLikeFailureReason {
+    NETWORK,
+    SERVER,
+    UNKNOWN,
+}
+
+sealed interface FoodRecordLikeResult {
+    data class Success(
+        val likeCount: Int,
+    ) : FoodRecordLikeResult
+
+    data class Failure(
+        val reason: FoodRecordLikeFailureReason,
+        val message: String,
+    ) : FoodRecordLikeResult
 }
 
 private fun Exception.asUserFacingMessage(): String = when (this) {
@@ -72,4 +105,10 @@ private fun Exception.asFailureReason(): FoodRecordCreateFailureReason = when (t
     is IOException -> FoodRecordCreateFailureReason.NETWORK
     is HttpException -> FoodRecordCreateFailureReason.SERVER
     else -> FoodRecordCreateFailureReason.UNKNOWN
+}
+
+private fun Exception.asLikeFailureReason(): FoodRecordLikeFailureReason = when (this) {
+    is IOException -> FoodRecordLikeFailureReason.NETWORK
+    is HttpException -> FoodRecordLikeFailureReason.SERVER
+    else -> FoodRecordLikeFailureReason.UNKNOWN
 }

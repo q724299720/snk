@@ -98,6 +98,7 @@
 - `is_public`
 - `rating`
 - `comment`
+- `like_count`
 - `price`
 - `location`
 - `record_time`
@@ -116,6 +117,7 @@
 - 公开不应作为记录创建的默认行为，而应作为用户主动执行的后续动作
 - `rating` 表示本次记录事件的体验评分，不表示用户对该 `FoodItem` 的长期总评分
 - `rating` 在 MVP 阶段采用 `1-5` 的整数星级
+- `like_count` 表示记录层的互动聚合计数，MVP 阶段仅做累计，不做去重
 - 用户长期偏好、推荐分或平均分应从多条 `FoodRecord` 聚合得出
 - `location` 在 MVP 阶段仅作为自由文本字段使用，不绑定独立地点实体
 - `price` 在 MVP 阶段表示本次事件中的实际支付或主观感知价格，默认按人民币数值理解
@@ -291,3 +293,4 @@
 | 2026-06-13 | Codex | 回填首版 `pg_trgm` 索引落地情况 | 当前 Phase 1 已将文本搜索相关索引写入 Flyway 迁移，文档需同步反映 |
 | 2026-06-13 | Codex | 为 `users` 补充匿名安装标识与最近访问时间字段 | 当前 Phase 1 已开始落地匿名用户初始化接口，需要让数据库模型与实现对齐 |
 | 2026-06-14 | Codex | 为 `FoodItem` 补充 `created_by_user_id` 字段说明 | Phase 3 已落地手动创建待审核条目，需要记录创建者归属与可见性依赖字段 |
+| 2026-06-14 | Codex | 为 `FoodRecord.like_count` 补充字段说明 | Phase 5 已落地记录点赞聚合计数，需要同步数据模型与后端响应 |

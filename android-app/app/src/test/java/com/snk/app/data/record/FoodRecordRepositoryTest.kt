@@ -63,6 +63,7 @@ class FoodRecordRepositoryTest {
                       "isPublic": false,
                       "rating": 5,
                       "comment": "很好吃",
+                      "likeCount": 0,
                       "recordTime": "2026-06-13T23:40:00Z",
                       "createdAt": "2026-06-13T23:40:00Z"
                     }
@@ -79,6 +80,37 @@ class FoodRecordRepositoryTest {
 
         assertTrue(result is FoodRecordCreateResult.Success)
         assertEquals(55L, (result as FoodRecordCreateResult.Success).recordId)
+        assertEquals(0, result.likeCount)
+    }
+
+    @Test
+    fun `likeRecord returns updated like count`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(200)
+                .setBody(
+                    """
+                    {
+                      "id": 55,
+                      "userId": 100,
+                      "foodItemId": 200,
+                      "sourceType": "text_search",
+                      "isPublic": false,
+                      "rating": 5,
+                      "comment": "很好吃",
+                      "likeCount": 4,
+                      "recordTime": "2026-06-13T23:40:00Z",
+                      "createdAt": "2026-06-13T23:40:00Z"
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.likeRecord(55L)
+
+        assertTrue(result is FoodRecordLikeResult.Success)
+        assertEquals(4, (result as FoodRecordLikeResult.Success).likeCount)
     }
 
     @Test

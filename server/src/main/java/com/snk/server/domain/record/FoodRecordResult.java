@@ -10,6 +10,7 @@ public record FoodRecordResult(
 	boolean isPublic,
 	short rating,
 	String comment,
+	int likeCount,
 	OffsetDateTime recordTime,
 	OffsetDateTime createdAt
 ) {

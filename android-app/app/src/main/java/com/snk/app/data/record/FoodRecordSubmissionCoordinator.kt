@@ -31,6 +31,7 @@ class FoodRecordSubmissionCoordinator(
                 FoodRecordSubmissionResult.Submitted(
                     recordId = result.recordId,
                     recordTime = result.recordTime,
+                    likeCount = result.likeCount,
                 )
             }
 
@@ -64,6 +65,7 @@ sealed interface FoodRecordSubmissionResult {
     data class Submitted(
         val recordId: Long,
         val recordTime: String,
+        val likeCount: Int,
     ) : FoodRecordSubmissionResult
 
     data class SavedToDraft(

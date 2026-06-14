@@ -75,8 +75,38 @@ class FoodRecordServiceTests {
 		assertThat(saved.getFoodItem().getId()).isEqualTo(200L);
 		assertThat(saved.getSourceType()).isEqualTo("text_search");
 		assertThat(saved.getRating()).isEqualTo((short) 4);
+		assertThat(result.likeCount()).isZero();
 		assertThat(result.id()).isEqualTo(1L);
 		assertThat(result.foodItemId()).isEqualTo(200L);
+	}
+
+	@Test
+	void shouldIncreaseLikeCount() throws Exception {
+		UserEntity user = new UserEntity();
+		setUserId(user, 100L);
+
+		FoodItemEntity foodItem = new FoodItemEntity();
+		setFoodItemId(foodItem, 200L);
+
+		FoodRecordEntity record = new FoodRecordEntity();
+		setRecordId(record, 1L);
+		setCreatedAt(record, OffsetDateTime.parse("2026-06-13T23:30:00Z"));
+		record.setUser(user);
+		record.setFoodItem(foodItem);
+		record.setSourceType("text_search");
+		record.setPublic(false);
+		record.setRating((short) 4);
+		record.setComment("鍙ｅ懗涓嶉敊");
+		record.setLikeCount(2);
+		record.setRecordTime(OffsetDateTime.parse("2026-06-13T23:29:00Z"));
+
+		when(foodRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+		when(foodRecordRepository.save(any(FoodRecordEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		FoodRecordResult result = foodRecordService.likeRecord(1L);
+
+		assertThat(result.likeCount()).isEqualTo(3);
+		verify(foodRecordRepository).save(record);
 	}
 
 	private void setUserId(UserEntity entity, Long id) throws Exception {

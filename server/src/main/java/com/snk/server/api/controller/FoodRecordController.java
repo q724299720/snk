@@ -7,6 +7,7 @@ import com.snk.server.domain.record.FoodRecordResult;
 import com.snk.server.domain.record.FoodRecordService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,6 +46,25 @@ public class FoodRecordController {
 			result.isPublic(),
 			result.rating(),
 			result.comment(),
+			result.likeCount(),
+			result.recordTime(),
+			result.createdAt()
+		);
+	}
+
+	@PostMapping("/{recordId}/like")
+	@ResponseStatus(HttpStatus.OK)
+	public FoodRecordResponse likeRecord(@PathVariable Long recordId) {
+		FoodRecordResult result = foodRecordService.likeRecord(recordId);
+		return new FoodRecordResponse(
+			result.id(),
+			result.userId(),
+			result.foodItemId(),
+			result.sourceType(),
+			result.isPublic(),
+			result.rating(),
+			result.comment(),
+			result.likeCount(),
 			result.recordTime(),
 			result.createdAt()
 		);

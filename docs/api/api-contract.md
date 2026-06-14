@@ -86,6 +86,7 @@
 - `GET /api/records/{id}`
 - `PUT /api/records/{id}`
 - `DELETE /api/records/{id}`
+- `POST /api/records/{id}/like`
 
 记录创建当前约束：
 
@@ -93,7 +94,13 @@
 - `comment`、`recordTime` 当前为可选字段
 - 当前 `rating` 允许范围为 `1-5`
 - 当前 `sourceType` 已落地：`text_search / image_search / manual`
-- 当前成功响应返回：`id`、`userId`、`foodItemId`、`sourceType`、`isPublic`、`rating`、`comment`、`recordTime`、`createdAt`
+- 当前成功响应返回：`id`、`userId`、`foodItemId`、`sourceType`、`isPublic`、`rating`、`comment`、`likeCount`、`recordTime`、`createdAt`
+
+记录点赞当前约定：
+
+- `POST /api/records/{id}/like` 用于对记录增加一次聚合点赞
+- 当前实现不做用户级去重，只累计 `likeCount`
+- 当前成功响应返回与记录创建一致的完整记录视图，并包含更新后的 `likeCount`
 
 ### 标签与分类
 
@@ -260,4 +267,5 @@
 | 2026-06-14 | Codex | 补充食物条目管理列表 / 详情接口 | Phase 4 已落地后台食物条目基础管理闭环 |
 | 2026-06-14 | Codex | 补充食物条目报错清零接口 | Phase 4 已补齐报错 / 纠错处理流程的最小处理动作 |
 | 2026-06-14 | Codex | 补充后台统计报表接口 | Phase 4 已落地后台治理汇总概览闭环 |
+| 2026-06-14 | Codex | 补充记录点赞接口与 `likeCount` 响应字段 | Phase 5 已落地记录互动的最小聚合点赞闭环 |
 | 2026-06-14 | Codex | 补充相似食物推荐接口 | Phase 5 已落地记录页可消费的最小推荐闭环 |

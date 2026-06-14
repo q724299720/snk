@@ -44,17 +44,29 @@ public class FoodRecordService {
 		entity.setComment(command.comment());
 		entity.setRecordTime(command.recordTime());
 
-		FoodRecordEntity saved = foodRecordRepository.save(entity);
+		return toResult(foodRecordRepository.save(entity));
+	}
+
+	@Transactional
+	public FoodRecordResult likeRecord(Long recordId) {
+		FoodRecordEntity entity = foodRecordRepository.findById(recordId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food record not found."));
+		entity.setLikeCount(entity.getLikeCount() + 1);
+		return toResult(foodRecordRepository.save(entity));
+	}
+
+	private FoodRecordResult toResult(FoodRecordEntity entity) {
 		return new FoodRecordResult(
-			saved.getId(),
-			saved.getUser().getId(),
-			saved.getFoodItem().getId(),
-			saved.getSourceType(),
-			saved.isPublic(),
-			saved.getRating(),
-			saved.getComment(),
-			saved.getRecordTime(),
-			saved.getCreatedAt()
+			entity.getId(),
+			entity.getUser().getId(),
+			entity.getFoodItem().getId(),
+			entity.getSourceType(),
+			entity.isPublic(),
+			entity.getRating(),
+			entity.getComment(),
+			entity.getLikeCount(),
+			entity.getRecordTime(),
+			entity.getCreatedAt()
 		);
 	}
 }

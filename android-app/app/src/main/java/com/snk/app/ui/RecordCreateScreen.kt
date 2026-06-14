@@ -1,5 +1,6 @@
 package com.snk.app.ui
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,10 +27,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import android.content.Intent
 import com.snk.app.SnkApplication
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodSearchResult
+import com.snk.app.data.record.FoodRecordLikeResult
 import com.snk.app.data.record.FoodRecordSubmissionCoordinator
 import com.snk.app.data.record.FoodRecordSubmissionResult
 import kotlinx.coroutines.launch
@@ -50,7 +51,10 @@ fun RecordCreateScreen(
     var rating by remember { mutableIntStateOf(4) }
     var comment by remember { mutableStateOf("") }
     var submitState by remember { mutableStateOf<FoodRecordSubmissionResult?>(null) }
+    var likeCount by remember { mutableIntStateOf(0) }
+    var interactionMessage by remember { mutableStateOf<String?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
+    var isLiking by remember { mutableStateOf(false) }
     val relatedFoodState by produceState<FoodSearchResult?>(initialValue = null, key1 = selectedFood.id) {
         value = application.container.foodSearchRepository.recommendRelatedFoods(selectedFood.id)
     }
@@ -206,13 +210,18 @@ fun RecordCreateScreen(
 
                 coroutineScope.launch {
                     isSubmitting = true
-                    submitState = submissionCoordinator.submit(
+                    val result = submissionCoordinator.submit(
                         userId = userId,
                         selectedFood = selectedFood,
                         rating = rating,
                         comment = comment,
                         sourceType = sourceType,
                     )
+                    submitState = result
+                    interactionMessage = null
+                    if (result is FoodRecordSubmissionResult.Submitted) {
+                        likeCount = result.likeCount
+                    }
                     isSubmitting = false
                 }
             },
@@ -251,6 +260,33 @@ fun RecordCreateScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFF5B4A42),
                         )
+                        Text(
+                            text = "已点赞 $likeCount 次",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF5B4A42),
+                        )
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    isLiking = true
+                                    when (val likeResult = application.container.foodRecordRepository.likeRecord(result.recordId)) {
+                                        is FoodRecordLikeResult.Success -> {
+                                            likeCount = likeResult.likeCount
+                                            interactionMessage = "已更新点赞数"
+                                        }
+
+                                        is FoodRecordLikeResult.Failure -> {
+                                            interactionMessage = likeResult.message
+                                        }
+                                    }
+                                    isLiking = false
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            enabled = !isLiking,
+                        ) {
+                            Text(if (isLiking) "点赞中..." else "点赞这条记录")
+                        }
                         Button(
                             onClick = {
                                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -280,6 +316,13 @@ fun RecordCreateScreen(
                             Text("返回搜索")
                         }
                     }
+                }
+                interactionMessage?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF8A2E1C),
+                    )
                 }
             }
 

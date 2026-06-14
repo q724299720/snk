@@ -19,6 +19,7 @@ class FoodRecordSubmissionCoordinatorTest {
                 FoodRecordCreateResult.Success(
                     recordId = 88L,
                     recordTime = "2026-06-14T10:00:00Z",
+                    likeCount = 0,
                 ),
             ),
             draftSaver = FakeDraftSaver(),
@@ -34,6 +35,7 @@ class FoodRecordSubmissionCoordinatorTest {
 
         assertTrue(result is FoodRecordSubmissionResult.Submitted)
         assertEquals(88L, (result as FoodRecordSubmissionResult.Submitted).recordId)
+        assertEquals(0, result.likeCount)
     }
 
     @Test

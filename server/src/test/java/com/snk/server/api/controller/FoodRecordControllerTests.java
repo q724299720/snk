@@ -1,6 +1,7 @@
 package com.snk.server.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -49,7 +50,8 @@ class FoodRecordControllerTests {
 				"text_search",
 				false,
 				(short) 5,
-				"很好吃",
+				"tasty",
+				0,
 				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
 				OffsetDateTime.parse("2026-06-13T23:30:00Z")
 			)
@@ -65,7 +67,7 @@ class FoodRecordControllerTests {
 					  "sourceType": "text_search",
 					  "isPublic": false,
 					  "rating": 5,
-					  "comment": "很好吃"
+					  "comment": "tasty"
 					}
 					""")
 		)
@@ -73,7 +75,34 @@ class FoodRecordControllerTests {
 			.andExpect(jsonPath("$.id").value(1))
 			.andExpect(jsonPath("$.userId").value(100))
 			.andExpect(jsonPath("$.foodItemId").value(200))
-			.andExpect(jsonPath("$.rating").value(5));
+			.andExpect(jsonPath("$.rating").value(5))
+			.andExpect(jsonPath("$.likeCount").value(0));
+	}
+
+	@Test
+	void shouldLikeRecord() throws Exception {
+		when(foodRecordService.likeRecord(eq(1L))).thenReturn(
+			new FoodRecordResult(
+				1L,
+				100L,
+				200L,
+				"text_search",
+				false,
+				(short) 5,
+				"tasty",
+				3,
+				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+				OffsetDateTime.parse("2026-06-13T23:30:00Z")
+			)
+		);
+
+		mockMvc.perform(
+			post("/api/records/1/like")
+				.contentType(MediaType.APPLICATION_JSON)
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.id").value(1))
+			.andExpect(jsonPath("$.likeCount").value(3));
 	}
 
 	@Test
