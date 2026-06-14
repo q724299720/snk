@@ -3,6 +3,7 @@ package com.snk.app.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -37,6 +38,7 @@ private val recentQueries = listOf("乐事黄瓜味", "抹茶蛋糕", "拿铁", 
 fun SearchScreen(
     sessionState: SessionUiState,
     onCreateRecord: (FoodSearchItem) -> Unit,
+    onOpenBarcodeScanner: () -> Unit,
 ) {
     val application = LocalContext.current.applicationContext as SnkApplication
     val coroutineScope = rememberCoroutineScope()
@@ -90,11 +92,21 @@ fun SearchScreen(
                 )
             }
         }
-        Button(
-            onClick = { submitSearch(query) },
-            shape = RoundedCornerShape(18.dp),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(if (isSearching) "搜索中..." else "搜索")
+            Button(
+                onClick = { submitSearch(query) },
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Text(if (isSearching) "搜索中..." else "搜索")
+            }
+            Button(
+                onClick = onOpenBarcodeScanner,
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Text("扫码录入")
+            }
         }
         Card(
             shape = RoundedCornerShape(24.dp),

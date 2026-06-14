@@ -8,6 +8,7 @@ import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -43,6 +44,24 @@ class FoodSearchServiceTests {
 
 		assertThat(result.qualitySignal()).isEqualTo("weak");
 		assertThat(result.items()).isEmpty();
+	}
+
+	@Test
+	void shouldReturnApprovedFoodWhenBarcodeMatches() {
+		when(foodItemRepository.findByAuditStatusAndBarcode("approved", "6900000000011"))
+			.thenReturn(Optional.of(foodItem("乐事黄瓜味薯片", "乐事", "6900000000011")));
+
+		Optional<FoodSearchItem> result = foodSearchService.lookupByBarcode("6900000000011");
+
+		assertThat(result).isPresent();
+		assertThat(result.orElseThrow().barcode()).isEqualTo("6900000000011");
+	}
+
+	@Test
+	void shouldReturnEmptyWhenBarcodeIsBlank() {
+		Optional<FoodSearchItem> result = foodSearchService.lookupByBarcode(" ");
+
+		assertThat(result).isEmpty();
 	}
 
 	private FoodItemEntity foodItem(String name, String brand, String barcode) {

@@ -3,6 +3,7 @@ package com.snk.server.domain.food;
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,6 +21,15 @@ public class FoodSearchService {
 			.map(this::toItem)
 			.toList();
 		return new FoodSearchResult(items, resolveQualitySignal(query, items));
+	}
+
+	public Optional<FoodSearchItem> lookupByBarcode(String rawBarcode) {
+		String barcode = rawBarcode == null ? "" : rawBarcode.trim();
+		if (barcode.isBlank()) {
+			return Optional.empty();
+		}
+		return foodItemRepository.findByAuditStatusAndBarcode("approved", barcode)
+			.map(this::toItem);
 	}
 
 	private FoodSearchItem toItem(FoodItemEntity entity) {

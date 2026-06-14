@@ -3,6 +3,7 @@ package com.snk.app.data.food
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface FoodSearchApi {
@@ -10,6 +11,11 @@ interface FoodSearchApi {
     suspend fun searchFoods(
         @Query("q") query: String,
     ): FoodSearchResponse
+
+    @GET("/api/foods/barcode/{code}")
+    suspend fun lookupFoodByBarcode(
+        @Path("code") barcode: String,
+    ): FoodSearchItemResponse
 }
 
 @Serializable

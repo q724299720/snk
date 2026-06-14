@@ -71,7 +71,7 @@ fun SnkApp() {
     val navController = rememberNavController()
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
-    val showBottomBar = currentRoute != "record_create"
+    val showBottomBar = currentRoute != "record_create" && currentRoute != "barcode_scan"
 
     Scaffold(
         bottomBar = {
@@ -125,6 +125,9 @@ fun SnkApp() {
                             selectedFood = item
                             navController.navigate("record_create")
                         },
+                        onOpenBarcodeScanner = {
+                            navController.navigate("barcode_scan")
+                        },
                     )
                 }
                 composable(SnkDestination.Drafts.route) {
@@ -145,6 +148,9 @@ fun SnkApp() {
                                 selectedFood = item
                                 navController.navigate("record_create")
                             },
+                            onOpenBarcodeScanner = {
+                                navController.navigate("barcode_scan")
+                            },
                         )
                     } else {
                         RecordCreateScreen(
@@ -160,6 +166,21 @@ fun SnkApp() {
                             },
                         )
                     }
+                }
+                composable("barcode_scan") {
+                    BarcodeScanScreen(
+                        onFoodMatched = { item ->
+                            selectedFood = item
+                            navController.navigate("record_create") {
+                                popUpTo("barcode_scan") {
+                                    inclusive = true
+                                }
+                            }
+                        },
+                        onBack = {
+                            navController.popBackStack()
+                        },
+                    )
                 }
             }
         }

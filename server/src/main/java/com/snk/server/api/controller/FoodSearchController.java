@@ -7,6 +7,7 @@ import com.snk.server.domain.food.FoodSearchService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,5 +43,25 @@ public class FoodSearchController {
 			))
 			.toList();
 		return new FoodSearchResponse(items, result.qualitySignal());
+	}
+
+	@GetMapping("/barcode/{code}")
+	public FoodSearchItemResponse lookupByBarcode(@PathVariable("code") String code) {
+		String normalizedCode = code == null ? "" : code.trim();
+		if (normalizedCode.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "barcode must not be blank");
+		}
+		return foodSearchService.lookupByBarcode(normalizedCode)
+			.map(item -> new FoodSearchItemResponse(
+				item.id(),
+				item.name(),
+				item.itemType(),
+				item.category(),
+				item.subcategory(),
+				item.brand(),
+				item.barcode(),
+				item.coverImageUrl()
+			))
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "food not found"));
 	}
 }

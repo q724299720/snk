@@ -11,6 +11,7 @@ import com.snk.server.domain.food.FoodSearchResult;
 import com.snk.server.domain.food.FoodSearchService;
 import com.snk.server.infrastructure.storage.StorageProperties;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -71,5 +72,37 @@ class FoodSearchControllerTests {
 	void shouldRejectBlankQuery() throws Exception {
 		mockMvc.perform(get("/api/foods/search").param("q", " "))
 			.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void shouldReturnFoodWhenBarcodeMatches() throws Exception {
+		when(foodSearchService.lookupByBarcode(eq("6900000000011")))
+			.thenReturn(
+				Optional.of(
+					new FoodSearchItem(
+						1L,
+						"乐事黄瓜味薯片",
+						"packaged_product",
+						"snack",
+						"chips",
+						"乐事",
+						"6900000000011",
+						null
+					)
+				)
+			);
+
+		mockMvc.perform(get("/api/foods/barcode/6900000000011"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.name").value("乐事黄瓜味薯片"))
+			.andExpect(jsonPath("$.barcode").value("6900000000011"));
+	}
+
+	@Test
+	void shouldReturnNotFoundWhenBarcodeMisses() throws Exception {
+		when(foodSearchService.lookupByBarcode(eq("0000000000000"))).thenReturn(Optional.empty());
+
+		mockMvc.perform(get("/api/foods/barcode/0000000000000"))
+			.andExpect(status().isNotFound());
 	}
 }

@@ -9,6 +9,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -79,5 +80,48 @@ class FoodSearchRepositoryTest {
         assertEquals("strong", success.qualitySignal)
         assertEquals(1, success.items.size)
         assertEquals("乐事黄瓜味薯片", success.items.first().name)
+    }
+
+    @Test
+    fun `lookupByBarcode returns item when backend succeeds`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody(
+                    """
+                    {
+                      "id": 1,
+                      "name": "乐事黄瓜味薯片",
+                      "itemType": "packaged_product",
+                      "category": "snack",
+                      "subcategory": "chips",
+                      "brand": "乐事",
+                      "barcode": "6900000000011",
+                      "coverImageUrl": null
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.lookupByBarcode("6900000000011")
+
+        assertTrue(result is FoodBarcodeLookupResult.Success)
+        assertEquals("乐事黄瓜味薯片", (result as FoodBarcodeLookupResult.Success).item.name)
+    }
+
+    @Test
+    fun `lookupByBarcode returns not found when backend misses`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(404))
+
+        val result = repository.lookupByBarcode("0000000000000")
+
+        assertTrue(result is FoodBarcodeLookupResult.NotFound)
+    }
+
+    @Test
+    fun `lookupByBarcode returns failure for blank input`() = runTest {
+        val result = repository.lookupByBarcode(" ")
+
+        assertTrue(result is FoodBarcodeLookupResult.Failure)
     }
 }
