@@ -291,6 +291,9 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 已落地 `POST /api/recognition/ocr` 服务端 OCR 兜底接口
 - 已在服务端引入 `ServerOcrProvider` 抽象与 `snk.recognition.ocr.*` 配置项，当前默认 `disabled`，开发期可切到 `stub`
 - 已在安卓端 OCR 页面接通“本地 OCR -> 服务端 OCR -> 手动创建”回退链路
+- 已落地 `RecognitionTaskService`、`RecognitionTaskRepository` 与 `POST /api/recognition/tasks` / `GET /api/recognition/tasks/{id}` 图片识别任务接口
+- 已在服务端引入 `ImageRecognitionTaskProvider` 抽象与 `snk.recognition.image.*` 配置项，当前默认 `disabled`，开发期可切到 `stub`
+- 已在安卓端 OCR 页面接通“上传图片 -> 创建识别任务 -> 候选确认 -> 手动创建”回退链路，并复用统一候选确认页
 
 ## 变更记录维护规则
 
@@ -335,3 +338,4 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-14 | Codex | 回填正式公网域名到服务端资源地址与安卓默认接口地址 | 已确认统一使用 `https://snk.qiuxinmin.cn` 做服务器部署与真机联调 |
 | 2026-06-14 | Codex | 回填 Phase 2 第五个落地产物 | 当前仓库已落地 Room 草稿存储、WorkManager 自动补传与草稿页重试闭环 |
 | 2026-06-14 | Codex | 回填 Phase 3 的服务端 OCR 兜底接口与客户端自动回退链路 | 当前仓库已具备本地 OCR 失败后的服务端 OCR 回退能力，并预留 provider 配置扩展点 |
+| 2026-06-14 | Codex | 回填 Phase 3 的图片识别任务接口与客户端自动回退链路 | 当前仓库已具备上传图片后创建识别任务、统一导入候选确认页并最终回退到手动创建的闭环 |

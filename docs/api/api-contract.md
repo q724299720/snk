@@ -134,6 +134,13 @@
 - 无条形码
 - 本地 OCR 与服务端 OCR 都未召回有效候选
 - 需要给自然食物图片返回候选食物列表
+- 客户端先调用 `POST /api/upload/image` 上传原图，再用返回的 `resourceUrl` 创建识别任务
+- `POST /api/recognition/tasks` 当前最小请求字段为 `userId`、`inputImageUrl`
+- `POST /api/recognition/tasks` 与 `GET /api/recognition/tasks/{id}` 当前最小响应字段包含：`id`、`status`、`topCandidates`、`selectedFoodItemId`、`confidence`、`createdAt`、`finishedAt`、`statusReason`
+- 当前 `status` 至少支持 `processing / completed / failed`
+- 当任务仍处于 `processing` 时，客户端可以继续轮询 `GET /api/recognition/tasks/{id}`
+- MVP 当前允许服务端在创建任务时同步完成 provider 调用与候选回填，因此首个 `POST` 响应即可直接返回 `completed` 或 `failed`
+- Android 端当前已接入 “本地 OCR -> 服务端 OCR -> 图片识别任务 -> 手动创建” 自动回退链路
 
 ## 候选质量信号
 
@@ -170,3 +177,4 @@
 | 2026-06-14 | Codex | 补充手动创建待审核条目接口与 `auditStatus` 响应字段 | Phase 3 已落地搜索失败后的手动创建条目闭环，接口文档需与实现对齐 |
 | 2026-06-14 | Codex | 补充手动创建条目的可选 `barcode` 入参与扫码未命中的前端流转 | Phase 3 需覆盖包装食品扫码未命中的 UGC 沉淀场景 |
 | 2026-06-14 | Codex | 补充服务端 OCR 接口的 multipart 入参、响应字段与 provider 降级语义 | Phase 3 已落地本地 OCR 失败后的服务端 OCR 回退链路 |
+| 2026-06-14 | Codex | 补充图片识别任务接口的上传前置约束、响应字段与客户端轮询语义 | Phase 3 已落地图片上传后创建识别任务并回退到候选确认页的闭环 |
