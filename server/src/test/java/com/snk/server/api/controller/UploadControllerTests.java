@@ -50,13 +50,22 @@ class UploadControllerTests {
 		);
 
 		when(objectStorageService.storeImage(any())).thenReturn(
-			new StoredObject("images/2026/06/test.png", "/uploads/images/2026/06/test.png", "image/png", 11L)
+			new StoredObject(
+				"images/2026/06/test.png",
+				"/uploads/images/2026/06/test.png",
+				"images/2026/06/test_thumb.png",
+				"/uploads/images/2026/06/test_thumb.png",
+				"image/png",
+				11L
+			)
 		);
 
 		mockMvc.perform(multipart("/api/upload/image").file(file))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.objectKey").value("images/2026/06/test.png"))
 			.andExpect(jsonPath("$.resourceUrl").value("/uploads/images/2026/06/test.png"))
+			.andExpect(jsonPath("$.thumbnailObjectKey").value("images/2026/06/test_thumb.png"))
+			.andExpect(jsonPath("$.thumbnailUrl").value("/uploads/images/2026/06/test_thumb.png"))
 			.andExpect(jsonPath("$.contentType").value("image/png"))
 			.andExpect(jsonPath("$.size").value(11));
 	}

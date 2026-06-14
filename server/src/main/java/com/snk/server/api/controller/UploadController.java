@@ -33,6 +33,8 @@ public class UploadController {
 		return new UploadImageResponse(
 			storedObject.objectKey(),
 			storedObject.resourceUrl(),
+			storedObject.thumbnailObjectKey(),
+			storedObject.thumbnailUrl(),
 			storedObject.contentType(),
 			storedObject.size()
 		);

@@ -74,7 +74,8 @@
 
 - `POST /api/upload/image` 使用 `multipart/form-data`
 - 首版字段采用 `file`
-- 服务端当前返回 `objectKey`、`resourceUrl`、`contentType`、`size`
+- 服务端当前返回 `objectKey`、`resourceUrl`、`thumbnailObjectKey`、`thumbnailUrl`、`contentType`、`size`
+- `thumbnailUrl` 用于历史记录、列表页和候选卡片优先加载缩略图，避免首屏直接请求原图
 - `resourceUrl` 在未配置公网前缀时可返回相对路径；配置 `SNK_STORAGE_PUBLIC_BASE_URL` 后应返回可被真机直接访问的绝对地址，当前部署目标为 `https://snk.qiuxinmin.cn`
 - 首版仅接受图片 `MIME` 类型，不接受通用文件上传
 - 开发环境当前采用本地文件系统存储，对外暴露 `resourceUrl` 静态访问路径；后续可替换为 MinIO / S3
@@ -259,6 +260,7 @@
 | 2026-06-14 | Codex | 补充手动创建条目的可选 `barcode` 入参与扫码未命中的前端流转 | Phase 3 需覆盖包装食品扫码未命中的 UGC 沉淀场景 |
 | 2026-06-14 | Codex | 补充服务端 OCR 接口的 multipart 入参、响应字段与 provider 降级语义 | Phase 3 已落地本地 OCR 失败后的服务端 OCR 回退链路 |
 | 2026-06-14 | Codex | 补充图片识别任务接口的上传前置约束、响应字段与客户端轮询语义 | Phase 3 已落地图片上传后创建识别任务并回退到候选确认页的闭环 |
+| 2026-06-14 | Codex | 补充图片上传响应的缩略图字段 | 需要让历史记录与列表页优先使用缩略图资源，减少首屏原图加载压力 |
 | 2026-06-14 | Codex | 补充后台 pending / reported 条目列表接口 | Phase 4 已开始落地后台治理的最小可见能力 |
 | 2026-06-14 | Codex | 补充用户报错接口与 `report_count` 累加语义 | Phase 4 已开始落地报错 / 纠错处理流程的最小后端信号 |
 | 2026-06-14 | Codex | 补充后台审核通过 / 驳回接口 | Phase 4 需要具备可执行的审核动作，形成列表到处理的完整闭环 |
