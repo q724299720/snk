@@ -18,8 +18,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.snk.app.data.food.FoodSearchItem
 
 data class CandidateConfirmationState(
@@ -33,6 +35,7 @@ data class CandidateConfirmationState(
     val matchedQuery: String? = null,
     val attemptedQueries: List<String> = emptyList(),
     val manualCreateSeedName: String? = null,
+    val previewImageUrl: String? = null,
 )
 
 @Composable
@@ -68,6 +71,31 @@ fun CandidateConfirmationScreen(
             style = MaterialTheme.typography.bodyLarge,
             color = Color(0xFF5B4A42),
         )
+        state.previewImageUrl?.takeIf { it.isNotBlank() }?.let { imageUrl ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF7EFE5)),
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "识别图片预览",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "候选图片预览",
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+            }
+        }
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),

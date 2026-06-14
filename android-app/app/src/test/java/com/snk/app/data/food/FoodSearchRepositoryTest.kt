@@ -325,6 +325,8 @@ class FoodSearchRepositoryTest {
                     {
                       "objectKey": "images/demo.png",
                       "resourceUrl": "https://snk.qiuxinmin.cn/uploads/images/demo.png",
+                      "thumbnailObjectKey": "images/demo_thumb.png",
+                      "thumbnailUrl": "https://snk.qiuxinmin.cn/uploads/images/demo_thumb.png",
                       "contentType": "image/png",
                       "size": 11
                     }
@@ -376,6 +378,7 @@ class FoodSearchRepositoryTest {
         val success = result as FoodImageRecognitionResult.Success
         assertEquals("0.8500", success.confidence)
         assertEquals("Lays Cucumber Chips", success.result.items.first().name)
+        assertEquals("https://snk.qiuxinmin.cn/uploads/images/demo_thumb.png", success.previewImageUrl)
 
         val uploadRequest = server.takeRequest()
         assertEquals("/api/upload/image", uploadRequest.path)

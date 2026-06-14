@@ -131,6 +131,10 @@ data class UploadImageResponse(
     val objectKey: String,
     @SerialName("resourceUrl")
     val resourceUrl: String,
+    @SerialName("thumbnailObjectKey")
+    val thumbnailObjectKey: String? = null,
+    @SerialName("thumbnailUrl")
+    val thumbnailUrl: String? = null,
     @SerialName("contentType")
     val contentType: String,
     @SerialName("size")

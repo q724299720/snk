@@ -221,6 +221,7 @@ class FoodSearchRepository(
                 imageBytes.toRequestBody(contentType.toMediaTypeOrNull()),
             )
             val uploadResponse = api.uploadImage(imagePart)
+            val previewImageUrl = uploadResponse.thumbnailUrl?.ifBlank { null } ?: uploadResponse.resourceUrl
             var task = api.createRecognitionTask(
                 CreateRecognitionTaskRequest(
                     userId = userId,
@@ -234,7 +235,7 @@ class FoodSearchRepository(
                 delay(300)
                 task = api.getRecognitionTask(task.id)
             }
-            task.toImageRecognitionResult()
+            task.toImageRecognitionResult(previewImageUrl)
         } catch (exception: Exception) {
             FoodImageRecognitionResult.Failure(exception.asImageRecognitionMessage())
         }
@@ -299,12 +300,14 @@ sealed interface FoodOcrSearchResult {
 sealed interface FoodImageRecognitionResult {
     data class Success(
         val imageUrl: String,
+        val previewImageUrl: String,
         val confidence: String?,
         val result: FoodSearchResult.Success,
     ) : FoodImageRecognitionResult
 
     data class NoMatch(
         val imageUrl: String,
+        val previewImageUrl: String,
         val confidence: String?,
     ) : FoodImageRecognitionResult
 
@@ -365,12 +368,13 @@ private fun Exception.asServerOcrMessage(): String = when (this) {
     else -> "服务端 OCR 识别失败，请稍后重试。"
 }
 
-private fun RecognitionTaskResponse.toImageRecognitionResult(): FoodImageRecognitionResult {
+private fun RecognitionTaskResponse.toImageRecognitionResult(previewImageUrl: String): FoodImageRecognitionResult {
     val mappedItems = topCandidates.map(FoodSearchItemResponse::toModel)
     return when {
         status.equals("completed", ignoreCase = true) && mappedItems.isNotEmpty() -> {
             FoodImageRecognitionResult.Success(
                 imageUrl = inputImageUrl,
+                previewImageUrl = previewImageUrl,
                 confidence = confidence,
                 result = FoodSearchResult.Success(
                     items = mappedItems,
@@ -382,6 +386,7 @@ private fun RecognitionTaskResponse.toImageRecognitionResult(): FoodImageRecogni
         status.equals("completed", ignoreCase = true) -> {
             FoodImageRecognitionResult.NoMatch(
                 imageUrl = inputImageUrl,
+                previewImageUrl = previewImageUrl,
                 confidence = confidence,
             )
         }

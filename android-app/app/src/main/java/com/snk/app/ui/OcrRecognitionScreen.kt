@@ -70,7 +70,9 @@ fun OcrRecognitionScreen(
         imagePayload: ImagePayload,
         fallbackReason: String,
         manualSeedName: String,
+        previewImageUrl: String? = null,
     ) {
+        val resolvedPreviewImageUrl = previewImageUrl ?: imagePayload.sourceUri
         val userId = sessionUserId
         if (userId == null) {
             searchState = FoodSearchResult.Failure("匿名身份尚未就绪，无法继续服务端图片识别。")
@@ -102,6 +104,7 @@ fun OcrRecognitionScreen(
                         sourceType = "image_search",
                         matchedQuery = result.imageUrl,
                         manualCreateSeedName = manualSeedName,
+                        previewImageUrl = result.previewImageUrl.ifBlank { resolvedPreviewImageUrl },
                     ),
                 )
             }
@@ -164,6 +167,7 @@ fun OcrRecognitionScreen(
                         matchedQuery = result.matchedQuery,
                         attemptedQueries = result.attemptedQueries,
                         manualCreateSeedName = result.attemptedQueries.firstOrNull() ?: result.recognizedText,
+                        previewImageUrl = uri.toString(),
                     ),
                 )
             }
@@ -178,6 +182,7 @@ fun OcrRecognitionScreen(
                     fallbackReason = "服务端 OCR 也没有命中条目，正在继续尝试图片识别。",
                     manualSeedName = result.attemptedQueries.firstOrNull()
                         ?: result.recognizedText.ifBlank { clientRecognizedText.orEmpty() },
+                    previewImageUrl = uri.toString(),
                 )
             }
 
@@ -188,6 +193,7 @@ fun OcrRecognitionScreen(
                     imagePayload = imagePayload,
                     fallbackReason = "服务端 OCR 失败，正在继续尝试图片识别。",
                     manualSeedName = clientRecognizedText.orEmpty(),
+                    previewImageUrl = uri.toString(),
                 )
             }
         }
@@ -232,6 +238,7 @@ fun OcrRecognitionScreen(
                             matchedQuery = result.matchedQuery,
                             attemptedQueries = result.attemptedQueries,
                             manualCreateSeedName = result.attemptedQueries.firstOrNull() ?: result.recognizedText,
+                            previewImageUrl = uri.toString(),
                         ),
                     )
                 }
@@ -420,6 +427,7 @@ private data class ImagePayload(
     val bytes: ByteArray,
     val fileName: String,
     val contentType: String,
+    val sourceUri: String? = null,
 )
 
 private fun readImagePayload(context: Context, imageUri: Uri): ImagePayload {
@@ -432,6 +440,7 @@ private fun readImagePayload(context: Context, imageUri: Uri): ImagePayload {
         bytes = bytes,
         fileName = fileName,
         contentType = contentType,
+        sourceUri = imageUri.toString(),
     )
 }
 
