@@ -39,8 +39,10 @@ data class CandidateConfirmationState(
 fun CandidateConfirmationScreen(
     state: CandidateConfirmationState,
     onSelectCandidate: (FoodSearchItem) -> Unit,
+    onReportCandidate: (FoodSearchItem) -> Unit,
     onOpenManualCreate: (String) -> Unit,
     onBack: () -> Unit,
+    reportMessage: String? = null,
 ) {
     Column(
         modifier = Modifier
@@ -162,7 +164,7 @@ fun CandidateConfirmationScreen(
                     )
                     item.barcode?.takeIf { it.isNotBlank() }?.let { barcode ->
                         Text(
-                            text = "条形码：$barcode",
+                            text = "条码：$barcode",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color(0xFF8A5A44),
                         )
@@ -172,6 +174,12 @@ fun CandidateConfirmationScreen(
                         shape = RoundedCornerShape(14.dp),
                     ) {
                         Text("确认并记一笔")
+                    }
+                    Button(
+                        onClick = { onReportCandidate(item) },
+                        shape = RoundedCornerShape(14.dp),
+                    ) {
+                        Text("报错 / 纠错")
                     }
                 }
             }
@@ -186,6 +194,13 @@ fun CandidateConfirmationScreen(
             ) {
                 Text("候选不对，手动创建")
             }
+        }
+        reportMessage?.let { message ->
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF8A5A44),
+            )
         }
         Button(
             onClick = onBack,

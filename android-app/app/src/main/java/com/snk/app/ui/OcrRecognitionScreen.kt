@@ -35,6 +35,7 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
 import com.snk.app.SnkApplication
 import com.snk.app.data.food.FoodImageRecognitionResult
+import com.snk.app.data.food.FoodReportResult
 import com.snk.app.data.food.FoodOcrSearchResult
 import com.snk.app.data.food.FoodSearchResult
 import java.io.IOException
@@ -381,6 +382,24 @@ fun OcrRecognitionScreen(
             isSearching = isProcessing,
             emptyHint = "选择图片并识别文字后，会在这里展示文本召回结果。",
             onCreateRecord = {},
+            onReportItem = { item ->
+                val userId = sessionUserId
+                if (userId == null) {
+                    statusMessage = "匿名身份尚未就绪，暂时无法提交纠错。"
+                } else {
+                    coroutineScope.launch {
+                        statusMessage = when (
+                            val result = application.container.foodSearchRepository.reportFoodItem(
+                                userId = userId,
+                                foodItemId = item.id,
+                            )
+                        ) {
+                            is FoodReportResult.Success -> "已提交纠错信号，当前 reportCount = ${result.reportCount}"
+                            is FoodReportResult.Failure -> result.message
+                        }
+                    }
+                }
+            },
             noResultActionLabel = if (canOpenManualCreate) "识别失败？手动创建" else null,
             onNoResultAction = if (canOpenManualCreate) {
                 { onOpenManualCreate(manualCreateSeedName) }

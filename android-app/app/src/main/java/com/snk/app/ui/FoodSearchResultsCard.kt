@@ -24,6 +24,7 @@ fun FoodSearchResultsCard(
     isSearching: Boolean,
     emptyHint: String,
     onCreateRecord: (FoodSearchItem) -> Unit,
+    onReportItem: (FoodSearchItem) -> Unit,
     noResultActionLabel: String? = null,
     onNoResultAction: (() -> Unit)? = null,
 ) {
@@ -136,6 +137,12 @@ fun FoodSearchResultsCard(
                                     shape = RoundedCornerShape(14.dp),
                                 ) {
                                     Text("记一笔")
+                                }
+                                Button(
+                                    onClick = { onReportItem(item) },
+                                    shape = RoundedCornerShape(14.dp),
+                                ) {
+                                    Text("报错 / 纠错")
                                 }
                             }
                         }

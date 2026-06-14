@@ -76,6 +76,33 @@ class FoodSearchRepository(
         }
     }
 
+    suspend fun reportFoodItem(
+        userId: Long,
+        foodItemId: Long,
+        reason: String = "识别错误",
+    ): FoodReportResult {
+        if (userId <= 0L || foodItemId <= 0L) {
+            return FoodReportResult.Failure("无法提交纠错信号，请稍后重试。")
+        }
+
+        return try {
+            val response = api.reportFoodItem(
+                foodItemId = foodItemId,
+                request = CreateFoodReportRequest(
+                    userId = userId,
+                    reason = reason.trim().ifBlank { null },
+                ),
+            )
+            FoodReportResult.Success(
+                foodItemId = response.foodItemId,
+                reportCount = response.reportCount,
+                auditStatus = response.auditStatus,
+            )
+        } catch (exception: Exception) {
+            FoodReportResult.Failure(exception.asFoodReportMessage())
+        }
+    }
+
     suspend fun recommendRelatedFoods(foodItemId: Long, limit: Int = 5): FoodSearchResult {
         if (foodItemId <= 0L) {
             return FoodSearchResult.Failure("请输入有效的食物条目。")
@@ -239,6 +266,16 @@ sealed interface ManualFoodCreateResult {
     data class Failure(val message: String) : ManualFoodCreateResult
 }
 
+sealed interface FoodReportResult {
+    data class Success(
+        val foodItemId: Long,
+        val reportCount: Int,
+        val auditStatus: String,
+    ) : FoodReportResult
+
+    data class Failure(val message: String) : FoodReportResult
+}
+
 sealed interface FoodOcrSearchResult {
     data class Success(
         val recognizedText: String,
@@ -310,6 +347,12 @@ private fun Exception.asManualCreateMessage(): String = when (this) {
     is IOException -> "无法连接服务端，暂时不能创建待审核条目。"
     is HttpException -> "服务端拒绝了这次待审核条目创建。"
     else -> "创建待审核条目失败，请稍后重试。"
+}
+
+private fun Exception.asFoodReportMessage(): String = when (this) {
+    is IOException -> "无法连接服务端，纠错信号暂时提交失败。"
+    is HttpException -> "服务端已接收到纠错信号，可稍后继续报错。"
+    else -> "纠错信号提交失败，请稍后重试。"
 }
 
 private fun Exception.asServerOcrMessage(): String = when (this) {

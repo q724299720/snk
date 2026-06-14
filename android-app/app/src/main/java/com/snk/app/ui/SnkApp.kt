@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -33,7 +34,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.snk.app.SnkApplication
 import com.snk.app.data.auth.AnonymousSessionResult
+import com.snk.app.data.food.FoodReportResult
 import com.snk.app.data.food.FoodSearchItem
+import kotlinx.coroutines.launch
 
 private sealed class SnkDestination(
     val route: String,
@@ -69,6 +72,8 @@ fun SnkApp() {
     var manualCreateSeedName by remember { mutableStateOf("") }
     var manualCreateSeedBarcode by remember { mutableStateOf("") }
     var candidateConfirmationState by remember { mutableStateOf<CandidateConfirmationState?>(null) }
+    var candidateReportMessage by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
     val sessionState by produceState<SessionUiState>(
         initialValue = SessionUiState.Loading,
         key1 = retryToken,
@@ -239,10 +244,29 @@ fun SnkApp() {
                                     }
                                 }
                             },
+                            onReportCandidate = { item ->
+                                val userId = sessionState.userIdOrNull()
+                                if (userId == null) {
+                                    candidateReportMessage = "游客身份尚未初始化，暂时无法提交纠错。"
+                                } else {
+                                    coroutineScope.launch {
+                                        candidateReportMessage = when (
+                                            val result = application.container.foodSearchRepository.reportFoodItem(
+                                                userId = userId,
+                                                foodItemId = item.id,
+                                            )
+                                        ) {
+                                            is FoodReportResult.Success -> "已提交纠错信号，当前 reportCount = ${result.reportCount}"
+                                            is FoodReportResult.Failure -> result.message
+                                        }
+                                    }
+                                }
+                            },
                             onOpenManualCreate = ::openManualCreate,
                             onBack = {
                                 navController.popBackStack()
                             },
+                            reportMessage = candidateReportMessage,
                         )
                     }
                 }

@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.snk.app.BuildConfig
 import com.snk.app.SnkApplication
 import com.snk.app.data.food.FoodSearchItem
+import com.snk.app.data.food.FoodReportResult
 import com.snk.app.data.food.FoodSearchResult
 import kotlinx.coroutines.launch
 
@@ -46,6 +47,7 @@ fun SearchScreen(
     var query by remember { mutableStateOf("") }
     var searchState by remember { mutableStateOf<FoodSearchResult?>(null) }
     var isSearching by remember { mutableStateOf(false) }
+    var reportMessage by remember { mutableStateOf<String?>(null) }
 
     fun submitSearch(value: String) {
         query = value
@@ -151,6 +153,28 @@ fun SearchScreen(
             isSearching = isSearching,
             emptyHint = "输入名称后即可查询已审核的基础食物条目。",
             onCreateRecord = onCreateRecord,
+            onReportItem = { item ->
+                val userId = when (sessionState) {
+                    is SessionUiState.Remote -> sessionState.session.userId
+                    is SessionUiState.Cached -> sessionState.session.userId
+                    else -> null
+                }
+                if (userId == null) {
+                    reportMessage = "游客身份尚未初始化，暂时无法提交纠错。"
+                } else {
+                    coroutineScope.launch {
+                        reportMessage = when (
+                            val result = application.container.foodSearchRepository.reportFoodItem(
+                                userId = userId,
+                                foodItemId = item.id,
+                            )
+                        ) {
+                            is FoodReportResult.Success -> "已提交纠错信号，当前 reportCount = ${result.reportCount}"
+                            is FoodReportResult.Failure -> result.message
+                        }
+                    }
+                }
+            },
             noResultActionLabel = if (query.isNotBlank()) "没有找到？手动创建" else null,
             onNoResultAction = if (query.isNotBlank()) {
                 { onOpenManualCreate(query) }
@@ -158,5 +182,12 @@ fun SearchScreen(
                 null
             },
         )
+        reportMessage?.let { message ->
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF8A5A44),
+            )
+        }
     }
 }

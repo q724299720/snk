@@ -171,6 +171,40 @@ class FoodSearchRepositoryTest {
     }
 
     @Test
+    fun `reportFoodItem returns report summary when backend succeeds`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(201)
+                .setBody(
+                    """
+                    {
+                      "foodItemId": 18,
+                      "reportCount": 3,
+                      "auditStatus": "pending"
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.reportFoodItem(
+            userId = 2L,
+            foodItemId = 18L,
+        )
+
+        assertTrue(result is FoodReportResult.Success)
+        val success = result as FoodReportResult.Success
+        assertEquals(18L, success.foodItemId)
+        assertEquals(3, success.reportCount)
+        assertEquals("pending", success.auditStatus)
+
+        val request = server.takeRequest()
+        assertEquals("/api/foods/18/report", request.path)
+        val body = Buffer().write(request.body.readByteArray()).readUtf8()
+        assertTrue(body.contains("\"userId\":2"))
+    }
+
+    @Test
     fun `searchByRecognizedText falls back to compact query when first query misses`() = runTest {
         server.enqueue(
             MockResponse()

@@ -33,6 +33,12 @@ interface FoodSearchApi {
         @Body request: CreateManualFoodItemRequest,
     ): FoodSearchItemResponse
 
+    @POST("/api/foods/{foodItemId}/report")
+    suspend fun reportFoodItem(
+        @Path("foodItemId") foodItemId: Long,
+        @Body request: CreateFoodReportRequest,
+    ): FoodReportResponse
+
     @Multipart
     @POST("/api/recognition/ocr")
     suspend fun recognizeByServerOcr(
@@ -137,6 +143,24 @@ data class CreateRecognitionTaskRequest(
     val userId: Long,
     @SerialName("inputImageUrl")
     val inputImageUrl: String,
+)
+
+@Serializable
+data class CreateFoodReportRequest(
+    @SerialName("userId")
+    val userId: Long,
+    @SerialName("reason")
+    val reason: String? = null,
+)
+
+@Serializable
+data class FoodReportResponse(
+    @SerialName("foodItemId")
+    val foodItemId: Long,
+    @SerialName("reportCount")
+    val reportCount: Int,
+    @SerialName("auditStatus")
+    val auditStatus: String,
 )
 
 @Serializable
