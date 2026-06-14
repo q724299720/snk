@@ -35,6 +35,8 @@ class ManualFoodItemServiceTests {
 		UserEntity creator = new UserEntity();
 		creator.setNickname("guest");
 		when(userRepository.findById(eq(2L))).thenReturn(Optional.of(creator));
+		when(foodItemRepository.findFirstByItemTypeAndBarcode("packaged_product", "6900000000011"))
+			.thenReturn(Optional.empty());
 		when(foodItemRepository.save(any(FoodItemEntity.class))).thenAnswer(invocation -> {
 			FoodItemEntity entity = invocation.getArgument(0);
 			setField(entity, "id", 21L);
@@ -42,13 +44,22 @@ class ManualFoodItemServiceTests {
 		});
 
 		FoodSearchItem result = manualFoodItemService.createPendingItem(
-			new CreateManualFoodItemCommand(2L, " 杨枝 鲜花饼 ", "dish", "dessert", "cake", "SNK Bakery")
+			new CreateManualFoodItemCommand(
+				2L,
+				" 乐事 黄瓜味薯片 ",
+				"packaged_product",
+				"snack",
+				"chips",
+				"乐事",
+				" 6900 0000 00011 "
+			)
 		);
 
 		assertThat(result.id()).isEqualTo(21L);
 		assertThat(result.auditStatus()).isEqualTo("pending");
-		assertThat(result.brand()).isEqualTo("SNK Bakery");
-		assertThat(result.category()).isEqualTo("dessert");
+		assertThat(result.brand()).isEqualTo("乐事");
+		assertThat(result.category()).isEqualTo("snack");
+		assertThat(result.barcode()).isEqualTo("6900000000011");
 	}
 
 	@Test
@@ -58,11 +69,35 @@ class ManualFoodItemServiceTests {
 
 		assertThatThrownBy(
 			() -> manualFoodItemService.createPendingItem(
-				new CreateManualFoodItemCommand(2L, "杨枝鲜花饼", "unknown_type", "dessert", null, null)
+				new CreateManualFoodItemCommand(2L, "杨枝鲜花饼", "unknown_type", "dessert", null, null, null)
 			)
 		)
 			.isInstanceOf(ResponseStatusException.class)
 			.hasMessageContaining("400 BAD_REQUEST");
+	}
+
+	@Test
+	void shouldRejectDuplicateBarcodeForPackagedProduct() {
+		UserEntity creator = new UserEntity();
+		when(userRepository.findById(eq(2L))).thenReturn(Optional.of(creator));
+		when(foodItemRepository.findFirstByItemTypeAndBarcode("packaged_product", "6900000000011"))
+			.thenReturn(Optional.of(new FoodItemEntity()));
+
+		assertThatThrownBy(
+			() -> manualFoodItemService.createPendingItem(
+				new CreateManualFoodItemCommand(
+					2L,
+					"乐事黄瓜味薯片",
+					"packaged_product",
+					"snack",
+					"chips",
+					"乐事",
+					"6900000000011"
+				)
+			)
+		)
+			.isInstanceOf(ResponseStatusException.class)
+			.hasMessageContaining("409 CONFLICT");
 	}
 
 	private void setField(FoodItemEntity entity, String fieldName, Object value) {

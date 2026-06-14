@@ -121,17 +121,17 @@ class FoodSearchControllerTests {
 	void shouldCreatePendingFoodItem() throws Exception {
 		when(
 			manualFoodItemService.createPendingItem(
-				eq(new CreateManualFoodItemCommand(2L, "杨枝鲜花饼", "dish", "dessert", "cake", "SNK Bakery"))
+				eq(new CreateManualFoodItemCommand(2L, "杨枝鲜花饼", "packaged_product", "snack", "chips", "SNK Bakery", "6900000000099"))
 			)
 		).thenReturn(
 			new FoodSearchItem(
 				9L,
 				"杨枝鲜花饼",
-				"dish",
-				"dessert",
-				"cake",
+				"packaged_product",
+				"snack",
+				"chips",
 				"SNK Bakery",
-				null,
+				"6900000000099",
 				null,
 				"pending"
 			)
@@ -145,16 +145,18 @@ class FoodSearchControllerTests {
 					{
 					  "userId": 2,
 					  "name": "杨枝鲜花饼",
-					  "itemType": "dish",
-					  "category": "dessert",
-					  "subcategory": "cake",
-					  "brand": "SNK Bakery"
+					  "itemType": "packaged_product",
+					  "category": "snack",
+					  "subcategory": "chips",
+					  "brand": "SNK Bakery",
+					  "barcode": "6900000000099"
 					}
 					"""
 				)
 		)
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.name").value("杨枝鲜花饼"))
+			.andExpect(jsonPath("$.barcode").value("6900000000099"))
 			.andExpect(jsonPath("$.auditStatus").value("pending"));
 	}
 }

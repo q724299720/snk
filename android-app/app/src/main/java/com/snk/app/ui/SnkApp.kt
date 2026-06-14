@@ -60,6 +60,7 @@ fun SnkApp() {
     var selectedFood: FoodSearchItem? by remember { mutableStateOf(null) }
     var selectedSourceType by remember { mutableStateOf("text_search") }
     var manualCreateSeedName by remember { mutableStateOf("") }
+    var manualCreateSeedBarcode by remember { mutableStateOf("") }
     var candidateConfirmationState by remember { mutableStateOf<CandidateConfirmationState?>(null) }
     val sessionState by produceState<SessionUiState>(
         initialValue = SessionUiState.Loading,
@@ -88,6 +89,13 @@ fun SnkApp() {
 
     fun openManualCreate(seedName: String) {
         manualCreateSeedName = seedName
+        manualCreateSeedBarcode = ""
+        navController.navigate("manual_food_create")
+    }
+
+    fun openManualCreateFromBarcode(barcode: String) {
+        manualCreateSeedName = ""
+        manualCreateSeedBarcode = barcode
         navController.navigate("manual_food_create")
     }
 
@@ -245,6 +253,7 @@ fun SnkApp() {
                                 }
                             }
                         },
+                        onOpenManualCreate = ::openManualCreateFromBarcode,
                         onBack = {
                             navController.popBackStack()
                         },
@@ -270,6 +279,7 @@ fun SnkApp() {
                     ManualFoodCreateScreen(
                         sessionState = sessionState,
                         initialName = manualCreateSeedName,
+                        initialBarcode = manualCreateSeedBarcode,
                         onFoodCreated = { item ->
                             selectedFood = item
                             selectedSourceType = "manual"

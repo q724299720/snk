@@ -32,6 +32,15 @@ public class ManualFoodItemService {
 		if (!ALLOWED_ITEM_TYPES.contains(itemType)) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "itemType is invalid");
 		}
+		String barcode = normalizeBarcode(command.barcode());
+		if (barcode != null) {
+			if (!"packaged_product".equals(itemType)) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "barcode is only supported for packaged_product");
+			}
+			if (foodItemRepository.findFirstByItemTypeAndBarcode("packaged_product", barcode).isPresent()) {
+				throw new ResponseStatusException(HttpStatus.CONFLICT, "barcode already exists");
+			}
+		}
 
 		FoodItemEntity entity = new FoodItemEntity();
 		entity.setName(normalizeRequired(command.name(), "name"));
@@ -39,7 +48,7 @@ public class ManualFoodItemService {
 		entity.setCategory(normalizeRequired(command.category(), "category"));
 		entity.setSubcategory(normalizeOptional(command.subcategory()));
 		entity.setBrand(normalizeOptional(command.brand()));
-		entity.setBarcode(null);
+		entity.setBarcode(barcode);
 		entity.setSource("user_generated");
 		entity.setAuditStatus("pending");
 		entity.setSearchKeywords(buildSearchKeywords(entity));
@@ -67,6 +76,7 @@ public class ManualFoodItemService {
 		addKeyword(parts, entity.getBrand());
 		addKeyword(parts, entity.getCategory());
 		addKeyword(parts, entity.getSubcategory());
+		addKeyword(parts, entity.getBarcode());
 		return String.join(" ", parts);
 	}
 
@@ -95,6 +105,14 @@ public class ManualFoodItemService {
 			return null;
 		}
 		String normalized = value.trim().replaceAll("\\s+", " ");
+		return normalized.isBlank() ? null : normalized;
+	}
+
+	private String normalizeBarcode(String value) {
+		if (value == null) {
+			return null;
+		}
+		String normalized = value.replaceAll("\\s+", "").trim();
 		return normalized.isBlank() ? null : normalized;
 	}
 }

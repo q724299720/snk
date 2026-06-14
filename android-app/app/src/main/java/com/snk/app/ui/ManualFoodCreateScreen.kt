@@ -53,12 +53,14 @@ private val manualCategoryOptions = listOf(
 fun ManualFoodCreateScreen(
     sessionState: SessionUiState,
     initialName: String,
+    initialBarcode: String,
     onFoodCreated: (FoodSearchItem) -> Unit,
     onBack: () -> Unit,
 ) {
     val application = LocalContext.current.applicationContext as SnkApplication
     val coroutineScope = rememberCoroutineScope()
     var name by remember(initialName) { mutableStateOf(initialName) }
+    var barcode by remember(initialBarcode) { mutableStateOf(initialBarcode) }
     var itemType by remember { mutableStateOf("packaged_product") }
     var category by remember { mutableStateOf("snack") }
     var subcategory by remember { mutableStateOf("") }
@@ -155,6 +157,17 @@ fun ManualFoodCreateScreen(
                     enabled = !isSubmitting,
                     shape = RoundedCornerShape(18.dp),
                 )
+                if (itemType == "packaged_product") {
+                    OutlinedTextField(
+                        value = barcode,
+                        onValueChange = { barcode = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("条码（包装食品可选填）") },
+                        singleLine = true,
+                        enabled = !isSubmitting,
+                        shape = RoundedCornerShape(18.dp),
+                    )
+                }
             }
         }
         Text(
@@ -193,6 +206,7 @@ fun ManualFoodCreateScreen(
                             category = category,
                             subcategory = subcategory,
                             brand = brand,
+                            barcode = barcode,
                         )
                     ) {
                         is ManualFoodCreateResult.Success -> onFoodCreated(result.item)

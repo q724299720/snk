@@ -6,6 +6,7 @@ public record CreateManualFoodItemCommand(
 	String itemType,
 	String category,
 	String subcategory,
-	String brand
+	String brand,
+	String barcode
 ) {
 }

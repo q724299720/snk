@@ -6,6 +6,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okio.Buffer
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
@@ -153,16 +154,20 @@ class FoodSearchRepositoryTest {
         val result = repository.createManualFoodItem(
             userId = 2L,
             name = "杨枝鲜花饼",
-            itemType = "dish",
-            category = "dessert",
-            subcategory = "cake",
+            itemType = "packaged_product",
+            category = "snack",
+            subcategory = "chips",
             brand = "SNK Bakery",
+            barcode = "6900000000099",
         )
 
         assertTrue(result is ManualFoodCreateResult.Success)
         val success = result as ManualFoodCreateResult.Success
         assertEquals("pending", success.item.auditStatus)
-        assertEquals("/api/foods/manual", server.takeRequest().path)
+        val request = server.takeRequest()
+        assertEquals("/api/foods/manual", request.path)
+        val body = Buffer().write(request.body.readByteArray()).readUtf8()
+        assertTrue(body.contains("\"barcode\":\"6900000000099\""))
     }
 
     @Test

@@ -33,4 +33,6 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 	List<FoodItemEntity> searchApproved(@Param("query") String query);
 
 	Optional<FoodItemEntity> findByAuditStatusAndBarcode(String auditStatus, String barcode);
+
+	Optional<FoodItemEntity> findFirstByItemTypeAndBarcode(String itemType, String barcode);
 }

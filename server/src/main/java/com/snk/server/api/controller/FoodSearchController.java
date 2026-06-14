@@ -86,7 +86,8 @@ public class FoodSearchController {
 				request.itemType(),
 				request.category(),
 				request.subcategory(),
-				request.brand()
+				request.brand(),
+				request.barcode()
 			)
 		);
 		return new FoodSearchItemResponse(

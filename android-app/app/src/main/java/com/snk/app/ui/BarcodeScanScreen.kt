@@ -51,6 +51,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun BarcodeScanScreen(
     onFoodMatched: (FoodSearchItem) -> Unit,
+    onOpenManualCreate: (String) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -65,6 +66,7 @@ fun BarcodeScanScreen(
     var statusMessage by remember { mutableStateOf("优先使用摄像头扫描条码，也可以手动输入后查询。") }
     var isLookingUp by remember { mutableStateOf(false) }
     var lastHandledBarcode by remember { mutableStateOf<String?>(null) }
+    var notFoundBarcode by remember { mutableStateOf<String?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -81,19 +83,23 @@ fun BarcodeScanScreen(
             return
         }
         isLookingUp = true
+        notFoundBarcode = null
         statusMessage = "正在查询条码 $normalizedBarcode ..."
         when (val result = application.container.foodSearchRepository.lookupByBarcode(normalizedBarcode)) {
             is FoodBarcodeLookupResult.Success -> {
+                notFoundBarcode = null
                 statusMessage = "条码命中 ${result.item.name}，正在进入候选确认页。"
                 onFoodMatched(result.item)
             }
 
             is FoodBarcodeLookupResult.NotFound -> {
+                notFoundBarcode = result.barcode
                 statusMessage = "未找到条码 ${result.barcode} 对应的服务端条目。"
                 isLookingUp = false
             }
 
             is FoodBarcodeLookupResult.Failure -> {
+                notFoundBarcode = null
                 statusMessage = result.message
                 isLookingUp = false
             }
@@ -188,6 +194,15 @@ fun BarcodeScanScreen(
             shape = RoundedCornerShape(18.dp),
         ) {
             Text(if (isLookingUp) "查询中..." else "按条码查询")
+        }
+        if (notFoundBarcode != null) {
+            Button(
+                onClick = { onOpenManualCreate(notFoundBarcode.orEmpty()) },
+                enabled = !isLookingUp,
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Text("未找到？手动创建")
+            }
         }
         Card(
             modifier = Modifier.fillMaxWidth(),

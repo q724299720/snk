@@ -46,6 +46,7 @@ class FoodSearchRepository(
         category: String,
         subcategory: String,
         brand: String,
+        barcode: String,
     ): ManualFoodCreateResult {
         val normalizedName = name.trim()
         if (normalizedName.isBlank()) {
@@ -62,6 +63,7 @@ class FoodSearchRepository(
                         category = category.trim(),
                         subcategory = subcategory.trim().ifBlank { null },
                         brand = brand.trim().ifBlank { null },
+                        barcode = barcode.trim().ifBlank { null },
                     ),
                 ).toModel(),
             )

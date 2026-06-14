@@ -46,12 +46,14 @@
 手动创建条目当前约束：
 
 - `POST /api/foods/manual` 当前最小请求字段包含：`userId`、`name`、`itemType`、`category`
-- `subcategory`、`brand` 当前为可选字段
+- `subcategory`、`brand`、`barcode` 当前为可选字段
 - `itemType` 当前仅允许：`packaged_product / dish / fruit`
+- `barcode` 当前仅建议用于 `packaged_product`
 - 服务端成功后直接返回新建的 `FoodItem` 响应体
 - 当前新建条目固定写入：`source = user_generated`、`auditStatus = pending`
 - 当前响应体字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`、`auditStatus`
 - 当前客户端在创建成功后直接进入“记录创建”页，不要求用户重新搜索
+- 当前客户端在扫码未命中时，会携带原始 `barcode` 进入手动创建页，便于后端沉淀包装食品条目
 
 ### 图片与识别
 
@@ -158,3 +160,4 @@
 | 2026-06-13 | Codex | 补充图片上传 `resourceUrl` 的相对 / 绝对地址约束 | 真机联调与宝塔反向代理部署需要稳定的外部可访问资源地址策略 |
 | 2026-06-14 | Codex | 补充当前生产域名 | 已确认图片资源与 App 真机访问统一使用 `https://snk.qiuxinmin.cn` |
 | 2026-06-14 | Codex | 补充手动创建待审核条目接口与 `auditStatus` 响应字段 | Phase 3 已落地搜索失败后的手动创建条目闭环，接口文档需与实现对齐 |
+| 2026-06-14 | Codex | 补充手动创建条目的可选 `barcode` 入参与扫码未命中的前端流转 | Phase 3 需覆盖包装食品扫码未命中的 UGC 沉淀场景 |
