@@ -111,6 +111,17 @@ class AdminFoodItemControllerTests {
 			.andExpect(jsonPath("$.auditStatus").value("rejected"));
 	}
 
+	@Test
+	void shouldClearReportCount() throws Exception {
+		when(foodModerationService.clearReportCount(5L))
+			.thenReturn(moderationItem(5L, "Cleared Item", 0, "approved"));
+
+		mockMvc.perform(post("/api/admin/food-items/5/clear-reports"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.name").value("Cleared Item"))
+			.andExpect(jsonPath("$.reportCount").value(0));
+	}
+
 	private FoodModerationItem moderationItem(Long id, String name, int reportCount, String auditStatus) {
 		return new FoodModerationItem(
 			id,

@@ -73,6 +73,14 @@ public class FoodModerationService {
 		return toModerationItem(foodItemRepository.save(entity));
 	}
 
+	@Transactional
+	public FoodModerationItem clearReportCount(Long foodItemId) {
+		FoodItemEntity entity = foodItemRepository.findById(foodItemId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food item not found."));
+		entity.setReportCount(0);
+		return toModerationItem(foodItemRepository.save(entity));
+	}
+
 	private FoodModerationItem toModerationItem(FoodItemEntity entity) {
 		Long createdByUserId = entity.getCreatedByUser() == null ? null : entity.getCreatedByUser().getId();
 		return new FoodModerationItem(

@@ -72,6 +72,19 @@ class FoodModerationServiceTests {
 	}
 
 	@Test
+	void shouldClearReportCount() {
+		FoodItemEntity entity = foodItem(6L, "Clear Target", 5);
+		entity.setAuditStatus("approved");
+		when(foodItemRepository.findById(6L)).thenReturn(java.util.Optional.of(entity));
+		when(foodItemRepository.save(any(FoodItemEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		FoodModerationService.FoodModerationItem item = foodModerationService.clearReportCount(6L);
+
+		assertThat(item.reportCount()).isZero();
+		assertThat(entity.getReportCount()).isZero();
+	}
+
+	@Test
 	void shouldListFoodItemsWithFiltersAndLimit() {
 		FoodItemEntity first = foodItem(10L, "Alpha Crackers", 0);
 		first.setAuditStatus("approved");

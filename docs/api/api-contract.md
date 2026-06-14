@@ -108,6 +108,7 @@
 - `GET /api/admin/food-items/reported?minReportCount=`
 - `POST /api/admin/food-items/{foodItemId}/approve`
 - `POST /api/admin/food-items/{foodItemId}/reject`
+- `POST /api/admin/food-items/{foodItemId}/clear-reports`
 - `POST /api/foods/{foodItemId}/report`
 
 后台食物条目管理当前约定：
@@ -115,6 +116,7 @@
 - 列表支持按 `auditStatus`、`q` 和 `limit` 过滤，默认按创建时间倒序
 - 返回字段与后台条目治理一致，详情接口复用同一响应模型
 - 详情接口返回单条完整管理视图，便于后台核查与处理
+- `clear-reports` 用于将已处理条目的 `reportCount` 清零，作为报错处理闭环的结束动作
 
 后台条目治理当前约定：
 
@@ -242,3 +244,4 @@
 | 2026-06-14 | Codex | 补充审核词典后台 CRUD / 启停 / 审计日志接口 | Phase 4 已落地配置词典的编辑、立即生效和历史追踪闭环 |
 | 2026-06-14 | Codex | 补充识别任务监控接口 | Phase 4 已落地后台查看识别失败与异常任务的最小闭环 |
 | 2026-06-14 | Codex | 补充食物条目管理列表 / 详情接口 | Phase 4 已落地后台食物条目基础管理闭环 |
+| 2026-06-14 | Codex | 补充食物条目报错清零接口 | Phase 4 已补齐报错 / 纠错处理流程的最小处理动作 |

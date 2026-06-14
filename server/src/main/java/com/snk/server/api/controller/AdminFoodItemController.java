@@ -68,4 +68,10 @@ public class AdminFoodItemController {
 	public AdminFoodItemResponse rejectFoodItem(@PathVariable("foodItemId") Long foodItemId) {
 		return AdminFoodItemResponse.from(foodModerationService.rejectFoodItem(foodItemId));
 	}
+
+	@PostMapping("/{foodItemId}/clear-reports")
+	@ResponseStatus(HttpStatus.OK)
+	public AdminFoodItemResponse clearReportCount(@PathVariable("foodItemId") Long foodItemId) {
+		return AdminFoodItemResponse.from(foodModerationService.clearReportCount(foodItemId));
+	}
 }
