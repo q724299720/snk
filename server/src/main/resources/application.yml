@@ -64,3 +64,16 @@ snk:
     image:
       provider: ${SNK_RECOGNITION_IMAGE_PROVIDER:disabled}
       stub-query: ${SNK_RECOGNITION_IMAGE_STUB_QUERY:}
+  moderation:
+    auto-audit:
+      enabled: ${SNK_MODERATION_AUTO_AUDIT_ENABLED:true}
+      pending-age-hours: ${SNK_MODERATION_PENDING_AGE_HOURS:24}
+      fixed-delay-ms: ${SNK_MODERATION_AUTO_AUDIT_FIXED_DELAY_MS:3600000}
+      initial-delay-ms: ${SNK_MODERATION_AUTO_AUDIT_INITIAL_DELAY_MS:300000}
+      reject-keywords:
+        - test
+        - junk
+        - garbage
+        - unknown
+        - asdf
+        - qwer

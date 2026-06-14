@@ -2,6 +2,7 @@ package com.snk.server.infrastructure.persistence.food;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.OffsetDateTime;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -39,4 +40,6 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 	List<FoodItemEntity> findByAuditStatusOrderByCreatedAtDesc(String auditStatus);
 
 	List<FoodItemEntity> findByReportCountGreaterThanEqualOrderByReportCountDescCreatedAtDesc(Integer reportCount);
+
+	List<FoodItemEntity> findByAuditStatusAndCreatedAtBeforeOrderByCreatedAtAsc(String auditStatus, OffsetDateTime createdAt);
 }
