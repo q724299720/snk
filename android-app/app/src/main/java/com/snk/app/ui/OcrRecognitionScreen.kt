@@ -35,7 +35,6 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
 import com.snk.app.SnkApplication
 import com.snk.app.data.food.FoodOcrSearchResult
-import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodSearchResult
 import java.io.IOException
 import kotlin.coroutines.resume
@@ -45,7 +44,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 
 @Composable
 fun OcrRecognitionScreen(
-    onFoodMatched: (FoodSearchItem) -> Unit,
+    onCandidatesMatched: (CandidateConfirmationState) -> Unit,
     onOpenManualCreate: (String) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -70,7 +69,7 @@ fun OcrRecognitionScreen(
             val rawText = recognizeText(context, uri)
             val normalizedText = rawText.trim()
             if (normalizedText.isBlank()) {
-                statusMessage = "本地 OCR 没有识别到清晰文字，后续可继续接服务端 OCR 兜底。"
+                statusMessage = "本地 OCR 没有识别到清晰文字，后续可以继续接服务端 OCR 兜底。"
                 isProcessing = false
                 return
             }
@@ -80,7 +79,21 @@ fun OcrRecognitionScreen(
                     recognizedText = result.recognizedText
                     attemptedQueries.addAll(result.attemptedQueries)
                     searchState = result.result
-                    statusMessage = "本地 OCR 已命中结果，当前使用查询：${result.matchedQuery}"
+                    statusMessage = "本地 OCR 已召回候选，正在进入确认页。"
+                    onCandidatesMatched(
+                        CandidateConfirmationState(
+                            sourceLabel = "OCR 候选确认",
+                            title = "请确认识别到的食物条目",
+                            description = "已先走本地 OCR 文本召回，确认正确后再进入记一笔页面。",
+                            items = result.result.items,
+                            qualitySignal = result.result.qualitySignal,
+                            sourceType = "image_search",
+                            recognizedText = result.recognizedText,
+                            matchedQuery = result.matchedQuery,
+                            attemptedQueries = result.attemptedQueries,
+                            manualCreateSeedName = result.attemptedQueries.firstOrNull() ?: result.recognizedText,
+                        ),
+                    )
                 }
 
                 is FoodOcrSearchResult.NoMatch -> {
@@ -218,7 +231,7 @@ fun OcrRecognitionScreen(
             searchState = searchState,
             isSearching = isProcessing,
             emptyHint = "选择图片并识别文字后，会在这里展示文本召回结果。",
-            onCreateRecord = onFoodMatched,
+            onCreateRecord = {},
             noResultActionLabel = if (recognizedText != null) "识别失败？手动创建" else null,
             onNoResultAction = if (recognizedText != null) {
                 { onOpenManualCreate(attemptedQueries.firstOrNull() ?: recognizedText.orEmpty()) }

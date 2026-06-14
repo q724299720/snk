@@ -62,7 +62,7 @@ fun BarcodeScanScreen(
         )
     }
     var manualBarcode by remember { mutableStateOf("") }
-    var statusMessage by remember { mutableStateOf("优先使用摄像头扫描条码，也可手动输入后查询。") }
+    var statusMessage by remember { mutableStateOf("优先使用摄像头扫描条码，也可以手动输入后查询。") }
     var isLookingUp by remember { mutableStateOf(false) }
     var lastHandledBarcode by remember { mutableStateOf<String?>(null) }
 
@@ -71,7 +71,7 @@ fun BarcodeScanScreen(
     ) { granted ->
         hasCameraPermission = granted
         if (!granted) {
-            statusMessage = "未授予相机权限，可先手动输入条码继续。"
+            statusMessage = "未授予相机权限，可以先手动输入条码继续。"
         }
     }
 
@@ -84,12 +84,12 @@ fun BarcodeScanScreen(
         statusMessage = "正在查询条码 $normalizedBarcode ..."
         when (val result = application.container.foodSearchRepository.lookupByBarcode(normalizedBarcode)) {
             is FoodBarcodeLookupResult.Success -> {
-                statusMessage = "条码命中 ${result.item.name}，准备进入记一笔。"
+                statusMessage = "条码命中 ${result.item.name}，正在进入候选确认页。"
                 onFoodMatched(result.item)
             }
 
             is FoodBarcodeLookupResult.NotFound -> {
-                statusMessage = "条码 ${result.barcode} 未命中服务端条目。"
+                statusMessage = "未找到条码 ${result.barcode} 对应的服务端条目。"
                 isLookingUp = false
             }
 
@@ -119,7 +119,7 @@ fun BarcodeScanScreen(
             color = Color(0xFF2B1E18),
         )
         Text(
-            text = "零食优先走条码命中，命中后直接进入记录创建页。",
+            text = "零食优先走条码命中，命中后先确认候选结果，再进入记录创建页。",
             style = MaterialTheme.typography.bodyLarge,
             color = Color(0xFF5B4A42),
         )
@@ -155,7 +155,7 @@ fun BarcodeScanScreen(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "可重新申请权限，或直接手动输入条码继续。",
+                        text = "可以重新申请权限，或者直接手动输入条码继续。",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFF5B4A42),
                     )
