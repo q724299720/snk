@@ -4,6 +4,12 @@ server:
 spring:
   application:
     name: snk-server
+  config:
+    import:
+      - optional:file:${SNK_RUNTIME_CONFIG:./runtime/application-runtime.yml}
+      - optional:file:./server/runtime/application-runtime.yml
+      - optional:file:../runtime/application-runtime.yml
+      - optional:file:../../runtime/application-runtime.yml
   servlet:
     multipart:
       max-file-size: ${SNK_UPLOAD_MAX_FILE_SIZE:10MB}
