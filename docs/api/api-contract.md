@@ -133,6 +133,19 @@
 - 审计日志返回 `beforeValue` 与 `afterValue` 的结构化 JSON 快照
 - 词典后台修改后立即生效，后续审核任务直接读取最新提交数据
 
+识别任务监控接口：
+
+- `GET /api/admin/recognition-tasks?status=&userId=&limit=`
+- `GET /api/admin/recognition-tasks/{taskId}`
+
+识别任务监控当前约定：
+
+- 列表支持按 `status` 和 `userId` 过滤，`limit` 默认 `20`
+- 列表按创建时间倒序返回，最多返回 `100` 条
+- 返回字段至少包含：`id`、`userId`、`inputImageUrl`、`status`、`topCandidates`、`selectedFoodItemId`、`confidence`、`createdAt`、`finishedAt`、`statusReason`
+- 监控接口与客户端 `POST /api/recognition/tasks`、`GET /api/recognition/tasks/{id}` 共用同一任务模型
+- 后台可直接观察 `processing / completed / failed` 任务状态分布
+
 用户报错接口当前约定：
 
 - `POST /api/foods/{foodItemId}/report` 用于提交用户对条目的报错或纠错信号
@@ -219,3 +232,4 @@
 | 2026-06-14 | Codex | 补充用户报错接口与 `report_count` 累加语义 | Phase 4 已开始落地报错 / 纠错处理流程的最小后端信号 |
 | 2026-06-14 | Codex | 补充后台审核通过 / 驳回接口 | Phase 4 需要具备可执行的审核动作，形成列表到处理的完整闭环 |
 | 2026-06-14 | Codex | 补充审核词典后台 CRUD / 启停 / 审计日志接口 | Phase 4 已落地配置词典的编辑、立即生效和历史追踪闭环 |
+| 2026-06-14 | Codex | 补充识别任务监控接口 | Phase 4 已落地后台查看识别失败与异常任务的最小闭环 |

@@ -12,6 +12,7 @@ import com.snk.server.infrastructure.persistence.recognition.RecognitionTaskRepo
 import com.snk.server.infrastructure.persistence.user.UserEntity;
 import com.snk.server.infrastructure.persistence.user.UserRepository;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,12 +87,42 @@ public class RecognitionTaskService {
 		return toResult(entity, null);
 	}
 
+	@Transactional(readOnly = true)
+	public List<RecognitionTaskResult> listTasks(String status, Long userId, int limit) {
+		int normalizedLimit = Math.min(Math.max(limit, 1), 100);
+		var pageable = PageRequest.of(0, normalizedLimit);
+		List<RecognitionTaskEntity> entities;
+		String normalizedStatus = normalizeOptional(status);
+		if (normalizedStatus != null && userId != null) {
+			entities = recognitionTaskRepository
+				.findByStatusAndUser_IdOrderByCreatedAtDesc(normalizedStatus, userId, pageable)
+				.getContent();
+		} else if (normalizedStatus != null) {
+			entities = recognitionTaskRepository.findByStatusOrderByCreatedAtDesc(normalizedStatus, pageable).getContent();
+		} else if (userId != null) {
+			entities = recognitionTaskRepository.findByUser_IdOrderByCreatedAtDesc(userId, pageable).getContent();
+		} else {
+			entities = recognitionTaskRepository.findByOrderByCreatedAtDesc(pageable).getContent();
+		}
+		return entities.stream()
+			.map(entity -> toResult(entity, null))
+			.toList();
+	}
+
 	private String normalizeInputImageUrl(String inputImageUrl) {
 		String normalized = inputImageUrl == null ? "" : inputImageUrl.trim();
 		if (normalized.isBlank()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "inputImageUrl must not be blank");
 		}
 		return normalized;
+	}
+
+	private String normalizeOptional(String value) {
+		if (value == null) {
+			return null;
+		}
+		String normalized = value.trim();
+		return normalized.isBlank() ? null : normalized;
 	}
 
 	private RecognitionTaskCompletion resolveCompletion(ImageRecognitionTaskProviderResult providerResult) {

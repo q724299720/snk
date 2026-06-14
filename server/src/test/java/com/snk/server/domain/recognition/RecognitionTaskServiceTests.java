@@ -26,6 +26,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -135,6 +136,21 @@ class RecognitionTaskServiceTests {
 			.hasMessageContaining("400 BAD_REQUEST");
 	}
 
+	@Test
+	void shouldListRecognitionTasksWithFilters() {
+		UserEntity user = new UserEntity();
+		setUserId(user, 7L);
+		RecognitionTaskEntity entity = recognitionTask("processing", 7L, 18L, user);
+		when(recognitionTaskRepository.findByStatusAndUser_IdOrderByCreatedAtDesc(eq("processing"), eq(7L), any()))
+			.thenReturn(new PageImpl<>(List.of(entity)));
+
+		List<RecognitionTaskResult> results = recognitionTaskService.listTasks("processing", 7L, 10);
+
+		assertThat(results).hasSize(1);
+		assertThat(results.getFirst().id()).isEqualTo(18L);
+		assertThat(results.getFirst().status()).isEqualTo("processing");
+	}
+
 	private void setTaskId(RecognitionTaskEntity entity, Long id) {
 		try {
 			var field = RecognitionTaskEntity.class.getDeclaredField("id");
@@ -173,5 +189,16 @@ class RecognitionTaskServiceTests {
 		} catch (ReflectiveOperationException exception) {
 			throw new IllegalStateException(exception);
 		}
+	}
+
+	private RecognitionTaskEntity recognitionTask(String status, Long userId, Long taskId, UserEntity user) {
+		RecognitionTaskEntity entity = new RecognitionTaskEntity();
+		setTaskId(entity, taskId);
+		setCreatedAt(entity, OffsetDateTime.parse("2026-06-14T12:00:00Z"));
+		entity.setStatus(status);
+		entity.setInputImageUrl("/uploads/images/demo.png");
+		entity.setTopCandidates("[]");
+		entity.setUser(user);
+		return entity;
 	}
 }
