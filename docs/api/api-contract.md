@@ -116,6 +116,23 @@
 - `approve` 会将条目标记为 `approved`，并允许继续进入全局搜索
 - `reject` 会将条目标记为 `rejected`，并阻止进入全局搜索
 
+审核词典后台接口：
+
+- `GET /api/admin/review-config-words?enabled=&wordType=`
+- `POST /api/admin/review-config-words`
+- `PUT /api/admin/review-config-words/{wordId}`
+- `POST /api/admin/review-config-words/{wordId}/enable`
+- `POST /api/admin/review-config-words/{wordId}/disable`
+- `GET /api/admin/review-config-words/{wordId}/audit-logs`
+
+审核词典当前约定：
+
+- 列表支持按 `enabled` 和 `wordType` 过滤，默认按 `updatedAt` 倒序
+- 返回字段至少包含：`id`、`word`、`wordType`、`enabled`、`source`、`remark`、`updatedBy`、`createdAt`、`updatedAt`
+- 新增 / 编辑 / 启停都会追加审计日志
+- 审计日志返回 `beforeValue` 与 `afterValue` 的结构化 JSON 快照
+- 词典后台修改后立即生效，后续审核任务直接读取最新提交数据
+
 用户报错接口当前约定：
 
 - `POST /api/foods/{foodItemId}/report` 用于提交用户对条目的报错或纠错信号
@@ -201,3 +218,4 @@
 | 2026-06-14 | Codex | 补充后台 pending / reported 条目列表接口 | Phase 4 已开始落地后台治理的最小可见能力 |
 | 2026-06-14 | Codex | 补充用户报错接口与 `report_count` 累加语义 | Phase 4 已开始落地报错 / 纠错处理流程的最小后端信号 |
 | 2026-06-14 | Codex | 补充后台审核通过 / 驳回接口 | Phase 4 需要具备可执行的审核动作，形成列表到处理的完整闭环 |
+| 2026-06-14 | Codex | 补充审核词典后台 CRUD / 启停 / 审计日志接口 | Phase 4 已落地配置词典的编辑、立即生效和历史追踪闭环 |

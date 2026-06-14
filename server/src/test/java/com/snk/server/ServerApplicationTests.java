@@ -1,6 +1,8 @@
 package com.snk.server;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
+import com.snk.server.infrastructure.persistence.review.ReviewConfigWordAuditLogRepository;
+import com.snk.server.infrastructure.persistence.review.ReviewConfigWordRepository;
 import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
 import com.snk.server.infrastructure.persistence.recognition.RecognitionTaskRepository;
 import com.snk.server.infrastructure.persistence.user.UserRepository;
@@ -32,6 +34,12 @@ class ServerApplicationTests {
 
 	@MockBean
 	private ImageRecognitionTaskProvider imageRecognitionTaskProvider;
+
+	@MockBean
+	private ReviewConfigWordRepository reviewConfigWordRepository;
+
+	@MockBean
+	private ReviewConfigWordAuditLogRepository reviewConfigWordAuditLogRepository;
 
 	@Test
 	void contextLoads() {
