@@ -3,7 +3,6 @@ package com.snk.app.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -39,6 +38,7 @@ fun SearchScreen(
     sessionState: SessionUiState,
     onCreateRecord: (FoodSearchItem) -> Unit,
     onOpenBarcodeScanner: () -> Unit,
+    onOpenOcrRecognition: () -> Unit,
 ) {
     val application = LocalContext.current.applicationContext as SnkApplication
     val coroutineScope = rememberCoroutineScope()
@@ -92,8 +92,9 @@ fun SearchScreen(
                 )
             }
         }
-        Row(
+        FlowRow(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Button(
                 onClick = { submitSearch(query) },
@@ -106,6 +107,12 @@ fun SearchScreen(
                 shape = RoundedCornerShape(18.dp),
             ) {
                 Text("扫码录入")
+            }
+            Button(
+                onClick = onOpenOcrRecognition,
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Text("图片识别")
             }
         }
         Card(
@@ -138,120 +145,11 @@ fun SearchScreen(
                 )
             }
         }
-        SearchResultsCard(
+        FoodSearchResultsCard(
             searchState = searchState,
             isSearching = isSearching,
+            emptyHint = "输入名称后即可查询已审核的基础食物条目。",
             onCreateRecord = onCreateRecord,
         )
-    }
-}
-
-@Composable
-private fun SearchResultsCard(
-    searchState: FoodSearchResult?,
-    isSearching: Boolean,
-    onCreateRecord: (FoodSearchItem) -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFDF8F2)),
-    ) {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                text = "搜索结果",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            when {
-                isSearching -> {
-                    Text(
-                        text = "正在请求服务端搜索...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF5B4A42),
-                    )
-                }
-
-                searchState == null -> {
-                    Text(
-                        text = "输入名称后即可查询已审核的基础食物条目。",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF5B4A42),
-                    )
-                }
-
-                searchState is FoodSearchResult.Failure -> {
-                    Text(
-                        text = searchState.message,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF8A2E1C),
-                    )
-                }
-
-                searchState is FoodSearchResult.Success && searchState.items.isEmpty() -> {
-                    Text(
-                        text = "没有命中结果，后续会在这里补手动创建入口。",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF8A5A44),
-                    )
-                }
-
-                searchState is FoodSearchResult.Success -> {
-                    Text(
-                        text = "质量信号: ${searchState.qualitySignal}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF5B4A42),
-                    )
-                    searchState.items.forEach { item ->
-                        Card(
-                            shape = RoundedCornerShape(18.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(14.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(
-                                    text = item.name,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                Text(
-                                    text = buildString {
-                                        append(item.category)
-                                        item.subcategory?.takeIf { it.isNotBlank() }?.let {
-                                            append(" / ")
-                                            append(it)
-                                        }
-                                        item.brand?.takeIf { it.isNotBlank() }?.let {
-                                            append(" / ")
-                                            append(it)
-                                        }
-                                    },
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(0xFF5B4A42),
-                                )
-                                item.barcode?.takeIf { it.isNotBlank() }?.let { barcode ->
-                                    Text(
-                                        text = "条码: $barcode",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(0xFF8A5A44),
-                                    )
-                                }
-                                Button(
-                                    onClick = { onCreateRecord(item) },
-                                    shape = RoundedCornerShape(14.dp),
-                                ) {
-                                    Text("记一笔")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }

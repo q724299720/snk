@@ -71,7 +71,9 @@ fun SnkApp() {
     val navController = rememberNavController()
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
-    val showBottomBar = currentRoute != "record_create" && currentRoute != "barcode_scan"
+    val showBottomBar = currentRoute != "record_create" &&
+        currentRoute != "barcode_scan" &&
+        currentRoute != "ocr_recognition"
 
     Scaffold(
         bottomBar = {
@@ -128,6 +130,9 @@ fun SnkApp() {
                         onOpenBarcodeScanner = {
                             navController.navigate("barcode_scan")
                         },
+                        onOpenOcrRecognition = {
+                            navController.navigate("ocr_recognition")
+                        },
                     )
                 }
                 composable(SnkDestination.Drafts.route) {
@@ -151,6 +156,9 @@ fun SnkApp() {
                             onOpenBarcodeScanner = {
                                 navController.navigate("barcode_scan")
                             },
+                            onOpenOcrRecognition = {
+                                navController.navigate("ocr_recognition")
+                            },
                         )
                     } else {
                         RecordCreateScreen(
@@ -173,6 +181,21 @@ fun SnkApp() {
                             selectedFood = item
                             navController.navigate("record_create") {
                                 popUpTo("barcode_scan") {
+                                    inclusive = true
+                                }
+                            }
+                        },
+                        onBack = {
+                            navController.popBackStack()
+                        },
+                    )
+                }
+                composable("ocr_recognition") {
+                    OcrRecognitionScreen(
+                        onFoodMatched = { item ->
+                            selectedFood = item
+                            navController.navigate("record_create") {
+                                popUpTo("ocr_recognition") {
                                     inclusive = true
                                 }
                             }

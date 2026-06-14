@@ -48,6 +48,45 @@ class FoodSearchRepository(
             }
         }
     }
+
+    suspend fun searchByRecognizedText(recognizedText: String): FoodOcrSearchResult {
+        val attemptedQueries = OcrSearchQueryBuilder.build(recognizedText)
+        if (attemptedQueries.isEmpty()) {
+            return FoodOcrSearchResult.Failure(
+                recognizedText = recognizedText,
+                attemptedQueries = emptyList(),
+                message = "未识别到可用于搜索的文字。",
+            )
+        }
+
+        attemptedQueries.forEach { query ->
+            when (val result = search(query)) {
+                is FoodSearchResult.Success -> {
+                    if (result.items.isNotEmpty()) {
+                        return FoodOcrSearchResult.Success(
+                            recognizedText = recognizedText,
+                            attemptedQueries = attemptedQueries,
+                            matchedQuery = query,
+                            result = result,
+                        )
+                    }
+                }
+
+                is FoodSearchResult.Failure -> {
+                    return FoodOcrSearchResult.Failure(
+                        recognizedText = recognizedText,
+                        attemptedQueries = attemptedQueries,
+                        message = result.message,
+                    )
+                }
+            }
+        }
+
+        return FoodOcrSearchResult.NoMatch(
+            recognizedText = recognizedText,
+            attemptedQueries = attemptedQueries,
+        )
+    }
 }
 
 data class FoodSearchItem(
@@ -66,6 +105,26 @@ sealed interface FoodBarcodeLookupResult {
     data class NotFound(val barcode: String) : FoodBarcodeLookupResult
 
     data class Failure(val message: String) : FoodBarcodeLookupResult
+}
+
+sealed interface FoodOcrSearchResult {
+    data class Success(
+        val recognizedText: String,
+        val attemptedQueries: List<String>,
+        val matchedQuery: String,
+        val result: FoodSearchResult.Success,
+    ) : FoodOcrSearchResult
+
+    data class NoMatch(
+        val recognizedText: String,
+        val attemptedQueries: List<String>,
+    ) : FoodOcrSearchResult
+
+    data class Failure(
+        val recognizedText: String,
+        val attemptedQueries: List<String>,
+        val message: String,
+    ) : FoodOcrSearchResult
 }
 
 sealed interface FoodSearchResult {

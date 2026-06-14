@@ -9,7 +9,6 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -123,5 +122,72 @@ class FoodSearchRepositoryTest {
         val result = repository.lookupByBarcode(" ")
 
         assertTrue(result is FoodBarcodeLookupResult.Failure)
+    }
+
+    @Test
+    fun `searchByRecognizedText falls back to compact query when first query misses`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody(
+                    """
+                    {
+                      "qualitySignal": "weak",
+                      "items": []
+                    }
+                    """.trimIndent(),
+                ),
+        )
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody(
+                    """
+                    {
+                      "qualitySignal": "strong",
+                      "items": [
+                        {
+                          "id": 1,
+                          "name": "乐事黄瓜味薯片",
+                          "itemType": "packaged_product",
+                          "category": "snack",
+                          "subcategory": "chips",
+                          "brand": "乐事",
+                          "barcode": "6900000000011",
+                          "coverImageUrl": null
+                        }
+                      ]
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.searchByRecognizedText("乐事\n黄瓜味 薯片")
+
+        assertTrue(result is FoodOcrSearchResult.Success)
+        val success = result as FoodOcrSearchResult.Success
+        assertEquals("乐事 黄瓜味 薯片", success.attemptedQueries.first())
+        assertEquals("乐事黄瓜味薯片", success.matchedQuery)
+        assertEquals("乐事黄瓜味薯片", success.result.items.first().name)
+        assertEquals("/api/foods/search?q=%E4%B9%90%E4%BA%8B%20%E9%BB%84%E7%93%9C%E5%91%B3%20%E8%96%AF%E7%89%87", server.takeRequest().path)
+        assertEquals("/api/foods/search?q=%E4%B9%90%E4%BA%8B%E9%BB%84%E7%93%9C%E5%91%B3%E8%96%AF%E7%89%87", server.takeRequest().path)
+    }
+
+    @Test
+    fun `searchByRecognizedText returns no match when all queries miss`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("""{"qualitySignal":"weak","items":[]}"""),
+        )
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("""{"qualitySignal":"weak","items":[]}"""),
+        )
+
+        val result = repository.searchByRecognizedText("乐事 黄瓜味")
+
+        assertTrue(result is FoodOcrSearchResult.NoMatch)
     }
 }

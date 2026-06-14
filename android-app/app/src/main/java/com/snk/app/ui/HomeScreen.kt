@@ -60,14 +60,14 @@ fun HomeScreen() {
         FeatureCard(
             modifier = Modifier.fillMaxWidth(),
             title = "当前开发阶段",
-            description = "Phase 2 正在落地安卓端基础记录闭环，先完成游客身份、搜索入口、草稿与补传能力。",
+            description = "Phase 3 已开始接入识别链路，当前优先落地条码扫描与本地 OCR 文本召回。",
             icon = Icons.Outlined.AutoAwesome,
             accent = Color(0xFFB53A1A),
         )
         FeatureCard(
             modifier = Modifier.fillMaxWidth(),
             title = "冷启动底座",
-            description = "服务端已准备基础种子数据、匿名用户初始化和图片上传能力，下一步接文本搜索与记录创建。",
+            description = "服务端已具备种子数据、匿名用户、图片上传、文本搜索与条码查询能力，继续补服务端 OCR 与识别兜底。",
             icon = Icons.Outlined.Inventory2,
             accent = Color(0xFF6F4E37),
         )
