@@ -42,4 +42,8 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 	List<FoodItemEntity> findByReportCountGreaterThanEqualOrderByReportCountDescCreatedAtDesc(Integer reportCount);
 
 	List<FoodItemEntity> findByAuditStatusAndCreatedAtBeforeOrderByCreatedAtAsc(String auditStatus, OffsetDateTime createdAt);
+
+	long countByAuditStatus(String auditStatus);
+
+	long countByReportCountGreaterThanEqual(Integer reportCount);
 }

@@ -110,6 +110,7 @@
 - `POST /api/admin/food-items/{foodItemId}/reject`
 - `POST /api/admin/food-items/{foodItemId}/clear-reports`
 - `POST /api/foods/{foodItemId}/report`
+- `GET /api/admin/stats`
 
 后台食物条目管理当前约定：
 
@@ -117,6 +118,12 @@
 - 返回字段与后台条目治理一致，详情接口复用同一响应模型
 - 详情接口返回单条完整管理视图，便于后台核查与处理
 - `clear-reports` 用于将已处理条目的 `reportCount` 清零，作为报错处理闭环的结束动作
+
+后台统计报表当前约定：
+
+- `GET /api/admin/stats` 用于返回后台治理的汇总概览
+- 当前最小响应字段包含：`totalFoodItems`、`pendingFoodItems`、`approvedFoodItems`、`rejectedFoodItems`、`reportedFoodItems`、`totalRecognitionTasks`、`processingRecognitionTasks`、`completedRecognitionTasks`、`failedRecognitionTasks`、`enabledReviewWords`、`disabledReviewWords`
+- 统计口径只做后台管理概览，不承诺分页或趋势图
 
 后台条目治理当前约定：
 
@@ -245,3 +252,4 @@
 | 2026-06-14 | Codex | 补充识别任务监控接口 | Phase 4 已落地后台查看识别失败与异常任务的最小闭环 |
 | 2026-06-14 | Codex | 补充食物条目管理列表 / 详情接口 | Phase 4 已落地后台食物条目基础管理闭环 |
 | 2026-06-14 | Codex | 补充食物条目报错清零接口 | Phase 4 已补齐报错 / 纠错处理流程的最小处理动作 |
+| 2026-06-14 | Codex | 补充后台统计报表接口 | Phase 4 已落地后台治理汇总概览闭环 |

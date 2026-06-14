@@ -13,4 +13,6 @@ public interface RecognitionTaskRepository extends JpaRepository<RecognitionTask
 	Page<RecognitionTaskEntity> findByUser_IdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
 	Page<RecognitionTaskEntity> findByStatusAndUser_IdOrderByCreatedAtDesc(String status, Long userId, Pageable pageable);
+
+	long countByStatus(String status);
 }

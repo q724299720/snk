@@ -17,4 +17,6 @@ public interface ReviewConfigWordRepository extends JpaRepository<ReviewConfigWo
 	List<ReviewConfigWordEntity> findByWordTypeOrderByUpdatedAtDesc(String wordType);
 
 	List<ReviewConfigWordEntity> findByEnabledAndWordTypeOrderByUpdatedAtDesc(boolean enabled, String wordType);
+
+	long countByEnabled(boolean enabled);
 }
