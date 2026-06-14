@@ -104,12 +104,20 @@
 - 统计报表
 - `GET /api/admin/food-items/pending`
 - `GET /api/admin/food-items/reported?minReportCount=`
+- `POST /api/foods/{foodItemId}/report`
 
 后台条目治理当前约定：
 
 - `pending` 列表返回当前待审核食物条目，按创建时间倒序
 - `reported` 列表返回报错次数达到阈值的食物条目，默认阈值为 `1`
 - 后台返回字段至少包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`source`、`auditStatus`、`reportCount`、`createdByUserId`、`createdAt`、`updatedAt`
+
+用户报错接口当前约定：
+
+- `POST /api/foods/{foodItemId}/report` 用于提交用户对条目的报错或纠错信号
+- 当前最小请求字段为 `userId`，`reason` 可选
+- 服务端成功后会将目标条目的 `report_count` 加 `1`
+- 当前最小响应字段为 `foodItemId`、`reportCount`、`auditStatus`
 
 ## OCR 与识别接口边界
 
@@ -187,3 +195,4 @@
 | 2026-06-14 | Codex | 补充服务端 OCR 接口的 multipart 入参、响应字段与 provider 降级语义 | Phase 3 已落地本地 OCR 失败后的服务端 OCR 回退链路 |
 | 2026-06-14 | Codex | 补充图片识别任务接口的上传前置约束、响应字段与客户端轮询语义 | Phase 3 已落地图片上传后创建识别任务并回退到候选确认页的闭环 |
 | 2026-06-14 | Codex | 补充后台 pending / reported 条目列表接口 | Phase 4 已开始落地后台治理的最小可见能力 |
+| 2026-06-14 | Codex | 补充用户报错接口与 `report_count` 累加语义 | Phase 4 已开始落地报错 / 纠错处理流程的最小后端信号 |
