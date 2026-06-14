@@ -237,4 +237,53 @@ class FoodSearchRepositoryTest {
 
         assertTrue(result is FoodOcrSearchResult.NoMatch)
     }
+
+    @Test
+    fun `searchByServerOcr returns candidates when backend succeeds`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody(
+                    """
+                    {
+                      "recognizedText": "乐事 黄瓜味 薯片",
+                      "attemptedQueries": ["乐事 黄瓜味 薯片", "乐事黄瓜味薯片"],
+                      "matchedQuery": "乐事黄瓜味薯片",
+                      "qualitySignal": "strong",
+                      "items": [
+                        {
+                          "id": 1,
+                          "name": "乐事黄瓜味薯片",
+                          "itemType": "packaged_product",
+                          "category": "snack",
+                          "subcategory": "chips",
+                          "brand": "乐事",
+                          "barcode": "6900000000011",
+                          "coverImageUrl": null,
+                          "auditStatus": "approved"
+                        }
+                      ]
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.searchByServerOcr(
+            imageBytes = "png-content".toByteArray(),
+            fileName = "chips.png",
+            contentType = "image/png",
+            clientRecognizedText = "乐事 黄瓜味 薯片",
+        )
+
+        assertTrue(result is FoodOcrSearchResult.Success)
+        val success = result as FoodOcrSearchResult.Success
+        assertEquals("乐事黄瓜味薯片", success.matchedQuery)
+        assertEquals("乐事黄瓜味薯片", success.result.items.first().name)
+        val request = server.takeRequest()
+        assertEquals("/api/recognition/ocr", request.path)
+        val body = Buffer().write(request.body.readByteArray()).readUtf8()
+        assertTrue(body.contains("name=\"clientRecognizedText\""))
+        assertTrue(body.contains("乐事 黄瓜味 薯片"))
+        assertTrue(body.contains("filename=\"chips.png\""))
+    }
 }

@@ -40,17 +40,7 @@ public class FoodSearchController {
 		}
 		FoodSearchResult result = foodSearchService.search(normalizedQuery);
 		List<FoodSearchItemResponse> items = result.items().stream()
-			.map(item -> new FoodSearchItemResponse(
-				item.id(),
-				item.name(),
-				item.itemType(),
-				item.category(),
-				item.subcategory(),
-				item.brand(),
-				item.barcode(),
-				item.coverImageUrl(),
-				item.auditStatus()
-			))
+			.map(FoodSearchItemResponse::from)
 			.toList();
 		return new FoodSearchResponse(items, result.qualitySignal());
 	}
@@ -62,17 +52,7 @@ public class FoodSearchController {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "barcode must not be blank");
 		}
 		return foodSearchService.lookupByBarcode(normalizedCode)
-			.map(item -> new FoodSearchItemResponse(
-				item.id(),
-				item.name(),
-				item.itemType(),
-				item.category(),
-				item.subcategory(),
-				item.brand(),
-				item.barcode(),
-				item.coverImageUrl(),
-				item.auditStatus()
-			))
+			.map(FoodSearchItemResponse::from)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "food not found"));
 	}
 
@@ -90,16 +70,6 @@ public class FoodSearchController {
 				request.barcode()
 			)
 		);
-		return new FoodSearchItemResponse(
-			item.id(),
-			item.name(),
-			item.itemType(),
-			item.category(),
-			item.subcategory(),
-			item.brand(),
-			item.barcode(),
-			item.coverImageUrl(),
-			item.auditStatus()
-		);
+		return FoodSearchItemResponse.from(item);
 	}
 }

@@ -37,6 +37,7 @@ import com.snk.app.SnkApplication
 import com.snk.app.data.food.FoodOcrSearchResult
 import com.snk.app.data.food.FoodSearchResult
 import java.io.IOException
+import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.launch
@@ -56,21 +57,97 @@ fun OcrRecognitionScreen(
     var recognizedText by remember { mutableStateOf<String?>(null) }
     var searchState by remember { mutableStateOf<FoodSearchResult?>(null) }
     var isProcessing by remember { mutableStateOf(false) }
-    var statusMessage by remember { mutableStateOf("先从相册选择一张零食或美食图片，本地识别出文字后会自动搜索。") }
+    var canOpenManualCreate by remember { mutableStateOf(false) }
+    var manualCreateSeedName by remember { mutableStateOf("") }
+    var statusMessage by remember {
+        mutableStateOf("先从相册选择一张零食或美食图片，本地识别出文字后会自动搜索。")
+    }
+
+    suspend fun runServerOcrFallback(
+        uri: Uri,
+        clientRecognizedText: String?,
+        fallbackReason: String,
+    ) {
+        statusMessage = fallbackReason
+        val imagePayload = try {
+            readImagePayload(context, uri)
+        } catch (exception: IOException) {
+            searchState = FoodSearchResult.Failure("无法读取上传图片，当前请直接手动创建。")
+            canOpenManualCreate = true
+            manualCreateSeedName = clientRecognizedText.orEmpty()
+            statusMessage = "读取图片失败，当前无法继续服务端 OCR，请直接手动创建。"
+            return
+        }
+
+        when (
+            val result = application.container.foodSearchRepository.searchByServerOcr(
+                imageBytes = imagePayload.bytes,
+                fileName = imagePayload.fileName,
+                contentType = imagePayload.contentType,
+                clientRecognizedText = clientRecognizedText,
+            )
+        ) {
+            is FoodOcrSearchResult.Success -> {
+                recognizedText = result.recognizedText
+                attemptedQueries.clear()
+                attemptedQueries.addAll(result.attemptedQueries)
+                searchState = result.result
+                statusMessage = "服务端 OCR 已召回候选，正在进入确认页。"
+                onCandidatesMatched(
+                    CandidateConfirmationState(
+                        sourceLabel = "服务端 OCR 候选确认",
+                        title = "请确认识别到的食物条目",
+                        description = "本地 OCR 未完成命中后，已继续走服务端 OCR 文本召回，确认正确后再进入记一笔页面。",
+                        items = result.result.items,
+                        qualitySignal = result.result.qualitySignal,
+                        sourceType = "image_search",
+                        recognizedText = result.recognizedText,
+                        matchedQuery = result.matchedQuery,
+                        attemptedQueries = result.attemptedQueries,
+                        manualCreateSeedName = result.attemptedQueries.firstOrNull() ?: result.recognizedText,
+                    ),
+                )
+            }
+
+            is FoodOcrSearchResult.NoMatch -> {
+                recognizedText = result.recognizedText.ifBlank { clientRecognizedText ?: "" }.ifBlank { null }
+                attemptedQueries.clear()
+                attemptedQueries.addAll(result.attemptedQueries)
+                searchState = FoodSearchResult.Success(emptyList(), "weak")
+                canOpenManualCreate = true
+                manualCreateSeedName = result.attemptedQueries.firstOrNull()
+                    ?: result.recognizedText.ifBlank { clientRecognizedText.orEmpty() }
+                statusMessage = "服务端 OCR 也没有命中条目，当前可直接手动创建待审核条目。"
+            }
+
+            is FoodOcrSearchResult.Failure -> {
+                recognizedText = result.recognizedText.ifBlank { clientRecognizedText ?: "" }.ifBlank { null }
+                searchState = FoodSearchResult.Failure(result.message)
+                canOpenManualCreate = true
+                manualCreateSeedName = clientRecognizedText.orEmpty()
+                statusMessage = result.message
+            }
+        }
+    }
 
     suspend fun runLocalOcr(uri: Uri) {
         isProcessing = true
         searchState = null
         recognizedText = null
         attemptedQueries.clear()
+        canOpenManualCreate = false
+        manualCreateSeedName = ""
         statusMessage = "正在本地识别图片文字..."
 
         try {
             val rawText = recognizeText(context, uri)
             val normalizedText = rawText.trim()
             if (normalizedText.isBlank()) {
-                statusMessage = "本地 OCR 没有识别到清晰文字，后续可以继续接服务端 OCR 兜底。"
-                isProcessing = false
+                runServerOcrFallback(
+                    uri = uri,
+                    clientRecognizedText = null,
+                    fallbackReason = "本地 OCR 没有识别到清晰文字，正在切到服务端 OCR 兜底。",
+                )
                 return
             }
 
@@ -100,22 +177,34 @@ fun OcrRecognitionScreen(
                     recognizedText = result.recognizedText
                     attemptedQueries.addAll(result.attemptedQueries)
                     searchState = FoodSearchResult.Success(emptyList(), "weak")
-                    statusMessage = "本地 OCR 已提取文字，但还没有命中条目，下一步可手动创建待审核条目。"
+                    runServerOcrFallback(
+                        uri = uri,
+                        clientRecognizedText = result.recognizedText,
+                        fallbackReason = "本地 OCR 已提取文字但没有命中条目，正在继续服务端 OCR 兜底。",
+                    )
+                    return
                 }
 
                 is FoodOcrSearchResult.Failure -> {
                     recognizedText = result.recognizedText.ifBlank { null }
                     attemptedQueries.addAll(result.attemptedQueries)
-                    searchState = FoodSearchResult.Failure(result.message)
-                    statusMessage = result.message
+                    runServerOcrFallback(
+                        uri = uri,
+                        clientRecognizedText = result.recognizedText,
+                        fallbackReason = "本地 OCR 识别失败，正在切到服务端 OCR 兜底。",
+                    )
+                    return
                 }
             }
         } catch (exception: IOException) {
             searchState = FoodSearchResult.Failure("无法读取所选图片，请重新选择。")
             statusMessage = "读取图片失败，请重新选择一张清晰图片。"
         } catch (exception: Exception) {
-            searchState = FoodSearchResult.Failure("本地 OCR 识别失败，请稍后重试。")
-            statusMessage = "本地 OCR 识别失败，后续可接服务端 OCR 兜底。"
+            runServerOcrFallback(
+                uri = uri,
+                clientRecognizedText = null,
+                fallbackReason = "本地 OCR 识别失败，正在切到服务端 OCR 兜底。",
+            )
         } finally {
             isProcessing = false
         }
@@ -232,9 +321,9 @@ fun OcrRecognitionScreen(
             isSearching = isProcessing,
             emptyHint = "选择图片并识别文字后，会在这里展示文本召回结果。",
             onCreateRecord = {},
-            noResultActionLabel = if (recognizedText != null) "识别失败？手动创建" else null,
-            onNoResultAction = if (recognizedText != null) {
-                { onOpenManualCreate(attemptedQueries.firstOrNull() ?: recognizedText.orEmpty()) }
+            noResultActionLabel = if (canOpenManualCreate) "识别失败？手动创建" else null,
+            onNoResultAction = if (canOpenManualCreate) {
+                { onOpenManualCreate(manualCreateSeedName) }
             } else {
                 null
             },
@@ -246,6 +335,25 @@ fun OcrRecognitionScreen(
             Text("返回搜索")
         }
     }
+}
+
+private data class ImagePayload(
+    val bytes: ByteArray,
+    val fileName: String,
+    val contentType: String,
+)
+
+private fun readImagePayload(context: Context, imageUri: Uri): ImagePayload {
+    val resolver = context.contentResolver
+    val bytes = resolver.openInputStream(imageUri)?.use { it.readBytes() }
+        ?: throw IOException("无法读取图片数据")
+    val contentType = resolver.getType(imageUri) ?: "image/jpeg"
+    val fileName = "ocr-${UUID.randomUUID()}.${contentType.substringAfter('/', "jpg")}"
+    return ImagePayload(
+        bytes = bytes,
+        fileName = fileName,
+        contentType = contentType,
+    )
 }
 
 private suspend fun recognizeText(

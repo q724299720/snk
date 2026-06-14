@@ -2,10 +2,13 @@ package com.snk.app.data.food
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Part
 import retrofit2.http.Query
 
 interface FoodSearchApi {
@@ -23,6 +26,13 @@ interface FoodSearchApi {
     suspend fun createManualFoodItem(
         @Body request: CreateManualFoodItemRequest,
     ): FoodSearchItemResponse
+
+    @Multipart
+    @POST("/api/recognition/ocr")
+    suspend fun recognizeByServerOcr(
+        @Part file: MultipartBody.Part,
+        @Part("clientRecognizedText") clientRecognizedText: String? = null,
+    ): OcrRecognitionResponse
 }
 
 @Serializable
@@ -71,4 +81,18 @@ data class FoodSearchItemResponse(
     val coverImageUrl: String? = null,
     @SerialName("auditStatus")
     val auditStatus: String = "approved",
+)
+
+@Serializable
+data class OcrRecognitionResponse(
+    @SerialName("recognizedText")
+    val recognizedText: String = "",
+    @SerialName("attemptedQueries")
+    val attemptedQueries: List<String> = emptyList(),
+    @SerialName("matchedQuery")
+    val matchedQuery: String? = null,
+    @SerialName("qualitySignal")
+    val qualitySignal: String = "weak",
+    @SerialName("items")
+    val items: List<FoodSearchItemResponse> = emptyList(),
 )

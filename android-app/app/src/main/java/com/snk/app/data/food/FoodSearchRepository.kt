@@ -1,6 +1,9 @@
 package com.snk.app.data.food
 
 import java.io.IOException
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
 
 class FoodSearchRepository(
@@ -9,7 +12,7 @@ class FoodSearchRepository(
     suspend fun search(query: String): FoodSearchResult {
         val normalizedQuery = query.trim()
         if (normalizedQuery.isBlank()) {
-            return FoodSearchResult.Failure("请输入要搜索的食品名称。")
+            return FoodSearchResult.Failure("请输入要搜索的食物名称。")
         }
 
         return try {
@@ -110,6 +113,52 @@ class FoodSearchRepository(
             attemptedQueries = attemptedQueries,
         )
     }
+
+    suspend fun searchByServerOcr(
+        imageBytes: ByteArray,
+        fileName: String,
+        contentType: String,
+        clientRecognizedText: String? = null,
+    ): FoodOcrSearchResult {
+        if (imageBytes.isEmpty()) {
+            return FoodOcrSearchResult.Failure(
+                recognizedText = clientRecognizedText.orEmpty(),
+                attemptedQueries = emptyList(),
+                message = "没有可上传的图片内容，暂时无法继续服务端 OCR。",
+            )
+        }
+
+        return try {
+            val requestBody = imageBytes.toRequestBody(contentType.toMediaTypeOrNull())
+            val response = api.recognizeByServerOcr(
+                file = MultipartBody.Part.createFormData("file", fileName, requestBody),
+                clientRecognizedText = clientRecognizedText?.trim()?.ifBlank { null },
+            )
+            val result = FoodSearchResult.Success(
+                items = response.items.map(FoodSearchItemResponse::toModel),
+                qualitySignal = response.qualitySignal,
+            )
+            if (result.items.isNotEmpty()) {
+                FoodOcrSearchResult.Success(
+                    recognizedText = response.recognizedText,
+                    attemptedQueries = response.attemptedQueries,
+                    matchedQuery = response.matchedQuery ?: response.attemptedQueries.firstOrNull().orEmpty(),
+                    result = result,
+                )
+            } else {
+                FoodOcrSearchResult.NoMatch(
+                    recognizedText = response.recognizedText,
+                    attemptedQueries = response.attemptedQueries,
+                )
+            }
+        } catch (exception: Exception) {
+            FoodOcrSearchResult.Failure(
+                recognizedText = clientRecognizedText.orEmpty(),
+                attemptedQueries = emptyList(),
+                message = exception.asServerOcrMessage(),
+            )
+        }
+    }
 }
 
 data class FoodSearchItem(
@@ -193,4 +242,14 @@ private fun Exception.asManualCreateMessage(): String = when (this) {
     is IOException -> "无法连接服务端，暂时不能创建待审核条目。"
     is HttpException -> "服务端拒绝了这次待审核条目创建。"
     else -> "创建待审核条目失败，请稍后重试。"
+}
+
+private fun Exception.asServerOcrMessage(): String = when (this) {
+    is IOException -> "无法连接服务端 OCR 接口，请稍后再试或直接手动创建。"
+    is HttpException -> if (code() == 503) {
+        "服务端 OCR 还未配置，当前先使用手动创建兜底。"
+    } else {
+        "服务端 OCR 暂时不可用，请稍后重试。"
+    }
+    else -> "服务端 OCR 识别失败，请稍后重试。"
 }

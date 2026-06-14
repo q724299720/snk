@@ -53,6 +53,7 @@
 - 图片存储与访问控制
 - 缩略图生成与图片派生资源管理
 - 图像识别与相似图检索
+- 服务端 OCR provider 抽象与配置化切换
 - 审核、统计、推荐、运营配置
 
 ## 安卓端技术选型
@@ -285,6 +286,12 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 已在安卓端草稿页展示 `draft / syncing / synced / failed` 状态，并支持 `failed` 草稿手动重试
 - 已补充安卓端提交协调器单测，并通过真机 `adb` 验证“断网保存草稿 -> 恢复网络自动补传”闭环
 
+当前仓库 Phase 3 新增落地产物：
+
+- 已落地 `POST /api/recognition/ocr` 服务端 OCR 兜底接口
+- 已在服务端引入 `ServerOcrProvider` 抽象与 `snk.recognition.ocr.*` 配置项，当前默认 `disabled`，开发期可切到 `stub`
+- 已在安卓端 OCR 页面接通“本地 OCR -> 服务端 OCR -> 手动创建”回退链路
+
 ## 变更记录维护规则
 
 - 每次修改本文件时，必须在下方追加一条记录
@@ -327,3 +334,4 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-13 | Codex | 补充反向代理与绝对资源地址配置约束 | 真机联调与宝塔部署需要稳定的转发头处理和外部资源地址生成策略 |
 | 2026-06-14 | Codex | 回填正式公网域名到服务端资源地址与安卓默认接口地址 | 已确认统一使用 `https://snk.qiuxinmin.cn` 做服务器部署与真机联调 |
 | 2026-06-14 | Codex | 回填 Phase 2 第五个落地产物 | 当前仓库已落地 Room 草稿存储、WorkManager 自动补传与草稿页重试闭环 |
+| 2026-06-14 | Codex | 回填 Phase 3 的服务端 OCR 兜底接口与客户端自动回退链路 | 当前仓库已具备本地 OCR 失败后的服务端 OCR 回退能力，并预留 provider 配置扩展点 |

@@ -118,6 +118,14 @@
 - 本地 OCR 结果乱码严重
 - 本地 OCR 结果置信度过低
 - 需要更强云端 OCR 能力做补充识别
+- 当前接口使用 `multipart/form-data`
+- 当前首版字段：
+- `file`：必填图片文件
+- `clientRecognizedText`：可选，本地 OCR 已提取出的文本，供服务端 OCR 或兜底策略复用
+- 当前响应字段：
+- `recognizedText`、`attemptedQueries`、`matchedQuery`、`qualitySignal`、`items`
+- 当前若服务端 OCR provider 未配置，返回 `503`
+- 当前后端已预留 provider 抽象，MVP 首版默认支持 `disabled / stub` 两种模式，后续再接真实云 OCR
 
 ### 图像识别兜底原则
 
@@ -161,3 +169,4 @@
 | 2026-06-14 | Codex | 补充当前生产域名 | 已确认图片资源与 App 真机访问统一使用 `https://snk.qiuxinmin.cn` |
 | 2026-06-14 | Codex | 补充手动创建待审核条目接口与 `auditStatus` 响应字段 | Phase 3 已落地搜索失败后的手动创建条目闭环，接口文档需与实现对齐 |
 | 2026-06-14 | Codex | 补充手动创建条目的可选 `barcode` 入参与扫码未命中的前端流转 | Phase 3 需覆盖包装食品扫码未命中的 UGC 沉淀场景 |
+| 2026-06-14 | Codex | 补充服务端 OCR 接口的 multipart 入参、响应字段与 provider 降级语义 | Phase 3 已落地本地 OCR 失败后的服务端 OCR 回退链路 |
