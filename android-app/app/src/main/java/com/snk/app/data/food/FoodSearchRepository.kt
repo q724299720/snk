@@ -76,6 +76,22 @@ class FoodSearchRepository(
         }
     }
 
+    suspend fun recommendRelatedFoods(foodItemId: Long, limit: Int = 5): FoodSearchResult {
+        if (foodItemId <= 0L) {
+            return FoodSearchResult.Failure("请输入有效的食物条目。")
+        }
+
+        return try {
+            val response = api.getRelatedFoods(foodItemId, limit)
+            FoodSearchResult.Success(
+                items = response.items.map(FoodSearchItemResponse::toModel),
+                qualitySignal = response.qualitySignal,
+            )
+        } catch (exception: Exception) {
+            FoodSearchResult.Failure(exception.asUserFacingMessage())
+        }
+    }
+
     suspend fun searchByRecognizedText(recognizedText: String): FoodOcrSearchResult {
         val attemptedQueries = OcrSearchQueryBuilder.build(recognizedText)
         if (attemptedQueries.isEmpty()) {

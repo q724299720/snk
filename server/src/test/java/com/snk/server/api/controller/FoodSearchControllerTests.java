@@ -118,6 +118,34 @@ class FoodSearchControllerTests {
 	}
 
 	@Test
+	void shouldReturnRelatedFoods() throws Exception {
+		when(foodSearchService.recommendRelatedFoods(1L, 5))
+			.thenReturn(
+				new FoodSearchResult(
+					List.of(
+						new FoodSearchItem(
+							2L,
+							"乐事番茄味薯片",
+							"packaged_product",
+							"snack",
+							"chips",
+							"乐事",
+							"6900000000022",
+							null,
+							"approved"
+						)
+					),
+					"related"
+				)
+			);
+
+		mockMvc.perform(get("/api/foods/1/related"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.qualitySignal").value("related"))
+			.andExpect(jsonPath("$.items[0].name").value("乐事番茄味薯片"));
+	}
+
+	@Test
 	void shouldCreatePendingFoodItem() throws Exception {
 		when(
 			manualFoodItemService.createPendingItem(

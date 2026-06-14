@@ -56,6 +56,15 @@ public class FoodSearchController {
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "food not found"));
 	}
 
+	@GetMapping("/{foodItemId}/related")
+	public FoodSearchResponse related(@PathVariable("foodItemId") Long foodItemId) {
+		FoodSearchResult result = foodSearchService.recommendRelatedFoods(foodItemId, 5);
+		List<FoodSearchItemResponse> items = result.items().stream()
+			.map(FoodSearchItemResponse::from)
+			.toList();
+		return new FoodSearchResponse(items, result.qualitySignal());
+	}
+
 	@PostMapping("/manual")
 	@ResponseStatus(HttpStatus.CREATED)
 	public FoodSearchItemResponse createManualFoodItem(@Valid @RequestBody CreateManualFoodItemRequest request) {

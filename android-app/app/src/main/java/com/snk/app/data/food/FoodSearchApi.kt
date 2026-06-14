@@ -22,6 +22,12 @@ interface FoodSearchApi {
         @Path("code") barcode: String,
     ): FoodSearchItemResponse
 
+    @GET("/api/foods/{foodItemId}/related")
+    suspend fun getRelatedFoods(
+        @Path("foodItemId") foodItemId: Long,
+        @Query("limit") limit: Int = 5,
+    ): FoodSearchResponse
+
     @POST("/api/foods/manual")
     suspend fun createManualFoodItem(
         @Body request: CreateManualFoodItemRequest,

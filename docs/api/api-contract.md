@@ -24,9 +24,9 @@
 
 - `GET /api/foods/search?q=`
 - `GET /api/foods/barcode/{code}`
+- `GET /api/foods/{foodItemId}/related`
 - `POST /api/foods/manual`
 - `GET /api/foods/{id}`
-- `GET /api/foods/recommend`
 
 文本搜索当前约束：
 
@@ -42,6 +42,13 @@
 - 空白条码直接返回 `400`
 - 未命中时返回 `404`
 - 当前响应体字段与 `items[*]` 一致，包含 `auditStatus`
+
+相似推荐当前约束：
+
+- `GET /api/foods/{foodItemId}/related` 用于返回当前条目的相似食物推荐
+- 当前推荐首版按同品牌、同二级分类、同一级分类和同名称词召回
+- 当前响应形态与搜索结果一致，返回 `items` 与 `qualitySignal`
+- `qualitySignal` 当前可取 `related / weak`
 
 手动创建条目当前约束：
 
@@ -253,3 +260,4 @@
 | 2026-06-14 | Codex | 补充食物条目管理列表 / 详情接口 | Phase 4 已落地后台食物条目基础管理闭环 |
 | 2026-06-14 | Codex | 补充食物条目报错清零接口 | Phase 4 已补齐报错 / 纠错处理流程的最小处理动作 |
 | 2026-06-14 | Codex | 补充后台统计报表接口 | Phase 4 已落地后台治理汇总概览闭环 |
+| 2026-06-14 | Codex | 补充相似食物推荐接口 | Phase 5 已落地记录页可消费的最小推荐闭环 |

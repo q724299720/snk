@@ -66,6 +66,38 @@ class FoodSearchServiceTests {
 		assertThat(result).isEmpty();
 	}
 
+	@Test
+	void shouldRecommendRelatedFoodsFromSimilarFields() {
+		FoodItemEntity seed = foodItem("乐事黄瓜味薯片", "乐事", "6900000000011", "approved");
+		setId(seed, 1L);
+		FoodItemEntity related = foodItem("乐事番茄味薯片", "乐事", "6900000000022", "approved");
+		setId(related, 2L);
+		when(foodItemRepository.findById(1L)).thenReturn(Optional.of(seed));
+		when(foodItemRepository.searchApproved("乐事"))
+			.thenReturn(List.of(seed, related));
+		when(foodItemRepository.searchApproved("chips"))
+			.thenReturn(List.of(related));
+		when(foodItemRepository.searchApproved("snack"))
+			.thenReturn(List.of(related));
+		when(foodItemRepository.searchApproved("乐事黄瓜味薯片"))
+			.thenReturn(List.of(seed));
+
+		FoodSearchResult result = foodSearchService.recommendRelatedFoods(1L, 5);
+
+		assertThat(result.items()).hasSize(1);
+		assertThat(result.items().getFirst().name()).isEqualTo("乐事番茄味薯片");
+		assertThat(result.qualitySignal()).isEqualTo("related");
+	}
+
+	@Test
+	void shouldRejectUnknownFoodWhenRecommendationSeedMissing() {
+		when(foodItemRepository.findById(99L)).thenReturn(Optional.empty());
+
+		org.assertj.core.api.Assertions.assertThatThrownBy(() -> foodSearchService.recommendRelatedFoods(99L, 5))
+			.isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+			.hasMessageContaining("404 NOT_FOUND");
+	}
+
 	private FoodItemEntity foodItem(String name, String brand, String barcode, String auditStatus) {
 		FoodItemEntity entity = new FoodItemEntity();
 		entity.setName(name);
@@ -81,5 +113,15 @@ class FoodSearchServiceTests {
 		entity.setCreatedAt(OffsetDateTime.parse("2026-06-13T00:00:00Z"));
 		entity.setUpdatedAt(OffsetDateTime.parse("2026-06-13T00:00:00Z"));
 		return entity;
+	}
+
+	private void setId(FoodItemEntity entity, Long id) {
+		try {
+			var field = FoodItemEntity.class.getDeclaredField("id");
+			field.setAccessible(true);
+			field.set(entity, id);
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException(exception);
+		}
 	}
 }

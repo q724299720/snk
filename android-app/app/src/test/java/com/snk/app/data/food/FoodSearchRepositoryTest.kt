@@ -351,4 +351,40 @@ class FoodSearchRepositoryTest {
         assertTrue(body.contains("\"userId\":2"))
         assertTrue(body.contains("\"inputImageUrl\":\"https://snk.qiuxinmin.cn/uploads/images/demo.png\""))
     }
+
+    @Test
+    fun `recommendRelatedFoods returns related items when backend succeeds`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody(
+                    """
+                    {
+                      "qualitySignal": "related",
+                      "items": [
+                        {
+                          "id": 2,
+                          "name": "乐事番茄味薯片",
+                          "itemType": "packaged_product",
+                          "category": "snack",
+                          "subcategory": "chips",
+                          "brand": "乐事",
+                          "barcode": "6900000000022",
+                          "coverImageUrl": null,
+                          "auditStatus": "approved"
+                        }
+                      ]
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.recommendRelatedFoods(1L)
+
+        assertTrue(result is FoodSearchResult.Success)
+        val success = result as FoodSearchResult.Success
+        assertEquals("related", success.qualitySignal)
+        assertEquals("乐事番茄味薯片", success.items.first().name)
+        assertEquals("/api/foods/1/related?limit=5", server.takeRequest().path)
+    }
 }

@@ -197,6 +197,10 @@ fun SnkApp() {
                             sourceType = selectedSourceType,
                             sessionState = sessionState,
                             submissionCoordinator = application.container.foodRecordSubmissionCoordinator,
+                            onSwitchRecommendedFood = { item ->
+                                selectedFood = item
+                                selectedSourceType = "related_recommendation"
+                            },
                             onBackToSearch = {
                                 navController.popBackStack()
                             },

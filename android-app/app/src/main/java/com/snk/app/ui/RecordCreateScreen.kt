@@ -17,14 +17,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.snk.app.SnkApplication
 import com.snk.app.data.food.FoodSearchItem
+import com.snk.app.data.food.FoodSearchResult
 import com.snk.app.data.record.FoodRecordSubmissionCoordinator
 import com.snk.app.data.record.FoodRecordSubmissionResult
 import kotlinx.coroutines.launch
@@ -35,14 +39,19 @@ fun RecordCreateScreen(
     sourceType: String,
     sessionState: SessionUiState,
     submissionCoordinator: FoodRecordSubmissionCoordinator,
+    onSwitchRecommendedFood: (FoodSearchItem) -> Unit,
     onBackToSearch: () -> Unit,
     onOpenDrafts: () -> Unit,
 ) {
+    val application = LocalContext.current.applicationContext as SnkApplication
     val coroutineScope = rememberCoroutineScope()
     var rating by remember { mutableIntStateOf(4) }
     var comment by remember { mutableStateOf("") }
     var submitState by remember { mutableStateOf<FoodRecordSubmissionResult?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
+    val relatedFoodState by produceState<FoodSearchResult?>(initialValue = null, key1 = selectedFood.id) {
+        value = application.container.foodSearchRepository.recommendRelatedFoods(selectedFood.id)
+    }
 
     Column(
         modifier = Modifier
@@ -98,6 +107,51 @@ fun RecordCreateScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFF8A5A44),
                     )
+                }
+            }
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F1E7)),
+        ) {
+            Column(
+                modifier = Modifier.padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = "相似推荐",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                when (val related = relatedFoodState) {
+                    null -> Text(
+                        text = "正在加载同类食物推荐...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF5B4A42),
+                    )
+
+                    is FoodSearchResult.Failure -> Text(
+                        text = related.message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF8A2E1C),
+                    )
+
+                    is FoodSearchResult.Success -> {
+                        Text(
+                            text = if (related.items.isEmpty()) "暂时没有找到相似条目。" else "可以快速切换到以下相似条目：",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF5B4A42),
+                        )
+                        related.items.take(3).forEach { item ->
+                            Button(
+                                onClick = { onSwitchRecommendedFood(item) },
+                                shape = RoundedCornerShape(14.dp),
+                            ) {
+                                Text(item.name)
+                            }
+                        }
+                    }
                 }
             }
         }
