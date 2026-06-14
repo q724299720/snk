@@ -1,15 +1,22 @@
 package com.snk.server.api.controller;
 
+import com.snk.server.api.dto.CreateManualFoodItemRequest;
 import com.snk.server.api.dto.FoodSearchItemResponse;
 import com.snk.server.api.dto.FoodSearchResponse;
+import com.snk.server.domain.food.CreateManualFoodItemCommand;
 import com.snk.server.domain.food.FoodSearchResult;
 import com.snk.server.domain.food.FoodSearchService;
+import com.snk.server.domain.food.ManualFoodItemService;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -18,9 +25,11 @@ import org.springframework.web.server.ResponseStatusException;
 public class FoodSearchController {
 
 	private final FoodSearchService foodSearchService;
+	private final ManualFoodItemService manualFoodItemService;
 
-	public FoodSearchController(FoodSearchService foodSearchService) {
+	public FoodSearchController(FoodSearchService foodSearchService, ManualFoodItemService manualFoodItemService) {
 		this.foodSearchService = foodSearchService;
+		this.manualFoodItemService = manualFoodItemService;
 	}
 
 	@GetMapping("/search")
@@ -39,7 +48,8 @@ public class FoodSearchController {
 				item.subcategory(),
 				item.brand(),
 				item.barcode(),
-				item.coverImageUrl()
+				item.coverImageUrl(),
+				item.auditStatus()
 			))
 			.toList();
 		return new FoodSearchResponse(items, result.qualitySignal());
@@ -60,8 +70,35 @@ public class FoodSearchController {
 				item.subcategory(),
 				item.brand(),
 				item.barcode(),
-				item.coverImageUrl()
+				item.coverImageUrl(),
+				item.auditStatus()
 			))
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "food not found"));
+	}
+
+	@PostMapping("/manual")
+	@ResponseStatus(HttpStatus.CREATED)
+	public FoodSearchItemResponse createManualFoodItem(@Valid @RequestBody CreateManualFoodItemRequest request) {
+		var item = manualFoodItemService.createPendingItem(
+			new CreateManualFoodItemCommand(
+				request.userId(),
+				request.name(),
+				request.itemType(),
+				request.category(),
+				request.subcategory(),
+				request.brand()
+			)
+		);
+		return new FoodSearchItemResponse(
+			item.id(),
+			item.name(),
+			item.itemType(),
+			item.category(),
+			item.subcategory(),
+			item.brand(),
+			item.barcode(),
+			item.coverImageUrl(),
+			item.auditStatus()
+		);
 	}
 }

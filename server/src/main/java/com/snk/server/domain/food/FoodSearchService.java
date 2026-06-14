@@ -41,7 +41,8 @@ public class FoodSearchService {
 			entity.getSubcategory(),
 			entity.getBrand(),
 			entity.getBarcode(),
-			entity.getCoverImageUrl()
+			entity.getCoverImageUrl(),
+			entity.getAuditStatus()
 		);
 	}
 

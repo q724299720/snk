@@ -46,6 +46,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @Composable
 fun OcrRecognitionScreen(
     onFoodMatched: (FoodSearchItem) -> Unit,
+    onOpenManualCreate: (String) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -86,7 +87,7 @@ fun OcrRecognitionScreen(
                     recognizedText = result.recognizedText
                     attemptedQueries.addAll(result.attemptedQueries)
                     searchState = FoodSearchResult.Success(emptyList(), "weak")
-                    statusMessage = "本地 OCR 已提取文字，但还没有命中条目，下一步可接服务端 OCR 或手动创建。"
+                    statusMessage = "本地 OCR 已提取文字，但还没有命中条目，下一步可手动创建待审核条目。"
                 }
 
                 is FoodOcrSearchResult.Failure -> {
@@ -218,6 +219,12 @@ fun OcrRecognitionScreen(
             isSearching = isProcessing,
             emptyHint = "选择图片并识别文字后，会在这里展示文本召回结果。",
             onCreateRecord = onFoodMatched,
+            noResultActionLabel = if (recognizedText != null) "识别失败？手动创建" else null,
+            onNoResultAction = if (recognizedText != null) {
+                { onOpenManualCreate(attemptedQueries.firstOrNull() ?: recognizedText.orEmpty()) }
+            } else {
+                null
+            },
         )
         Button(
             onClick = onBack,

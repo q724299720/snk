@@ -2,14 +2,14 @@
 
 ## 文档职责
 
-本文件记录核心数据模型、关键字段语义、数据库迁移与索引策略。
+本文档记录核心数据模型、关键字段语义、数据库迁移与索引策略。
 
 ## 迁移策略
 
 - 数据库结构必须通过 Flyway 或 Liquibase 管理
 - 不允许依赖 `hibernate.hbm2ddl.auto=update`
 - 迁移脚本建议统一放在 `db/migration` 或框架约定目录
-- 涉及字段、索引、扩展变更时，必须同步更新本文件
+- 涉及字段、索引、扩展变更时，必须同步更新本文档
 
 ## PostgreSQL 基线
 
@@ -50,6 +50,7 @@
 - `barcode`
 - `source`：`system / user_generated / external_api`
 - `audit_status`：`pending / approved / rejected`
+- `created_by_user_id`
 - `search_keywords`
 - `report_count`
 - `description`
@@ -67,6 +68,7 @@
 - 包装饮料归入 `packaged_product`，现制饮品归入 `dish`
 - `search_keywords`：用于沉淀别名、OCR 扫描文本、包装关键词，提高模糊搜索召回率
 - `report_count`：用于累计用户报错 / 纠错次数，辅助后台识别低质量 UGC 条目
+- `created_by_user_id`：仅对 `user_generated` 条目有值，用于标记创建者、控制 `pending` 可见性，并支持后续审核追溯
 
 ### FoodImage
 
@@ -164,9 +166,10 @@
 - `updated_at`
 
 字段说明：
+
 - `ReviewConfigWord` 用于承载审核规则依赖的小型手工词典
 - MVP 阶段优先用于“已知有效词”维护，支持后台热更新
-- 词典变更在数据库提交后立即生效，后续审核任务按最新生效数据读取
+- 词典变更在数据库提交后立刻生效，后续审核任务按最新生效数据读取
 - 词典后台修改必须具备可追溯审计能力，并采用独立的追加式变更日志保留历史
 - 该表不承载自动拒绝阈值等规则参数，相关阈值继续由服务端代码配置维护
 - `word_type` 在 MVP 阶段至少支持 `valid_food_word`
@@ -176,7 +179,7 @@
 - `word_type` 变更在 MVP 阶段同样属于同一条 `ReviewConfigWord` 记录上的普通更新
 - `source` 字段变更在 MVP 阶段同样属于同一条 `ReviewConfigWord` 记录上的普通更新
 - `source` 可标记 `manual` 等来源，便于后续区分系统生成与人工维护
-- `word` 与 `word_type` 的组合在数据库层应保持唯一
+- `word + word_type` 组合在数据库层应保持唯一
 - `updated_by` 在首版迁移中按轻量字符串字段落地，避免过早绑定后台用户表主键形态
 
 ### ReviewConfigWordAuditLog
@@ -192,9 +195,10 @@
 - `created_at`
 
 字段说明：
+
 - `ReviewConfigWordAuditLog` 用于记录词典后台修改的追加式变更日志
 - 每次新增、编辑、启用、停用都追加新日志，不回写历史日志
-- 对已停用词条的重新启用，记录为原 `review_config_word_id` 上的新增日志事件，不生成新的词条主记录
+- 对已停用词条的重新启用，记录为原 `review_config_word_id` 上的新日志事件，不生成新的词条主记录
 - 对 `word` 文本修正，记录为原 `review_config_word_id` 上的 `update` 事件，不拆成 `disable + create`
 - 对 `word_type` 变更，记录为原 `review_config_word_id` 上的 `update` 事件，不额外拆分迁移流程
 - 对 `source` 变更，记录为原 `review_config_word_id` 上的 `update` 事件
@@ -210,6 +214,7 @@
 - `FoodItem.name`、`alias`、`search_keywords` 建立模糊搜索相关索引
 - `FoodItem.barcode` 对 `packaged_product` 建立唯一索引或等价唯一约束
 - `FoodItem.audit_status` 建立筛选索引
+- `FoodItem.created_by_user_id + audit_status + created_at` 建立组合索引，支撑创建者查看待审核条目
 - `FoodRecord.user_id + record_time` 建立组合索引
 - 向量字段与图片 embedding 字段按 `pgvector` 能力设计索引
 - 当前首版迁移已为 `FoodItem.name / alias / search_keywords` 落地 `pg_trgm` GIN 索引
@@ -231,7 +236,6 @@
 
 - `pending` 条目默认对创建者可见、对审核后台可见、对其他普通用户不可见
 - 创建者看到自己的 `pending` 条目时，UI 应明确显示“待审核”状态
-- 对创建者本人执行搜索时，`approved` 条目默认排在前，`pending` 条目靠后展示
 - 若 `FoodRecord` 绑定 `pending FoodItem`，则在用户记录列表中也应显示轻量待审核提示
 - 审核通过后方可进入全局搜索结果
 - 报错 / 纠错会影响 `report_count`，供后台排查
@@ -242,13 +246,13 @@
 
 ## 变更记录维护规则
 
-- 每次修改本文件时，必须在下方追加一条记录
+- 每次修改本文档时，必须在下方追加一条记录
 
 ## 变更记录
 
 | 日期 | 修改人 | 变更范围 | 原因 |
 | --- | --- | --- | --- |
-| 2026-06-13 | Codex | 从 `agents.md` 拆出数据模型、迁移策略与索引建议 | 将数据库设计独立管理，便于后续迁移迭代 |
+| 2026-06-13 | Codex | 从 `agents.md` 拆出数据模型、迁移策略与索引建议 | 将数据库设计独立管理，便于后续迁移演进 |
 | 2026-06-13 | Codex | 为 `FoodItem` 增加 `item_type` 语义约束 | 已确认目录实体统一建模，但需要类型字段区分包装食品与菜品 |
 | 2026-06-13 | Codex | 补充 `FoodItem` 唯一性规则 | 已确认包装食品按条形码唯一、菜品按通用菜名统一建模 |
 | 2026-06-13 | Codex | 明确 `FoodRecord` 为一次事件记录 | 已确认记录对象不是长期卡片，而是一次具体发生的行为 |
@@ -265,20 +269,18 @@
 | 2026-06-13 | Codex | 明确无条码包装食品仍归属 `packaged_product` | 已确认条形码不是包装食品类型判断的唯一前提 |
 | 2026-06-13 | Codex | 收敛 `item_type` 并明确饮料归属规则 | 已确认 `drink` 不单列为类型，包装饮料与现制饮品按不同语义归类 |
 | 2026-06-13 | Codex | 明确保留 `fruit` 为独立 `item_type` | 已确认水果在 MVP 阶段具有独立语义，不并入 `dish` |
-| 2026-06-13 | Codex | 明确后台需要支持条目合并和记录迁移 | 已确认错误 pending 条目不能只删除，需修正历史记录归属 |
+| 2026-06-13 | Codex | 明确后台需要支持条目合并和记录迁移 | 已确认错误 `pending` 条目不能只删除，需要修正历史记录归属 |
 | 2026-06-13 | Codex | 明确最近记录按 `record_time` 排序 | 已确认用户侧记录时间感知优先于系统创建时间 |
 | 2026-06-13 | Codex | 明确 `record_time` 默认值与可编辑性 | 已确认快速记录默认当前时间，但允许补记和手动修正 |
 | 2026-06-13 | Codex | 明确逻辑删除记录时图片不立即物理删除 | 已确认媒体资源回收应与记录删除解耦，避免误删和追溯丢失 |
-| 2026-06-13 | Codex | 明确 pending 条目对创建者需展示待审核标记 | 已确认用户可见不等于正式生效，需清晰区分状态 |
-| 2026-06-13 | Codex | 明确创建者搜索时正式条目优先排序 | 已确认 pending 条目不应优先于稳定正式条目展示 |
-| 2026-06-13 | Codex | 明确绑定 pending 条目的记录也需显示待审核提示 | 已确认记录列表也应保持状态感知一致性 |
+| 2026-06-13 | Codex | 明确 pending 条目对创建者需显示待审核标记 | 已确认用户可见不等于正式生效，需清晰区分状态 |
 | 2026-06-13 | Codex | 增加 `ReviewConfigWord` 配置表模型 | 已确认小型手工词典应落在数据库并支持后台热更新 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord` 更新后立刻生效 | 已确认审核任务无需等待缓存刷新即可读取最新词典 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord` 需要可追溯审计 | 已确认后台词典治理必须保留操作历史以追查误判来源 |
 | 2026-06-13 | Codex | 增加 `ReviewConfigWordAuditLog` 追加式日志模型 | 已确认词典审计需要保留前后值与完整变更历史 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWordAuditLog` 前后值采用 JSON 快照 | 已确认日志字段需要兼容后续词典字段扩展 |
 | 2026-06-13 | Codex | 明确停用类操作的 `after_value` 也保存完整快照 | 已确认状态变更日志不能退化成仅记录差异字段 |
-| 2026-06-13 | Codex | 明确 `ReviewConfigWord` 重新启用时恢复原记录 | 已确认词典与日志都应围绕同一主记录连续演化 |
+| 2026-06-13 | Codex | 明确 `ReviewConfigWord` 重新启用时恢复原记录 | 已确认词典与日志都应围绕同一个主记录连续演化 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord.word` 修正属于 `update` | 已确认轻量文本修正不应拆成停用旧词与新建新词 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord.word_type` 变更属于 `update` | 已确认 MVP 阶段不单独处理跨类型迁移 |
 | 2026-06-13 | Codex | 明确 `ReviewConfigWord.source` 变更属于 `update` | 已确认词典来源字段变更也统一按 update 治理 |
@@ -288,3 +290,4 @@
 | 2026-06-13 | Codex | 回填核心业务表物理表名与 `subcategory` 字段 | 当前 Phase 1 已新增核心表迁移，需要让文档与实际表结构保持一致 |
 | 2026-06-13 | Codex | 回填首版 `pg_trgm` 索引落地情况 | 当前 Phase 1 已将文本搜索相关索引写入 Flyway 迁移，文档需同步反映 |
 | 2026-06-13 | Codex | 为 `users` 补充匿名安装标识与最近访问时间字段 | 当前 Phase 1 已开始落地匿名用户初始化接口，需要让数据库模型与实现对齐 |
+| 2026-06-14 | Codex | 为 `FoodItem` 补充 `created_by_user_id` 字段说明 | Phase 3 已落地手动创建待审核条目，需要记录创建者归属与可见性依赖字段 |

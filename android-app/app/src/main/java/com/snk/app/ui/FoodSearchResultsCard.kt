@@ -1,5 +1,6 @@
 package com.snk.app.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -23,6 +24,8 @@ fun FoodSearchResultsCard(
     isSearching: Boolean,
     emptyHint: String,
     onCreateRecord: (FoodSearchItem) -> Unit,
+    noResultActionLabel: String? = null,
+    onNoResultAction: (() -> Unit)? = null,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -31,7 +34,7 @@ fun FoodSearchResultsCard(
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
                 text = "搜索结果",
@@ -65,10 +68,18 @@ fun FoodSearchResultsCard(
 
                 searchState is FoodSearchResult.Success && searchState.items.isEmpty() -> {
                     Text(
-                        text = "没有命中结果，后续会在这里补手动创建入口。",
+                        text = "没有命中结果，可以手动创建一个待审核条目继续记录。",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFF8A5A44),
                     )
+                    if (noResultActionLabel != null && onNoResultAction != null) {
+                        Button(
+                            onClick = onNoResultAction,
+                            shape = RoundedCornerShape(14.dp),
+                        ) {
+                            Text(noResultActionLabel)
+                        }
+                    }
                 }
 
                 searchState is FoodSearchResult.Success -> {
@@ -84,13 +95,20 @@ fun FoodSearchResultsCard(
                         ) {
                             Column(
                                 modifier = Modifier.padding(14.dp),
-                                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 Text(
                                     text = item.name,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                 )
+                                if (item.auditStatus != "approved") {
+                                    Text(
+                                        text = "待审核条目",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = Color(0xFFB53A1A),
+                                    )
+                                }
                                 Text(
                                     text = buildString {
                                         append(item.category)

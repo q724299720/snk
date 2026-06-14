@@ -2,7 +2,7 @@
 
 ## 文档职责
 
-本文件记录 App 端与后台的接口边界、职责分工和识别链路接口约束。正式 `OpenAPI` 文档后续可在此基础上生成。
+本文档记录 App 端与后台的接口边界、职责分工和识别链路接口约束。正式 `OpenAPI` 文档后续可在此基础上生成。
 
 ## App 端主要接口
 
@@ -24,6 +24,7 @@
 
 - `GET /api/foods/search?q=`
 - `GET /api/foods/barcode/{code}`
+- `POST /api/foods/manual`
 - `GET /api/foods/{id}`
 - `GET /api/foods/recommend`
 
@@ -32,8 +33,25 @@
 - `GET /api/foods/search?q=` 当前返回已审核通过的基础食物条目
 - 空白 `q` 直接返回 `400`
 - 当前响应包含 `items` 与 `qualitySignal`
-- `items[*]` 当前最小字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`
+- `items[*]` 当前最小字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`、`auditStatus`
 - `qualitySignal` 当前最小取值：`strong / weak`
+
+条码查询当前约束：
+
+- `GET /api/foods/barcode/{code}` 当前返回单个精确命中条目
+- 空白条码直接返回 `400`
+- 未命中时返回 `404`
+- 当前响应体字段与 `items[*]` 一致，包含 `auditStatus`
+
+手动创建条目当前约束：
+
+- `POST /api/foods/manual` 当前最小请求字段包含：`userId`、`name`、`itemType`、`category`
+- `subcategory`、`brand` 当前为可选字段
+- `itemType` 当前仅允许：`packaged_product / dish / fruit`
+- 服务端成功后直接返回新建的 `FoodItem` 响应体
+- 当前新建条目固定写入：`source = user_generated`、`auditStatus = pending`
+- 当前响应体字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`、`auditStatus`
+- 当前客户端在创建成功后直接进入“记录创建”页，不要求用户重新搜索
 
 ### 图片与识别
 
@@ -49,7 +67,7 @@
 - 首版字段采用 `file`
 - 服务端当前返回 `objectKey`、`resourceUrl`、`contentType`、`size`
 - `resourceUrl` 在未配置公网前缀时可返回相对路径；配置 `SNK_STORAGE_PUBLIC_BASE_URL` 后应返回可被真机直接访问的绝对地址，当前部署目标为 `https://snk.qiuxinmin.cn`
-- 首版仅接受图片 MIME 类型，不接受通用文件上传
+- 首版仅接受图片 `MIME` 类型，不接受通用文件上传
 - 开发环境当前采用本地文件系统存储，对外暴露 `resourceUrl` 静态访问路径；后续可替换为 MinIO / S3
 
 ### 记录管理
@@ -65,7 +83,7 @@
 - `POST /api/records` 当前最小请求字段包含：`userId`、`foodItemId`、`sourceType`、`isPublic`、`rating`
 - `comment`、`recordTime` 当前为可选字段
 - 当前 `rating` 允许范围为 `1-5`
-- 当前 MVP 主路径由安卓端以 `text_search` 作为 `sourceType` 创建记录
+- 当前 `sourceType` 已落地：`text_search / image_search / manual`
 - 当前成功响应返回：`id`、`userId`、`foodItemId`、`sourceType`、`isPublic`、`rating`、`comment`、`recordTime`、`createdAt`
 
 ### 标签与分类
@@ -119,13 +137,13 @@
 
 ## 接口演进规则
 
-- 先维护本文件，再落正式 `OpenAPI`
+- 先维护本文档，再落正式 `OpenAPI`
 - 涉及字段新增、状态枚举变化、鉴权变化时，必须同步更新数据库文档
 - 识别链路接口调整时，必须同步更新 `docs/recognition/recognition-plan.md`
 
 ## 变更记录维护规则
 
-- 每次修改本文件时，必须在下方追加一条记录
+- 每次修改本文档时，必须在下方追加一条记录
 
 ## 变更记录
 
@@ -137,5 +155,6 @@
 | 2026-06-13 | Codex | 回填图片上传接口的 multipart 与返回约束 | 当前 Phase 1 已开始落地上传接口与本地对象存储适配 |
 | 2026-06-13 | Codex | 回填文本搜索接口的最小响应字段、质量信号与空查询约束 | 当前 Phase 2 已开始落地服务端文本搜索接口并被安卓搜索页真实消费 |
 | 2026-06-13 | Codex | 回填记录创建接口的最小请求字段与成功响应约束 | 当前 Phase 2 已开始落地搜索命中后的远程记录创建闭环 |
-| 2026-06-13 | Codex | 补充图片上传 `resourceUrl` 的相对/绝对地址约束 | 真机联调与宝塔反向代理部署需要稳定的外部可访问资源地址策略 |
+| 2026-06-13 | Codex | 补充图片上传 `resourceUrl` 的相对 / 绝对地址约束 | 真机联调与宝塔反向代理部署需要稳定的外部可访问资源地址策略 |
 | 2026-06-14 | Codex | 补充当前生产域名 | 已确认图片资源与 App 真机访问统一使用 `https://snk.qiuxinmin.cn` |
+| 2026-06-14 | Codex | 补充手动创建待审核条目接口与 `auditStatus` 响应字段 | Phase 3 已落地搜索失败后的手动创建条目闭环，接口文档需与实现对齐 |

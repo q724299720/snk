@@ -1,6 +1,7 @@
 package com.snk.app.data.food
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import java.net.Proxy
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -13,7 +14,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Retrofit
-import java.net.Proxy
 
 class FoodSearchRepositoryTest {
     private lateinit var server: MockWebServer
@@ -64,7 +64,8 @@ class FoodSearchRepositoryTest {
                           "subcategory": "chips",
                           "brand": "乐事",
                           "barcode": "6900000000011",
-                          "coverImageUrl": null
+                          "coverImageUrl": null,
+                          "auditStatus": "approved"
                         }
                       ]
                     }
@@ -79,6 +80,7 @@ class FoodSearchRepositoryTest {
         assertEquals("strong", success.qualitySignal)
         assertEquals(1, success.items.size)
         assertEquals("乐事黄瓜味薯片", success.items.first().name)
+        assertEquals("approved", success.items.first().auditStatus)
     }
 
     @Test
@@ -96,7 +98,8 @@ class FoodSearchRepositoryTest {
                       "subcategory": "chips",
                       "brand": "乐事",
                       "barcode": "6900000000011",
-                      "coverImageUrl": null
+                      "coverImageUrl": null,
+                      "auditStatus": "approved"
                     }
                     """.trimIndent(),
                 ),
@@ -122,6 +125,44 @@ class FoodSearchRepositoryTest {
         val result = repository.lookupByBarcode(" ")
 
         assertTrue(result is FoodBarcodeLookupResult.Failure)
+    }
+
+    @Test
+    fun `createManualFoodItem returns pending item when backend succeeds`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(201)
+                .setBody(
+                    """
+                    {
+                      "id": 9,
+                      "name": "杨枝鲜花饼",
+                      "itemType": "dish",
+                      "category": "dessert",
+                      "subcategory": "cake",
+                      "brand": "SNK Bakery",
+                      "barcode": null,
+                      "coverImageUrl": null,
+                      "auditStatus": "pending"
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.createManualFoodItem(
+            userId = 2L,
+            name = "杨枝鲜花饼",
+            itemType = "dish",
+            category = "dessert",
+            subcategory = "cake",
+            brand = "SNK Bakery",
+        )
+
+        assertTrue(result is ManualFoodCreateResult.Success)
+        val success = result as ManualFoodCreateResult.Success
+        assertEquals("pending", success.item.auditStatus)
+        assertEquals("/api/foods/manual", server.takeRequest().path)
     }
 
     @Test
@@ -154,7 +195,8 @@ class FoodSearchRepositoryTest {
                           "subcategory": "chips",
                           "brand": "乐事",
                           "barcode": "6900000000011",
-                          "coverImageUrl": null
+                          "coverImageUrl": null,
+                          "auditStatus": "approved"
                         }
                       ]
                     }

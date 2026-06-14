@@ -71,6 +71,7 @@ class FoodRecordSubmissionCoordinatorTest {
         subcategory = "chips",
         brand = "乐事",
         barcode = "6900000000011",
+        auditStatus = "approved",
     )
 }
 

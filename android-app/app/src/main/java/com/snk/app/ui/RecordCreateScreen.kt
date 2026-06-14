@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun RecordCreateScreen(
     selectedFood: FoodSearchItem,
+    sourceType: String,
     sessionState: SessionUiState,
     submissionCoordinator: FoodRecordSubmissionCoordinator,
     onBackToSearch: () -> Unit,
@@ -69,6 +70,13 @@ fun RecordCreateScreen(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
+                if (selectedFood.auditStatus != "approved") {
+                    Text(
+                        text = "该条目仍在审核中，当前记录会先绑定到待审核条目。",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFFB53A1A),
+                    )
+                }
                 Text(
                     text = buildString {
                         append(selectedFood.category)
@@ -147,6 +155,7 @@ fun RecordCreateScreen(
                         selectedFood = selectedFood,
                         rating = rating,
                         comment = comment,
+                        sourceType = sourceType,
                     )
                     isSubmitting = false
                 }

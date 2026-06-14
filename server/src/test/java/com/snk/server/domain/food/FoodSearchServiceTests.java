@@ -27,13 +27,14 @@ class FoodSearchServiceTests {
 	@Test
 	void shouldReturnStrongQualityForPrefixMatch() {
 		when(foodItemRepository.searchApproved(eq("乐事")))
-			.thenReturn(List.of(foodItem("乐事黄瓜味薯片", "乐事", "6900000000011")));
+			.thenReturn(List.of(foodItem("乐事黄瓜味薯片", "乐事", "6900000000011", "approved")));
 
 		FoodSearchResult result = foodSearchService.search("乐事");
 
 		assertThat(result.qualitySignal()).isEqualTo("strong");
 		assertThat(result.items()).hasSize(1);
 		assertThat(result.items().getFirst().name()).isEqualTo("乐事黄瓜味薯片");
+		assertThat(result.items().getFirst().auditStatus()).isEqualTo("approved");
 	}
 
 	@Test
@@ -49,12 +50,13 @@ class FoodSearchServiceTests {
 	@Test
 	void shouldReturnApprovedFoodWhenBarcodeMatches() {
 		when(foodItemRepository.findByAuditStatusAndBarcode("approved", "6900000000011"))
-			.thenReturn(Optional.of(foodItem("乐事黄瓜味薯片", "乐事", "6900000000011")));
+			.thenReturn(Optional.of(foodItem("乐事黄瓜味薯片", "乐事", "6900000000011", "approved")));
 
 		Optional<FoodSearchItem> result = foodSearchService.lookupByBarcode("6900000000011");
 
 		assertThat(result).isPresent();
 		assertThat(result.orElseThrow().barcode()).isEqualTo("6900000000011");
+		assertThat(result.orElseThrow().auditStatus()).isEqualTo("approved");
 	}
 
 	@Test
@@ -64,39 +66,20 @@ class FoodSearchServiceTests {
 		assertThat(result).isEmpty();
 	}
 
-	private FoodItemEntity foodItem(String name, String brand, String barcode) {
+	private FoodItemEntity foodItem(String name, String brand, String barcode, String auditStatus) {
 		FoodItemEntity entity = new FoodItemEntity();
-		TestFoodItemEntityAccessor.set(entity, name, brand, barcode);
+		entity.setName(name);
+		entity.setItemType("packaged_product");
+		entity.setCategory("snack");
+		entity.setSubcategory("chips");
+		entity.setBrand(brand);
+		entity.setBarcode(barcode);
+		entity.setSource("system");
+		entity.setAuditStatus(auditStatus);
+		entity.setSearchKeywords(name + " " + brand);
+		entity.setReportCount(0);
+		entity.setCreatedAt(OffsetDateTime.parse("2026-06-13T00:00:00Z"));
+		entity.setUpdatedAt(OffsetDateTime.parse("2026-06-13T00:00:00Z"));
 		return entity;
-	}
-
-	private static final class TestFoodItemEntityAccessor {
-
-		private TestFoodItemEntityAccessor() {
-		}
-
-		static void set(FoodItemEntity entity, String name, String brand, String barcode) {
-			try {
-				setField(entity, "name", name);
-				setField(entity, "itemType", "packaged_product");
-				setField(entity, "category", "snack");
-				setField(entity, "subcategory", "chips");
-				setField(entity, "brand", brand);
-				setField(entity, "barcode", barcode);
-				setField(entity, "auditStatus", "approved");
-				setField(entity, "searchKeywords", name + " " + brand);
-				setField(entity, "createdAt", OffsetDateTime.parse("2026-06-13T00:00:00Z"));
-				setField(entity, "updatedAt", OffsetDateTime.parse("2026-06-13T00:00:00Z"));
-			} catch (ReflectiveOperationException exception) {
-				throw new IllegalStateException(exception);
-			}
-		}
-
-		private static void setField(FoodItemEntity entity, String fieldName, Object value)
-			throws ReflectiveOperationException {
-			var field = FoodItemEntity.class.getDeclaredField(fieldName);
-			field.setAccessible(true);
-			field.set(entity, value);
-		}
 	}
 }

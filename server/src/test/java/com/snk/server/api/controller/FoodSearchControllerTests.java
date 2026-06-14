@@ -6,9 +6,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.snk.server.domain.food.CreateManualFoodItemCommand;
 import com.snk.server.domain.food.FoodSearchItem;
 import com.snk.server.domain.food.FoodSearchResult;
 import com.snk.server.domain.food.FoodSearchService;
+import com.snk.server.domain.food.ManualFoodItemService;
 import com.snk.server.infrastructure.storage.StorageProperties;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +21,9 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 @Import(FoodSearchControllerTests.ControllerTestConfiguration.class)
 @WebMvcTest(FoodSearchController.class)
@@ -30,6 +34,9 @@ class FoodSearchControllerTests {
 
 	@MockBean
 	private FoodSearchService foodSearchService;
+
+	@MockBean
+	private ManualFoodItemService manualFoodItemService;
 
 	@TestConfiguration
 	static class ControllerTestConfiguration {
@@ -54,7 +61,8 @@ class FoodSearchControllerTests {
 							"chips",
 							"乐事",
 							"6900000000011",
-							null
+							null,
+							"approved"
 						)
 					),
 					"strong"
@@ -65,7 +73,8 @@ class FoodSearchControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.qualitySignal").value("strong"))
 			.andExpect(jsonPath("$.items[0].name").value("乐事黄瓜味薯片"))
-			.andExpect(jsonPath("$.items[0].barcode").value("6900000000011"));
+			.andExpect(jsonPath("$.items[0].barcode").value("6900000000011"))
+			.andExpect(jsonPath("$.items[0].auditStatus").value("approved"));
 	}
 
 	@Test
@@ -87,7 +96,8 @@ class FoodSearchControllerTests {
 						"chips",
 						"乐事",
 						"6900000000011",
-						null
+						null,
+						"approved"
 					)
 				)
 			);
@@ -95,7 +105,8 @@ class FoodSearchControllerTests {
 		mockMvc.perform(get("/api/foods/barcode/6900000000011"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.name").value("乐事黄瓜味薯片"))
-			.andExpect(jsonPath("$.barcode").value("6900000000011"));
+			.andExpect(jsonPath("$.barcode").value("6900000000011"))
+			.andExpect(jsonPath("$.auditStatus").value("approved"));
 	}
 
 	@Test
@@ -104,5 +115,46 @@ class FoodSearchControllerTests {
 
 		mockMvc.perform(get("/api/foods/barcode/0000000000000"))
 			.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void shouldCreatePendingFoodItem() throws Exception {
+		when(
+			manualFoodItemService.createPendingItem(
+				eq(new CreateManualFoodItemCommand(2L, "杨枝鲜花饼", "dish", "dessert", "cake", "SNK Bakery"))
+			)
+		).thenReturn(
+			new FoodSearchItem(
+				9L,
+				"杨枝鲜花饼",
+				"dish",
+				"dessert",
+				"cake",
+				"SNK Bakery",
+				null,
+				null,
+				"pending"
+			)
+		);
+
+		mockMvc.perform(
+			MockMvcRequestBuilders.post("/api/foods/manual")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(
+					"""
+					{
+					  "userId": 2,
+					  "name": "杨枝鲜花饼",
+					  "itemType": "dish",
+					  "category": "dessert",
+					  "subcategory": "cake",
+					  "brand": "SNK Bakery"
+					}
+					"""
+				)
+		)
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.name").value("杨枝鲜花饼"))
+			.andExpect(jsonPath("$.auditStatus").value("pending"));
 	}
 }

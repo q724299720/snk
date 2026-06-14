@@ -15,17 +15,7 @@ class FoodSearchRepository(
         return try {
             val response = api.searchFoods(normalizedQuery)
             FoodSearchResult.Success(
-                items = response.items.map { item ->
-                    FoodSearchItem(
-                        id = item.id,
-                        name = item.name,
-                        itemType = item.itemType,
-                        category = item.category,
-                        subcategory = item.subcategory,
-                        brand = item.brand,
-                        barcode = item.barcode,
-                    )
-                },
+                items = response.items.map(FoodSearchItemResponse::toModel),
                 qualitySignal = response.qualitySignal,
             )
         } catch (exception: Exception) {
@@ -46,6 +36,37 @@ class FoodSearchRepository(
                 exception is HttpException && exception.code() == 404 -> FoodBarcodeLookupResult.NotFound(normalizedBarcode)
                 else -> FoodBarcodeLookupResult.Failure(exception.asBarcodeLookupMessage())
             }
+        }
+    }
+
+    suspend fun createManualFoodItem(
+        userId: Long,
+        name: String,
+        itemType: String,
+        category: String,
+        subcategory: String,
+        brand: String,
+    ): ManualFoodCreateResult {
+        val normalizedName = name.trim()
+        if (normalizedName.isBlank()) {
+            return ManualFoodCreateResult.Failure("请先输入名称。")
+        }
+
+        return try {
+            ManualFoodCreateResult.Success(
+                api.createManualFoodItem(
+                    CreateManualFoodItemRequest(
+                        userId = userId,
+                        name = normalizedName,
+                        itemType = itemType.trim(),
+                        category = category.trim(),
+                        subcategory = subcategory.trim().ifBlank { null },
+                        brand = brand.trim().ifBlank { null },
+                    ),
+                ).toModel(),
+            )
+        } catch (exception: Exception) {
+            ManualFoodCreateResult.Failure(exception.asManualCreateMessage())
         }
     }
 
@@ -97,6 +118,7 @@ data class FoodSearchItem(
     val subcategory: String?,
     val brand: String?,
     val barcode: String?,
+    val auditStatus: String,
 )
 
 sealed interface FoodBarcodeLookupResult {
@@ -105,6 +127,12 @@ sealed interface FoodBarcodeLookupResult {
     data class NotFound(val barcode: String) : FoodBarcodeLookupResult
 
     data class Failure(val message: String) : FoodBarcodeLookupResult
+}
+
+sealed interface ManualFoodCreateResult {
+    data class Success(val item: FoodSearchItem) : ManualFoodCreateResult
+
+    data class Failure(val message: String) : ManualFoodCreateResult
 }
 
 sealed interface FoodOcrSearchResult {
@@ -150,10 +178,17 @@ private fun FoodSearchItemResponse.toModel(): FoodSearchItem = FoodSearchItem(
     subcategory = subcategory,
     brand = brand,
     barcode = barcode,
+    auditStatus = auditStatus,
 )
 
 private fun Exception.asBarcodeLookupMessage(): String = when (this) {
     is IOException -> "无法连接服务端条码接口。"
     is HttpException -> "服务端条码查询暂时不可用。"
     else -> "条码查询失败，请稍后重试。"
+}
+
+private fun Exception.asManualCreateMessage(): String = when (this) {
+    is IOException -> "无法连接服务端，暂时不能创建待审核条目。"
+    is HttpException -> "服务端拒绝了这次待审核条目创建。"
+    else -> "创建待审核条目失败，请稍后重试。"
 }

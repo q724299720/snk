@@ -39,6 +39,7 @@ fun SearchScreen(
     onCreateRecord: (FoodSearchItem) -> Unit,
     onOpenBarcodeScanner: () -> Unit,
     onOpenOcrRecognition: () -> Unit,
+    onOpenManualCreate: (String) -> Unit,
 ) {
     val application = LocalContext.current.applicationContext as SnkApplication
     val coroutineScope = rememberCoroutineScope()
@@ -150,6 +151,12 @@ fun SearchScreen(
             isSearching = isSearching,
             emptyHint = "输入名称后即可查询已审核的基础食物条目。",
             onCreateRecord = onCreateRecord,
+            noResultActionLabel = if (query.isNotBlank()) "没有找到？手动创建" else null,
+            onNoResultAction = if (query.isNotBlank()) {
+                { onOpenManualCreate(query) }
+            } else {
+                null
+            },
         )
     }
 }

@@ -26,7 +26,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import com.snk.app.data.food.FoodSearchItem
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -34,6 +33,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.snk.app.SnkApplication
 import com.snk.app.data.auth.AnonymousSessionResult
+import com.snk.app.data.food.FoodSearchItem
 
 private sealed class SnkDestination(
     val route: String,
@@ -58,6 +58,8 @@ fun SnkApp() {
     val application = LocalContext.current.applicationContext as SnkApplication
     var retryToken by remember { mutableIntStateOf(0) }
     var selectedFood: FoodSearchItem? by remember { mutableStateOf(null) }
+    var selectedSourceType by remember { mutableStateOf("text_search") }
+    var manualCreateSeedName by remember { mutableStateOf("") }
     val sessionState by produceState<SessionUiState>(
         initialValue = SessionUiState.Loading,
         key1 = retryToken,
@@ -73,7 +75,8 @@ fun SnkApp() {
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute != "record_create" &&
         currentRoute != "barcode_scan" &&
-        currentRoute != "ocr_recognition"
+        currentRoute != "ocr_recognition" &&
+        currentRoute != "manual_food_create"
 
     Scaffold(
         bottomBar = {
@@ -96,7 +99,7 @@ fun SnkApp() {
                         )
                     }
                 }
-            } 
+            }
         },
     ) { innerPadding ->
         Box(
@@ -125,6 +128,7 @@ fun SnkApp() {
                         sessionState = sessionState,
                         onCreateRecord = { item ->
                             selectedFood = item
+                            selectedSourceType = "text_search"
                             navController.navigate("record_create")
                         },
                         onOpenBarcodeScanner = {
@@ -132,6 +136,10 @@ fun SnkApp() {
                         },
                         onOpenOcrRecognition = {
                             navController.navigate("ocr_recognition")
+                        },
+                        onOpenManualCreate = { seedName ->
+                            manualCreateSeedName = seedName
+                            navController.navigate("manual_food_create")
                         },
                     )
                 }
@@ -151,6 +159,7 @@ fun SnkApp() {
                             sessionState = sessionState,
                             onCreateRecord = { item ->
                                 selectedFood = item
+                                selectedSourceType = "text_search"
                                 navController.navigate("record_create")
                             },
                             onOpenBarcodeScanner = {
@@ -159,10 +168,15 @@ fun SnkApp() {
                             onOpenOcrRecognition = {
                                 navController.navigate("ocr_recognition")
                             },
+                            onOpenManualCreate = { seedName ->
+                                manualCreateSeedName = seedName
+                                navController.navigate("manual_food_create")
+                            },
                         )
                     } else {
                         RecordCreateScreen(
                             selectedFood = food,
+                            sourceType = selectedSourceType,
                             sessionState = sessionState,
                             submissionCoordinator = application.container.foodRecordSubmissionCoordinator,
                             onBackToSearch = {
@@ -179,6 +193,7 @@ fun SnkApp() {
                     BarcodeScanScreen(
                         onFoodMatched = { item ->
                             selectedFood = item
+                            selectedSourceType = "image_search"
                             navController.navigate("record_create") {
                                 popUpTo("barcode_scan") {
                                     inclusive = true
@@ -194,8 +209,31 @@ fun SnkApp() {
                     OcrRecognitionScreen(
                         onFoodMatched = { item ->
                             selectedFood = item
+                            selectedSourceType = "image_search"
                             navController.navigate("record_create") {
                                 popUpTo("ocr_recognition") {
+                                    inclusive = true
+                                }
+                            }
+                        },
+                        onOpenManualCreate = { seedName ->
+                            manualCreateSeedName = seedName
+                            navController.navigate("manual_food_create")
+                        },
+                        onBack = {
+                            navController.popBackStack()
+                        },
+                    )
+                }
+                composable("manual_food_create") {
+                    ManualFoodCreateScreen(
+                        sessionState = sessionState,
+                        initialName = manualCreateSeedName,
+                        onFoodCreated = { item ->
+                            selectedFood = item
+                            selectedSourceType = "manual"
+                            navController.navigate("record_create") {
+                                popUpTo("manual_food_create") {
                                     inclusive = true
                                 }
                             }

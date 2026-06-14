@@ -8,6 +8,7 @@ public record FoodSearchItemResponse(
 	String subcategory,
 	String brand,
 	String barcode,
-	String coverImageUrl
+	String coverImageUrl,
+	String auditStatus
 ) {
 }
