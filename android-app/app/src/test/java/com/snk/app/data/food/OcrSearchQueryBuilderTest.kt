@@ -5,14 +5,32 @@ import org.junit.Test
 
 class OcrSearchQueryBuilderTest {
     @Test
-    fun `build returns original compact and merged queries`() {
-        val result = OcrSearchQueryBuilder.build("乐事\n黄瓜味 薯片！")
+    fun `build keeps english full query and merged fallback`() {
+        val result = OcrSearchQueryBuilder.build("Lays\nCucumber Chips!")
 
         assertEquals(
             listOf(
-                "乐事 黄瓜味 薯片！",
-                "乐事 黄瓜味 薯片",
-                "乐事黄瓜味薯片",
+                "Lays Cucumber Chips!",
+                "Lays Cucumber Chips",
+                "LaysCucumberChips",
+                "Cucumber Chips",
+                "Chips",
+                "Lays",
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `buildDisplayQueries creates grouped chinese phrases`() {
+        val result = OcrSearchQueryBuilder.buildDisplayQueries("康师傅红烧牛肉面")
+
+        assertEquals(
+            listOf(
+                "康师傅红烧牛肉面",
+                "红烧牛肉面",
+                "牛肉面",
+                "康师傅",
             ),
             result,
         )

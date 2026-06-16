@@ -1,11 +1,29 @@
 package com.snk.app.data.record
 
+import com.snk.app.data.food.FoodSearchItem
 import java.io.IOException
 import retrofit2.HttpException
 
 class FoodRecordRepository(
     private val api: FoodRecordApi,
 ) : RemoteFoodRecordWriter {
+    suspend fun listRecentRecords(
+        userId: Long,
+        limit: Int = 10,
+    ): FoodRecordHistoryResult {
+        if (userId <= 0L) {
+            return FoodRecordHistoryResult.Failure("游客身份尚未完成初始化。")
+        }
+
+        return try {
+            FoodRecordHistoryResult.Success(
+                api.listRecentRecords(userId, limit).map(FoodRecordHistoryResponse::toModel),
+            )
+        } catch (exception: Exception) {
+            FoodRecordHistoryResult.Failure(exception.asHistoryMessage())
+        }
+    }
+
     override suspend fun createRecord(
         userId: Long,
         foodItemId: Long,
@@ -59,6 +77,46 @@ class FoodRecordRepository(
     }
 }
 
+data class FoodRecordHistoryItem(
+    val id: Long,
+    val userId: Long,
+    val foodItemId: Long,
+    val foodName: String,
+    val foodItemType: String,
+    val foodCategory: String,
+    val foodSubcategory: String?,
+    val foodBrand: String?,
+    val foodCoverImageUrl: String?,
+    val sourceType: String,
+    val isPublic: Boolean,
+    val rating: Int,
+    val comment: String?,
+    val likeCount: Int,
+    val recordTime: String,
+    val createdAt: String,
+)
+
+fun FoodRecordHistoryItem.toFoodSearchItem(): FoodSearchItem = FoodSearchItem(
+    id = foodItemId,
+    name = foodName,
+    itemType = foodItemType,
+    category = foodCategory,
+    subcategory = foodSubcategory,
+    brand = foodBrand,
+    barcode = null,
+    coverImageUrl = foodCoverImageUrl,
+    averageRating = null,
+    auditStatus = "approved",
+)
+
+sealed interface FoodRecordHistoryResult {
+    data class Success(
+        val items: List<FoodRecordHistoryItem>,
+    ) : FoodRecordHistoryResult
+
+    data class Failure(val message: String) : FoodRecordHistoryResult
+}
+
 enum class FoodRecordCreateFailureReason {
     NETWORK,
     SERVER,
@@ -95,10 +153,35 @@ sealed interface FoodRecordLikeResult {
     ) : FoodRecordLikeResult
 }
 
+private fun FoodRecordHistoryResponse.toModel(): FoodRecordHistoryItem = FoodRecordHistoryItem(
+    id = id,
+    userId = userId,
+    foodItemId = foodItemId,
+    foodName = foodName,
+    foodItemType = foodItemType,
+    foodCategory = foodCategory,
+    foodSubcategory = foodSubcategory,
+    foodBrand = foodBrand,
+    foodCoverImageUrl = foodCoverImageUrl,
+    sourceType = sourceType,
+    isPublic = isPublic,
+    rating = rating,
+    comment = comment,
+    likeCount = likeCount,
+    recordTime = recordTime,
+    createdAt = createdAt,
+)
+
 private fun Exception.asUserFacingMessage(): String = when (this) {
     is IOException -> "无法连接服务端，记录暂时没有提交成功。"
     is HttpException -> "服务端拒绝了这次记录提交。"
     else -> "保存记录失败，请稍后重试。"
+}
+
+private fun Exception.asHistoryMessage(): String = when (this) {
+    is IOException -> "无法连接服务端，暂时拉取不到历史记录。"
+    is HttpException -> "服务端暂时无法返回历史记录。"
+    else -> "加载历史记录失败，请稍后重试。"
 }
 
 private fun Exception.asFailureReason(): FoodRecordCreateFailureReason = when (this) {

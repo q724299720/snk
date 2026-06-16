@@ -1,6 +1,8 @@
 package com.snk.app.ui
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -30,10 +32,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
 import com.snk.app.SnkApplication
+import com.snk.app.data.food.OcrSearchQueryBuilder
+import java.io.File
 import java.io.IOException
 import java.util.UUID
 import kotlin.coroutines.resume
@@ -43,7 +49,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 
 @Composable
 fun OcrRecognitionScreen(
-    onFillSearchQuery: (String) -> Unit,
+    onFillSearchQuery: (String, List<String>) -> Unit,
     onOpenManualCreate: (String) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -52,18 +58,37 @@ fun OcrRecognitionScreen(
     val coroutineScope = rememberCoroutineScope()
     val attemptedQueries = remember { mutableStateListOf<String>() }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
     var recognizedText by remember { mutableStateOf<String?>(null) }
     var isProcessing by remember { mutableStateOf(false) }
     var canOpenManualCreate by remember { mutableStateOf(false) }
     var manualCreateSeedName by remember { mutableStateOf("") }
     var statusMessage by remember {
-        mutableStateOf("先从相册选择一张零食或美食图片，系统会优先在本地提取文字，必要时再切到服务端 OCR。")
+        mutableStateOf("选择相册图片或直接拍照，系统会先在本地提取文字，必要时再切到服务端 OCR。")
     }
 
-    fun returnToSearch(query: String, message: String) {
-        onFillSearchQuery(query)
-        statusMessage = message
-        onBack()
+    fun buildSuggestedQueries(recognizedText: String?, attemptedQueries: List<String>): List<String> {
+        val baseText = recognizedText?.trim().orEmpty()
+        if (baseText.isNotBlank()) {
+            return OcrSearchQueryBuilder.buildDisplayQueries(baseText)
+        }
+        return attemptedQueries.firstOrNull()
+            ?.let(OcrSearchQueryBuilder::buildDisplayQueries)
+            .orEmpty()
+    }
+
+    fun returnToSearch(query: String, recognizedText: String?, attemptedQueries: List<String>) {
+        val normalizedQuery = query.trim()
+        if (normalizedQuery.isBlank()) {
+            return
+        }
+        onFillSearchQuery(
+            normalizedQuery,
+            buildSuggestedQueries(
+                recognizedText = recognizedText,
+                attemptedQueries = attemptedQueries,
+            ),
+        )
     }
 
     suspend fun runServerOcrFallback(
@@ -94,10 +119,10 @@ fun OcrRecognitionScreen(
                 attemptedQueries.clear()
                 attemptedQueries.addAll(result.attemptedQueries)
                 returnToSearch(
-                    query = result.matchedQuery.ifBlank {
-                        result.attemptedQueries.firstOrNull().orEmpty()
-                    },
-                    message = "服务端 OCR 已提取到可搜索文字，正在回填搜索框。",
+                    query = result.attemptedQueries.firstOrNull()
+                        ?: result.matchedQuery,
+                    recognizedText = result.recognizedText,
+                    attemptedQueries = result.attemptedQueries,
                 )
             }
 
@@ -110,7 +135,8 @@ fun OcrRecognitionScreen(
                 if (fallbackQuery.isNotBlank()) {
                     returnToSearch(
                         query = fallbackQuery,
-                        message = "OCR 已提取文字，但还未命中结果，已回填到搜索框继续确认。",
+                        recognizedText = recognizedText,
+                        attemptedQueries = result.attemptedQueries,
                     )
                 } else {
                     canOpenManualCreate = true
@@ -128,7 +154,8 @@ fun OcrRecognitionScreen(
                 if (fallbackQuery.isNotBlank()) {
                     returnToSearch(
                         query = fallbackQuery,
-                        message = "服务端 OCR 不稳定，但已提取到文字，已回填到搜索框继续确认。",
+                        recognizedText = recognizedText,
+                        attemptedQueries = result.attemptedQueries,
                     )
                 } else {
                     canOpenManualCreate = true
@@ -164,8 +191,9 @@ fun OcrRecognitionScreen(
                     recognizedText = result.recognizedText
                     attemptedQueries.addAll(result.attemptedQueries)
                     returnToSearch(
-                        query = result.matchedQuery,
-                        message = "本地 OCR 已提取到可搜索文字，正在回填搜索框。",
+                        query = result.attemptedQueries.firstOrNull() ?: result.matchedQuery,
+                        recognizedText = result.recognizedText,
+                        attemptedQueries = result.attemptedQueries,
                     )
                 }
 
@@ -176,7 +204,8 @@ fun OcrRecognitionScreen(
                     if (fallbackQuery.isNotBlank()) {
                         returnToSearch(
                             query = fallbackQuery,
-                            message = "本地 OCR 已提取文字，但还未命中结果，已回填到搜索框继续确认。",
+                            recognizedText = result.recognizedText,
+                            attemptedQueries = result.attemptedQueries,
                         )
                     } else {
                         runServerOcrFallback(
@@ -211,6 +240,20 @@ fun OcrRecognitionScreen(
         }
     }
 
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+    ) { success ->
+        val imageUri = pendingCameraUri
+        if (!success || imageUri == null) {
+            statusMessage = "已取消拍照。"
+            return@rememberLauncherForActivityResult
+        }
+        selectedImageUri = imageUri
+        coroutineScope.launch {
+            runLocalOcr(imageUri)
+        }
+    }
+
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
@@ -221,6 +264,22 @@ fun OcrRecognitionScreen(
         }
         coroutineScope.launch {
             runLocalOcr(uri)
+        }
+    }
+
+    fun launchCameraCapture() {
+        val imageUri = createTempCameraImageUri(context)
+        pendingCameraUri = imageUri
+        cameraLauncher.launch(imageUri)
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            launchCameraCapture()
+        } else {
+            statusMessage = "未授予相机权限，当前只能从相册选择图片。"
         }
     }
 
@@ -237,20 +296,42 @@ fun OcrRecognitionScreen(
             color = Color(0xFF2B1E18),
         )
         Text(
-            text = "这里不直接做独立识别确认，只负责把图片里的文字提取出来并回填到主搜索框。",
+            text = "这里不直接做独立识别确认，而是把图片里的文字拆成可选词组，带回主搜索框继续确认。",
             style = MaterialTheme.typography.bodyLarge,
             color = Color(0xFF5B4A42),
         )
-        Button(
-            onClick = {
-                photoPickerLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                )
-            },
-            enabled = !isProcessing,
-            shape = RoundedCornerShape(18.dp),
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(if (isProcessing) "识别中..." else "选择图片")
+            Button(
+                onClick = {
+                    photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                    )
+                },
+                enabled = !isProcessing,
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Text("相册选图")
+            }
+            Button(
+                onClick = {
+                    val hasCameraPermission = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.CAMERA,
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (hasCameraPermission) {
+                        launchCameraCapture()
+                    } else {
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                },
+                enabled = !isProcessing,
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Text(if (isProcessing) "识别中..." else "拍照识别")
+            }
         }
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -305,10 +386,15 @@ fun OcrRecognitionScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            attemptedQueries.forEach { query ->
+                            buildSuggestedQueries(recognizedText, attemptedQueries).forEach { query ->
                                 AssistChip(
-                                    onClick = {},
-                                    enabled = false,
+                                    onClick = {
+                                        returnToSearch(
+                                            query = query,
+                                            recognizedText = recognizedText,
+                                            attemptedQueries = attemptedQueries,
+                                        )
+                                    },
                                     label = { Text(query) },
                                 )
                             }
@@ -350,6 +436,16 @@ private fun readImagePayload(context: Context, imageUri: Uri): ImagePayload {
         bytes = bytes,
         fileName = fileName,
         contentType = contentType,
+    )
+}
+
+private fun createTempCameraImageUri(context: Context): Uri {
+    val imageDirectory = File(context.cacheDir, "ocr-camera").apply { mkdirs() }
+    val imageFile = File(imageDirectory, "camera-${UUID.randomUUID()}.jpg")
+    return FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        imageFile,
     )
 }
 

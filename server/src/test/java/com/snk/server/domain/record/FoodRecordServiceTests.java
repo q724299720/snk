@@ -2,6 +2,7 @@ package com.snk.server.domain.record;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,6 +14,7 @@ import com.snk.server.infrastructure.persistence.user.UserEntity;
 import com.snk.server.infrastructure.persistence.user.UserRepository;
 import java.lang.reflect.Field;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -107,6 +109,44 @@ class FoodRecordServiceTests {
 
 		assertThat(result.likeCount()).isEqualTo(3);
 		verify(foodRecordRepository).save(record);
+	}
+
+	@Test
+	void shouldListRecentRecords() throws Exception {
+		UserEntity user = new UserEntity();
+		setUserId(user, 100L);
+
+		FoodItemEntity foodItem = new FoodItemEntity();
+		setFoodItemId(foodItem, 200L);
+		foodItem.setName("Lays Cucumber Chips");
+		foodItem.setItemType("packaged_product");
+		foodItem.setCategory("snack");
+		foodItem.setSubcategory("chips");
+		foodItem.setBrand("Lays");
+		foodItem.setCoverImageUrl("https://snk.qiuxinmin.cn/images/1.png");
+
+		FoodRecordEntity record = new FoodRecordEntity();
+		setRecordId(record, 1L);
+		setCreatedAt(record, OffsetDateTime.parse("2026-06-13T23:30:00Z"));
+		record.setUser(user);
+		record.setFoodItem(foodItem);
+		record.setSourceType("text_search");
+		record.setPublic(false);
+		record.setRating((short) 5);
+		record.setComment("tasty");
+		record.setLikeCount(2);
+		record.setRecordTime(OffsetDateTime.parse("2026-06-13T23:29:00Z"));
+
+		when(foodRecordRepository.findByUser_IdAndDeletedAtIsNullOrderByRecordTimeDesc(eq(100L), any()))
+			.thenReturn(List.of(record));
+
+		List<FoodRecordHistoryItem> result = foodRecordService.listRecentRecords(100L, 10);
+
+		assertThat(result).hasSize(1);
+		assertThat(result.getFirst().foodName()).isEqualTo("Lays Cucumber Chips");
+		assertThat(result.getFirst().foodItemType()).isEqualTo("packaged_product");
+		assertThat(result.getFirst().foodCoverImageUrl()).isEqualTo("https://snk.qiuxinmin.cn/images/1.png");
+		assertThat(result.getFirst().rating()).isEqualTo((short) 5);
 	}
 
 	private void setUserId(UserEntity entity, Long id) throws Exception {

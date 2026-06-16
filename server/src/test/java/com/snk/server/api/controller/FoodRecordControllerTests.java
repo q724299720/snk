@@ -3,14 +3,17 @@ package com.snk.server.api.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.snk.server.domain.record.FoodRecordResult;
 import com.snk.server.domain.record.FoodRecordService;
+import com.snk.server.domain.record.FoodRecordHistoryItem;
 import com.snk.server.infrastructure.storage.StorageProperties;
 import java.time.OffsetDateTime;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -38,6 +41,39 @@ class FoodRecordControllerTests {
 		StorageProperties storageProperties() {
 			return new StorageProperties();
 		}
+	}
+
+	@Test
+	void shouldListRecentRecords() throws Exception {
+		when(foodRecordService.listRecentRecords(100L, 10)).thenReturn(
+			List.of(
+				new FoodRecordHistoryItem(
+					1L,
+					100L,
+					200L,
+					"Lays Cucumber Chips",
+					"packaged_product",
+					"snack",
+					"chips",
+					"Lays",
+					"https://snk.qiuxinmin.cn/images/1.png",
+					"text_search",
+					false,
+					(short) 5,
+					"tasty",
+					2,
+					OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+					OffsetDateTime.parse("2026-06-13T23:30:00Z")
+				)
+			)
+		);
+
+		mockMvc.perform(get("/api/records").param("userId", "100"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].id").value(1))
+			.andExpect(jsonPath("$[0].foodName").value("Lays Cucumber Chips"))
+			.andExpect(jsonPath("$[0].foodCoverImageUrl").value("https://snk.qiuxinmin.cn/images/1.png"))
+			.andExpect(jsonPath("$[0].rating").value(5));
 	}
 
 	@Test

@@ -1,16 +1,20 @@
 package com.snk.server.api.controller;
 
 import com.snk.server.api.dto.CreateFoodRecordRequest;
+import com.snk.server.api.dto.FoodRecordHistoryResponse;
 import com.snk.server.api.dto.FoodRecordResponse;
 import com.snk.server.domain.record.FoodRecordCreateCommand;
 import com.snk.server.domain.record.FoodRecordResult;
 import com.snk.server.domain.record.FoodRecordService;
 import jakarta.validation.Valid;
+import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,6 +26,16 @@ public class FoodRecordController {
 
 	public FoodRecordController(FoodRecordService foodRecordService) {
 		this.foodRecordService = foodRecordService;
+	}
+
+	@GetMapping
+	public List<FoodRecordHistoryResponse> listRecentRecords(
+		@RequestParam("userId") Long userId,
+		@RequestParam(value = "limit", defaultValue = "10") int limit
+	) {
+		return foodRecordService.listRecentRecords(userId, limit).stream()
+			.map(FoodRecordHistoryResponse::from)
+			.toList();
 	}
 
 	@PostMapping

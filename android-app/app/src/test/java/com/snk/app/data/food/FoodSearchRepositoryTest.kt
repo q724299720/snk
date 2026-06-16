@@ -249,16 +249,13 @@ class FoodSearchRepositoryTest {
 
     @Test
     fun `searchByRecognizedText returns no match when all queries miss`() = runTest {
-        server.enqueue(
-            MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("""{"qualitySignal":"weak","items":[]}"""),
-        )
-        server.enqueue(
-            MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("""{"qualitySignal":"weak","items":[]}"""),
-        )
+        repeat(4) {
+            server.enqueue(
+                MockResponse()
+                    .setHeader("Content-Type", "application/json")
+                    .setBody("""{"qualitySignal":"weak","items":[]}"""),
+            )
+        }
 
         val result = repository.searchByRecognizedText("Lays Cucumber")
 

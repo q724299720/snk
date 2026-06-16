@@ -6,6 +6,8 @@ import com.snk.server.infrastructure.persistence.record.FoodRecordEntity;
 import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
 import com.snk.server.infrastructure.persistence.user.UserEntity;
 import com.snk.server.infrastructure.persistence.user.UserRepository;
+import java.util.List;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,11 +57,43 @@ public class FoodRecordService {
 		return toResult(foodRecordRepository.save(entity));
 	}
 
+	@Transactional(readOnly = true)
+	public List<FoodRecordHistoryItem> listRecentRecords(Long userId, int limit) {
+		int normalizedLimit = Math.min(Math.max(limit, 1), 20);
+		return foodRecordRepository.findByUser_IdAndDeletedAtIsNullOrderByRecordTimeDesc(
+			userId,
+			PageRequest.of(0, normalizedLimit)
+		).stream()
+			.map(this::toHistoryItem)
+			.toList();
+	}
+
 	private FoodRecordResult toResult(FoodRecordEntity entity) {
 		return new FoodRecordResult(
 			entity.getId(),
 			entity.getUser().getId(),
 			entity.getFoodItem().getId(),
+			entity.getSourceType(),
+			entity.isPublic(),
+			entity.getRating(),
+			entity.getComment(),
+			entity.getLikeCount(),
+			entity.getRecordTime(),
+			entity.getCreatedAt()
+		);
+	}
+
+	private FoodRecordHistoryItem toHistoryItem(FoodRecordEntity entity) {
+		return new FoodRecordHistoryItem(
+			entity.getId(),
+			entity.getUser().getId(),
+			entity.getFoodItem().getId(),
+			entity.getFoodItem().getName(),
+			entity.getFoodItem().getItemType(),
+			entity.getFoodItem().getCategory(),
+			entity.getFoodItem().getSubcategory(),
+			entity.getFoodItem().getBrand(),
+			entity.getFoodItem().getCoverImageUrl(),
 			entity.getSourceType(),
 			entity.isPublic(),
 			entity.getRating(),

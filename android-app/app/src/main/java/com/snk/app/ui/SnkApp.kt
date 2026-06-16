@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.ManageSearch
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -43,14 +42,12 @@ private sealed class SnkDestination(
     val label: String,
     val icon: ImageVector,
 ) {
-    data object Home : SnkDestination("home", "首页", Icons.Outlined.Home)
-    data object Search : SnkDestination("search", "搜索", Icons.Outlined.ManageSearch)
+    data object Search : SnkDestination("search", "首页", Icons.Outlined.Home)
     data object Drafts : SnkDestination("drafts", "草稿", Icons.Outlined.BookmarkBorder)
     data object Profile : SnkDestination("profile", "我的", Icons.Outlined.Person)
 }
 
 private val destinations = listOf(
-    SnkDestination.Home,
     SnkDestination.Search,
     SnkDestination.Drafts,
     SnkDestination.Profile,
@@ -72,6 +69,7 @@ fun SnkApp() {
     var manualCreateSeedName by remember { mutableStateOf("") }
     var manualCreateSeedBarcode by remember { mutableStateOf("") }
     var searchQuerySeed by remember { mutableStateOf<String?>(null) }
+    var searchSuggestedQueries by remember { mutableStateOf<List<String>>(emptyList()) }
     var candidateConfirmationState by remember { mutableStateOf<CandidateConfirmationState?>(null) }
     var candidateReportMessage by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
@@ -152,11 +150,8 @@ fun SnkApp() {
         ) {
             NavHost(
                 navController = navController,
-                startDestination = SnkDestination.Home.route,
+                startDestination = SnkDestination.Search.route,
             ) {
-                composable(SnkDestination.Home.route) {
-                    HomeScreen()
-                }
                 composable(SnkDestination.Search.route) {
                     SearchScreen(
                         sessionState = sessionState,
@@ -168,8 +163,10 @@ fun SnkApp() {
                             navController.navigate("ocr_recognition")
                         },
                         externalQuerySeed = searchQuerySeed,
+                        externalSuggestedQueries = searchSuggestedQueries,
                         onExternalQueryConsumed = {
                             searchQuerySeed = null
+                            searchSuggestedQueries = emptyList()
                         },
                     )
                 }
@@ -195,8 +192,10 @@ fun SnkApp() {
                                 navController.navigate("ocr_recognition")
                             },
                             externalQuerySeed = searchQuerySeed,
+                            externalSuggestedQueries = searchSuggestedQueries,
                             onExternalQueryConsumed = {
                                 searchQuerySeed = null
+                                searchSuggestedQueries = emptyList()
                             },
                         )
                     } else {
@@ -232,8 +231,10 @@ fun SnkApp() {
                                 navController.navigate("ocr_recognition")
                             },
                             externalQuerySeed = searchQuerySeed,
+                            externalSuggestedQueries = searchSuggestedQueries,
                             onExternalQueryConsumed = {
                                 searchQuerySeed = null
+                                searchSuggestedQueries = emptyList()
                             },
                         )
                     } else {
@@ -300,9 +301,16 @@ fun SnkApp() {
                 }
                 composable("ocr_recognition") {
                     OcrRecognitionScreen(
-                        onFillSearchQuery = { query ->
+                        onFillSearchQuery = { query, suggestions ->
                             searchQuerySeed = query
-                            navController.popBackStack()
+                            searchSuggestedQueries = suggestions
+                            navController.navigate(SnkDestination.Search.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         },
                         onOpenManualCreate = ::openManualCreate,
                         onBack = {
