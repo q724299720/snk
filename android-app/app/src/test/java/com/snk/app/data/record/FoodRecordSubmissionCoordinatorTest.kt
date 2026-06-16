@@ -30,7 +30,7 @@ class FoodRecordSubmissionCoordinatorTest {
             userId = 1L,
             selectedFood = testFood(),
             rating = 4,
-            comment = "顺利提交",
+            comment = "remote success",
         )
 
         assertTrue(result is FoodRecordSubmissionResult.Submitted)
@@ -46,7 +46,7 @@ class FoodRecordSubmissionCoordinatorTest {
             remoteWriter = FakeRemoteWriter(
                 FoodRecordCreateResult.Failure(
                     reason = FoodRecordCreateFailureReason.NETWORK,
-                    message = "无法连接服务端，记录暂时没有提交成功。",
+                    message = "network failed",
                 ),
             ),
             draftSaver = draftSaver,
@@ -57,7 +57,7 @@ class FoodRecordSubmissionCoordinatorTest {
             userId = 1L,
             selectedFood = testFood(),
             rating = 4,
-            comment = "转草稿",
+            comment = "save draft",
         )
 
         assertTrue(result is FoodRecordSubmissionResult.SavedToDraft)
@@ -67,12 +67,14 @@ class FoodRecordSubmissionCoordinatorTest {
 
     private fun testFood(): FoodSearchItem = FoodSearchItem(
         id = 7L,
-        name = "乐事黄瓜味薯片",
+        name = "Lays Cucumber Chips",
         itemType = "packaged_product",
         category = "snack",
         subcategory = "chips",
-        brand = "乐事",
+        brand = "Lays",
         barcode = "6900000000011",
+        coverImageUrl = "https://snk.qiuxinmin.cn/images/7.png",
+        averageRating = 4.6,
         auditStatus = "approved",
     )
 }

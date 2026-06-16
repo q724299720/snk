@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +41,9 @@ fun SearchScreen(
     sessionState: SessionUiState,
     onCreateRecord: (FoodSearchItem) -> Unit,
     onOpenManualCreate: (String) -> Unit,
+    onOpenOcrRecognition: () -> Unit,
+    externalQuerySeed: String? = null,
+    onExternalQueryConsumed: () -> Unit = {},
 ) {
     val application = LocalContext.current.applicationContext as SnkApplication
     val coroutineScope = rememberCoroutineScope()
@@ -47,6 +51,14 @@ fun SearchScreen(
     var searchState by remember { mutableStateOf<FoodSearchResult?>(null) }
     var isSearching by remember { mutableStateOf(false) }
     var reportMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(externalQuerySeed) {
+        val seed = externalQuerySeed?.trim().orEmpty()
+        if (seed.isNotBlank()) {
+            query = seed
+            onExternalQueryConsumed()
+        }
+    }
 
     LaunchedEffect(query) {
         val normalizedQuery = query.trim()
@@ -74,7 +86,7 @@ fun SearchScreen(
             color = Color(0xFF2B1E18),
         )
         Text(
-            text = "输入名称、品牌或口味词后，系统会自动联想候选条目，直接进入记录流程。",
+            text = "输入名称、品牌或口味词后，系统会自动联想候选条目，并用图片和全站评分辅助确认。",
             style = MaterialTheme.typography.bodyLarge,
             color = Color(0xFF5B4A42),
         )
@@ -86,6 +98,12 @@ fun SearchScreen(
             singleLine = true,
             shape = RoundedCornerShape(20.dp),
         )
+        Button(
+            onClick = onOpenOcrRecognition,
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Text("从图片提取文字")
+        }
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

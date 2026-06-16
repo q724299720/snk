@@ -81,6 +81,7 @@ class RecognitionControllerTests {
 							"Lays",
 							"6900000000011",
 							null,
+							null,
 							"approved"
 						)
 					)

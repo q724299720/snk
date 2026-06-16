@@ -81,6 +81,7 @@ class RecognitionTaskServiceTests {
 							"Lays",
 							"6900000000011",
 							null,
+							null,
 							"approved"
 						)
 					),
@@ -163,6 +164,7 @@ class RecognitionTaskServiceTests {
 							"chips",
 							"Lays",
 							"6900000000011",
+							null,
 							null,
 							"approved"
 						)

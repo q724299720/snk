@@ -71,6 +71,7 @@ fun SnkApp() {
     var selectedSourceType by remember { mutableStateOf("text_search") }
     var manualCreateSeedName by remember { mutableStateOf("") }
     var manualCreateSeedBarcode by remember { mutableStateOf("") }
+    var searchQuerySeed by remember { mutableStateOf<String?>(null) }
     var candidateConfirmationState by remember { mutableStateOf<CandidateConfirmationState?>(null) }
     var candidateReportMessage by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
@@ -163,6 +164,13 @@ fun SnkApp() {
                             openRecordCreate(item, "text_search")
                         },
                         onOpenManualCreate = ::openManualCreate,
+                        onOpenOcrRecognition = {
+                            navController.navigate("ocr_recognition")
+                        },
+                        externalQuerySeed = searchQuerySeed,
+                        onExternalQueryConsumed = {
+                            searchQuerySeed = null
+                        },
                     )
                 }
                 composable(SnkDestination.Drafts.route) {
@@ -183,6 +191,13 @@ fun SnkApp() {
                                 openRecordCreate(item, "text_search")
                             },
                             onOpenManualCreate = ::openManualCreate,
+                            onOpenOcrRecognition = {
+                                navController.navigate("ocr_recognition")
+                            },
+                            externalQuerySeed = searchQuerySeed,
+                            onExternalQueryConsumed = {
+                                searchQuerySeed = null
+                            },
                         )
                     } else {
                         RecordCreateScreen(
@@ -213,6 +228,13 @@ fun SnkApp() {
                                 openRecordCreate(item, "text_search")
                             },
                             onOpenManualCreate = ::openManualCreate,
+                            onOpenOcrRecognition = {
+                                navController.navigate("ocr_recognition")
+                            },
+                            externalQuerySeed = searchQuerySeed,
+                            onExternalQueryConsumed = {
+                                searchQuerySeed = null
+                            },
                         )
                     } else {
                         CandidateConfirmationScreen(
@@ -278,14 +300,9 @@ fun SnkApp() {
                 }
                 composable("ocr_recognition") {
                     OcrRecognitionScreen(
-                        sessionUserId = sessionState.userIdOrNull(),
-                        onCandidatesMatched = { state ->
-                            candidateConfirmationState = state
-                            navController.navigate("candidate_confirm") {
-                                popUpTo("ocr_recognition") {
-                                    inclusive = true
-                                }
-                            }
+                        onFillSearchQuery = { query ->
+                            searchQuerySeed = query
+                            navController.popBackStack()
                         },
                         onOpenManualCreate = ::openManualCreate,
                         onBack = {

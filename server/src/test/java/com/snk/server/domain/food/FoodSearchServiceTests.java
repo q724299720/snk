@@ -6,6 +6,8 @@ import static org.mockito.Mockito.when;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
+import com.snk.server.infrastructure.persistence.food.FoodSearchProjection;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -26,22 +28,23 @@ class FoodSearchServiceTests {
 
 	@Test
 	void shouldReturnStrongQualityForPrefixMatch() {
-		when(foodItemRepository.searchApproved(eq("乐事")))
-			.thenReturn(List.of(foodItem("乐事黄瓜味薯片", "乐事", "6900000000011", "approved")));
+		when(foodItemRepository.searchApproved(eq("lays")))
+			.thenReturn(List.of(searchProjection(1L, "Lays Cucumber Chips", "Lays", "6900000000011", "approved", "4.6")));
 
-		FoodSearchResult result = foodSearchService.search("乐事");
+		FoodSearchResult result = foodSearchService.search("lays");
 
 		assertThat(result.qualitySignal()).isEqualTo("strong");
 		assertThat(result.items()).hasSize(1);
-		assertThat(result.items().getFirst().name()).isEqualTo("乐事黄瓜味薯片");
+		assertThat(result.items().getFirst().name()).isEqualTo("Lays Cucumber Chips");
 		assertThat(result.items().getFirst().auditStatus()).isEqualTo("approved");
+		assertThat(result.items().getFirst().averageRating()).isEqualByComparingTo("4.6");
 	}
 
 	@Test
 	void shouldReturnWeakQualityWhenNoResultsFound() {
-		when(foodItemRepository.searchApproved(eq("未知零食"))).thenReturn(List.of());
+		when(foodItemRepository.searchApproved(eq("unknown snack"))).thenReturn(List.of());
 
-		FoodSearchResult result = foodSearchService.search("未知零食");
+		FoodSearchResult result = foodSearchService.search("unknown snack");
 
 		assertThat(result.qualitySignal()).isEqualTo("weak");
 		assertThat(result.items()).isEmpty();
@@ -50,13 +53,14 @@ class FoodSearchServiceTests {
 	@Test
 	void shouldReturnApprovedFoodWhenBarcodeMatches() {
 		when(foodItemRepository.findByAuditStatusAndBarcode("approved", "6900000000011"))
-			.thenReturn(Optional.of(foodItem("乐事黄瓜味薯片", "乐事", "6900000000011", "approved")));
+			.thenReturn(Optional.of(foodItem("Lays Cucumber Chips", "Lays", "6900000000011", "approved")));
 
 		Optional<FoodSearchItem> result = foodSearchService.lookupByBarcode("6900000000011");
 
 		assertThat(result).isPresent();
 		assertThat(result.orElseThrow().barcode()).isEqualTo("6900000000011");
 		assertThat(result.orElseThrow().auditStatus()).isEqualTo("approved");
+		assertThat(result.orElseThrow().averageRating()).isNull();
 	}
 
 	@Test
@@ -68,24 +72,28 @@ class FoodSearchServiceTests {
 
 	@Test
 	void shouldRecommendRelatedFoodsFromSimilarFields() {
-		FoodItemEntity seed = foodItem("乐事黄瓜味薯片", "乐事", "6900000000011", "approved");
+		FoodItemEntity seed = foodItem("Lays Cucumber Chips", "Lays", "6900000000011", "approved");
 		setId(seed, 1L);
-		FoodItemEntity related = foodItem("乐事番茄味薯片", "乐事", "6900000000022", "approved");
+		FoodItemEntity related = foodItem("Lays Tomato Chips", "Lays", "6900000000022", "approved");
 		setId(related, 2L);
 		when(foodItemRepository.findById(1L)).thenReturn(Optional.of(seed));
-		when(foodItemRepository.searchApproved("乐事"))
-			.thenReturn(List.of(seed, related));
+		when(foodItemRepository.searchApproved("Lays"))
+			.thenReturn(List.of(
+				searchProjection(1L, "Lays Cucumber Chips", "Lays", "6900000000011", "approved", "4.6"),
+				searchProjection(2L, "Lays Tomato Chips", "Lays", "6900000000022", "approved", "4.4")
+			));
 		when(foodItemRepository.searchApproved("chips"))
-			.thenReturn(List.of(related));
+			.thenReturn(List.of(searchProjection(2L, "Lays Tomato Chips", "Lays", "6900000000022", "approved", "4.4")));
 		when(foodItemRepository.searchApproved("snack"))
-			.thenReturn(List.of(related));
-		when(foodItemRepository.searchApproved("乐事黄瓜味薯片"))
-			.thenReturn(List.of(seed));
+			.thenReturn(List.of(searchProjection(2L, "Lays Tomato Chips", "Lays", "6900000000022", "approved", "4.4")));
+		when(foodItemRepository.searchApproved("Lays Cucumber Chips"))
+			.thenReturn(List.of(searchProjection(1L, "Lays Cucumber Chips", "Lays", "6900000000011", "approved", "4.6")));
 
 		FoodSearchResult result = foodSearchService.recommendRelatedFoods(1L, 5);
 
 		assertThat(result.items()).hasSize(1);
-		assertThat(result.items().getFirst().name()).isEqualTo("乐事番茄味薯片");
+		assertThat(result.items().getFirst().name()).isEqualTo("Lays Tomato Chips");
+		assertThat(result.items().getFirst().averageRating()).isEqualByComparingTo("4.4");
 		assertThat(result.qualitySignal()).isEqualTo("related");
 	}
 
@@ -113,6 +121,67 @@ class FoodSearchServiceTests {
 		entity.setCreatedAt(OffsetDateTime.parse("2026-06-13T00:00:00Z"));
 		entity.setUpdatedAt(OffsetDateTime.parse("2026-06-13T00:00:00Z"));
 		return entity;
+	}
+
+	private FoodSearchProjection searchProjection(
+		Long id,
+		String name,
+		String brand,
+		String barcode,
+		String auditStatus,
+		String averageRating
+	) {
+		return new FoodSearchProjection() {
+			@Override
+			public Long getId() {
+				return id;
+			}
+
+			@Override
+			public String getName() {
+				return name;
+			}
+
+			@Override
+			public String getItemType() {
+				return "packaged_product";
+			}
+
+			@Override
+			public String getCategory() {
+				return "snack";
+			}
+
+			@Override
+			public String getSubcategory() {
+				return "chips";
+			}
+
+			@Override
+			public String getBrand() {
+				return brand;
+			}
+
+			@Override
+			public String getBarcode() {
+				return barcode;
+			}
+
+			@Override
+			public String getCoverImageUrl() {
+				return "https://snk.qiuxinmin.cn/images/" + id + ".png";
+			}
+
+			@Override
+			public String getAuditStatus() {
+				return auditStatus;
+			}
+
+			@Override
+			public BigDecimal getAverageRating() {
+				return new BigDecimal(averageRating);
+			}
+		};
 	}
 
 	private void setId(FoodItemEntity entity, Long id) {

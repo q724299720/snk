@@ -1,6 +1,7 @@
 package com.snk.server.api.dto;
 
 import com.snk.server.domain.food.FoodSearchItem;
+import java.math.BigDecimal;
 
 public record FoodSearchItemResponse(
 	Long id,
@@ -11,6 +12,7 @@ public record FoodSearchItemResponse(
 	String brand,
 	String barcode,
 	String coverImageUrl,
+	BigDecimal averageRating,
 	String auditStatus
 ) {
 
@@ -24,6 +26,7 @@ public record FoodSearchItemResponse(
 			item.brand(),
 			item.barcode(),
 			item.coverImageUrl(),
+			item.averageRating(),
 			item.auditStatus()
 		);
 	}

@@ -252,6 +252,8 @@ data class FoodSearchItem(
     val subcategory: String?,
     val brand: String?,
     val barcode: String?,
+    val coverImageUrl: String?,
+    val averageRating: Double?,
     val auditStatus: String,
 )
 
@@ -339,6 +341,8 @@ private fun FoodSearchItemResponse.toModel(): FoodSearchItem = FoodSearchItem(
     subcategory = subcategory,
     brand = brand,
     barcode = barcode,
+    coverImageUrl = coverImageUrl,
+    averageRating = averageRating,
     auditStatus = auditStatus,
 )
 

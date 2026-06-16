@@ -12,6 +12,7 @@ import com.snk.server.domain.food.FoodSearchResult;
 import com.snk.server.domain.food.FoodSearchService;
 import com.snk.server.domain.food.ManualFoodItemService;
 import com.snk.server.infrastructure.storage.StorageProperties;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -49,19 +50,20 @@ class FoodSearchControllerTests {
 
 	@Test
 	void shouldReturnSearchResults() throws Exception {
-		when(foodSearchService.search(eq("乐事")))
+		when(foodSearchService.search(eq("lays")))
 			.thenReturn(
 				new FoodSearchResult(
 					List.of(
 						new FoodSearchItem(
 							1L,
-							"乐事黄瓜味薯片",
+							"Lays Cucumber Chips",
 							"packaged_product",
 							"snack",
 							"chips",
-							"乐事",
+							"Lays",
 							"6900000000011",
-							null,
+							"https://snk.qiuxinmin.cn/images/1.png",
+							new BigDecimal("4.6"),
 							"approved"
 						)
 					),
@@ -69,11 +71,13 @@ class FoodSearchControllerTests {
 				)
 			);
 
-		mockMvc.perform(get("/api/foods/search").param("q", "乐事"))
+		mockMvc.perform(get("/api/foods/search").param("q", "lays"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.qualitySignal").value("strong"))
-			.andExpect(jsonPath("$.items[0].name").value("乐事黄瓜味薯片"))
+			.andExpect(jsonPath("$.items[0].name").value("Lays Cucumber Chips"))
 			.andExpect(jsonPath("$.items[0].barcode").value("6900000000011"))
+			.andExpect(jsonPath("$.items[0].coverImageUrl").value("https://snk.qiuxinmin.cn/images/1.png"))
+			.andExpect(jsonPath("$.items[0].averageRating").value(4.6))
 			.andExpect(jsonPath("$.items[0].auditStatus").value("approved"));
 	}
 
@@ -90,12 +94,13 @@ class FoodSearchControllerTests {
 				Optional.of(
 					new FoodSearchItem(
 						1L,
-						"乐事黄瓜味薯片",
+						"Lays Cucumber Chips",
 						"packaged_product",
 						"snack",
 						"chips",
-						"乐事",
+						"Lays",
 						"6900000000011",
+						null,
 						null,
 						"approved"
 					)
@@ -104,8 +109,9 @@ class FoodSearchControllerTests {
 
 		mockMvc.perform(get("/api/foods/barcode/6900000000011"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.name").value("乐事黄瓜味薯片"))
+			.andExpect(jsonPath("$.name").value("Lays Cucumber Chips"))
 			.andExpect(jsonPath("$.barcode").value("6900000000011"))
+			.andExpect(jsonPath("$.averageRating").isEmpty())
 			.andExpect(jsonPath("$.auditStatus").value("approved"));
 	}
 
@@ -125,13 +131,14 @@ class FoodSearchControllerTests {
 					List.of(
 						new FoodSearchItem(
 							2L,
-							"乐事番茄味薯片",
+							"Lays Tomato Chips",
 							"packaged_product",
 							"snack",
 							"chips",
-							"乐事",
+							"Lays",
 							"6900000000022",
-							null,
+							"https://snk.qiuxinmin.cn/images/2.png",
+							new BigDecimal("4.4"),
 							"approved"
 						)
 					),
@@ -142,24 +149,26 @@ class FoodSearchControllerTests {
 		mockMvc.perform(get("/api/foods/1/related"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.qualitySignal").value("related"))
-			.andExpect(jsonPath("$.items[0].name").value("乐事番茄味薯片"));
+			.andExpect(jsonPath("$.items[0].name").value("Lays Tomato Chips"))
+			.andExpect(jsonPath("$.items[0].averageRating").value(4.4));
 	}
 
 	@Test
 	void shouldCreatePendingFoodItem() throws Exception {
 		when(
 			manualFoodItemService.createPendingItem(
-				eq(new CreateManualFoodItemCommand(2L, "杨枝鲜花饼", "packaged_product", "snack", "chips", "SNK Bakery", "6900000000099"))
+				eq(new CreateManualFoodItemCommand(2L, "Mango Cake", "packaged_product", "snack", "chips", "SNK Bakery", "6900000000099"))
 			)
 		).thenReturn(
 			new FoodSearchItem(
 				9L,
-				"杨枝鲜花饼",
+				"Mango Cake",
 				"packaged_product",
 				"snack",
 				"chips",
 				"SNK Bakery",
 				"6900000000099",
+				null,
 				null,
 				"pending"
 			)
@@ -172,7 +181,7 @@ class FoodSearchControllerTests {
 					"""
 					{
 					  "userId": 2,
-					  "name": "杨枝鲜花饼",
+					  "name": "Mango Cake",
 					  "itemType": "packaged_product",
 					  "category": "snack",
 					  "subcategory": "chips",
@@ -183,7 +192,7 @@ class FoodSearchControllerTests {
 				)
 		)
 			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.name").value("杨枝鲜花饼"))
+			.andExpect(jsonPath("$.name").value("Mango Cake"))
 			.andExpect(jsonPath("$.barcode").value("6900000000099"))
 			.andExpect(jsonPath("$.auditStatus").value("pending"));
 	}

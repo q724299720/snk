@@ -66,6 +66,7 @@ public class ManualFoodItemService {
 			saved.getBrand(),
 			saved.getBarcode(),
 			saved.getCoverImageUrl(),
+			null,
 			saved.getAuditStatus()
 		);
 	}

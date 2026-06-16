@@ -1,5 +1,7 @@
 package com.snk.server.domain.food;
 
+import java.math.BigDecimal;
+
 public record FoodSearchItem(
 	Long id,
 	String name,
@@ -9,6 +11,7 @@ public record FoodSearchItem(
 	String brand,
 	String barcode,
 	String coverImageUrl,
+	BigDecimal averageRating,
 	String auditStatus
 ) {
 }

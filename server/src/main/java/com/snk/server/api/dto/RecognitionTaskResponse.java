@@ -34,6 +34,7 @@ public record RecognitionTaskResponse(
 					candidate.brand(),
 					candidate.barcode(),
 					candidate.coverImageUrl(),
+					null,
 					candidate.auditStatus()
 				))
 				.toList(),

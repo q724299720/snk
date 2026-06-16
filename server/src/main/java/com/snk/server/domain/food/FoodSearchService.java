@@ -2,6 +2,7 @@ package com.snk.server.domain.food;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
+import com.snk.server.infrastructure.persistence.food.FoodSearchProjection;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -45,7 +46,7 @@ public class FoodSearchService {
 
 		LinkedHashMap<Long, FoodSearchItem> items = new LinkedHashMap<>();
 		for (String query : buildRecommendationQueries(seed)) {
-			for (FoodItemEntity candidate : foodItemRepository.searchApproved(query)) {
+			for (FoodSearchProjection candidate : foodItemRepository.searchApproved(query)) {
 				if (candidate.getId().equals(seed.getId())) {
 					continue;
 				}
@@ -59,6 +60,21 @@ public class FoodSearchService {
 		return new FoodSearchResult(new ArrayList<>(items.values()), items.isEmpty() ? "weak" : "related");
 	}
 
+	private FoodSearchItem toItem(FoodSearchProjection projection) {
+		return new FoodSearchItem(
+			projection.getId(),
+			projection.getName(),
+			projection.getItemType(),
+			projection.getCategory(),
+			projection.getSubcategory(),
+			projection.getBrand(),
+			projection.getBarcode(),
+			projection.getCoverImageUrl(),
+			projection.getAverageRating(),
+			projection.getAuditStatus()
+		);
+	}
+
 	private FoodSearchItem toItem(FoodItemEntity entity) {
 		return new FoodSearchItem(
 			entity.getId(),
@@ -69,6 +85,7 @@ public class FoodSearchService {
 			entity.getBrand(),
 			entity.getBarcode(),
 			entity.getCoverImageUrl(),
+			null,
 			entity.getAuditStatus()
 		);
 	}

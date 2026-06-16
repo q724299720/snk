@@ -107,6 +107,8 @@ data class FoodSearchItemResponse(
     val barcode: String? = null,
     @SerialName("coverImageUrl")
     val coverImageUrl: String? = null,
+    @SerialName("averageRating")
+    val averageRating: Double? = null,
     @SerialName("auditStatus")
     val auditStatus: String = "approved",
 )
