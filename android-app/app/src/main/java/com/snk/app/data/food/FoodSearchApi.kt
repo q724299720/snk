@@ -147,6 +147,8 @@ data class CreateRecognitionTaskRequest(
     val userId: Long,
     @SerialName("inputImageUrl")
     val inputImageUrl: String,
+    @SerialName("hintQuery")
+    val hintQuery: String? = null,
 )
 
 @Serializable

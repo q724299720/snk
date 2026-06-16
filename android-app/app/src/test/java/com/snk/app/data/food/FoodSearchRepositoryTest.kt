@@ -372,6 +372,7 @@ class FoodSearchRepositoryTest {
             imageBytes = "png-content".toByteArray(),
             fileName = "chips.png",
             contentType = "image/png",
+            hintQuery = "乐事 薯片 黄瓜味",
         )
 
         assertTrue(result is FoodImageRecognitionResult.Success)
@@ -387,6 +388,7 @@ class FoodSearchRepositoryTest {
         val body = Buffer().write(createTaskRequest.body.readByteArray()).readUtf8()
         assertTrue(body.contains("\"userId\":2"))
         assertTrue(body.contains("\"inputImageUrl\":\"https://snk.qiuxinmin.cn/uploads/images/demo.png\""))
+        assertTrue(body.contains("\"hintQuery\":\"乐事 薯片 黄瓜味\""))
     }
 
     @Test

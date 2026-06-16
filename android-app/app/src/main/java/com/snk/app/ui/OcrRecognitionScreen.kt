@@ -89,6 +89,7 @@ fun OcrRecognitionScreen(
                 imageBytes = imagePayload.bytes,
                 fileName = imagePayload.fileName,
                 contentType = imagePayload.contentType,
+                hintQuery = manualSeedName,
             )
         ) {
             is FoodImageRecognitionResult.Success -> {

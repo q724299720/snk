@@ -66,7 +66,8 @@ public class RecognitionController {
 			recognitionTaskService.createTask(
 				new ImageRecognitionTaskCommand(
 					request.userId(),
-					request.inputImageUrl()
+					request.inputImageUrl(),
+					request.hintQuery()
 				)
 			)
 		);

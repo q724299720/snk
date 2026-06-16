@@ -11,6 +11,8 @@ import com.snk.server.infrastructure.persistence.recognition.RecognitionTaskEnti
 import com.snk.server.infrastructure.persistence.recognition.RecognitionTaskRepository;
 import com.snk.server.infrastructure.persistence.user.UserEntity;
 import com.snk.server.infrastructure.persistence.user.UserRepository;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -50,6 +52,7 @@ public class RecognitionTaskService {
 	@Transactional
 	public RecognitionTaskResult createTask(ImageRecognitionTaskCommand command) {
 		String inputImageUrl = normalizeInputImageUrl(command.inputImageUrl());
+		String hintQuery = normalizeOptional(command.hintQuery());
 		UserEntity user = userRepository.findById(command.userId())
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
 
@@ -61,7 +64,7 @@ public class RecognitionTaskService {
 
 		try {
 			ImageRecognitionTaskProviderResult providerResult = imageRecognitionTaskProvider.recognize(inputImageUrl);
-			RecognitionTaskCompletion completion = resolveCompletion(providerResult);
+			RecognitionTaskCompletion completion = resolveCompletion(hintQuery, providerResult);
 			entity.setTopCandidates(writeSnapshots(completion.topCandidates()));
 			entity.setConfidence(providerResult.confidence());
 			entity.setSelectedFoodItem(
@@ -125,8 +128,8 @@ public class RecognitionTaskService {
 		return normalized.isBlank() ? null : normalized;
 	}
 
-	private RecognitionTaskCompletion resolveCompletion(ImageRecognitionTaskProviderResult providerResult) {
-		for (String query : providerResult.candidateQueries()) {
+	private RecognitionTaskCompletion resolveCompletion(String hintQuery, ImageRecognitionTaskProviderResult providerResult) {
+		for (String query : buildCandidateQueries(hintQuery, providerResult.candidateQueries())) {
 			FoodSearchResult searchResult = foodSearchService.search(query);
 			if (!searchResult.items().isEmpty()) {
 				List<ImageRecognitionCandidateSnapshot> snapshots = searchResult.items().stream()
@@ -138,6 +141,20 @@ public class RecognitionTaskService {
 			}
 		}
 		return new RecognitionTaskCompletion(List.of(), null);
+	}
+
+	private List<String> buildCandidateQueries(String hintQuery, List<String> providerQueries) {
+		LinkedHashSet<String> ordered = new LinkedHashSet<>();
+		if (hintQuery != null) {
+			ordered.add(hintQuery);
+		}
+		for (String providerQuery : providerQueries) {
+			String normalized = normalizeOptional(providerQuery);
+			if (normalized != null) {
+				ordered.add(normalized);
+			}
+		}
+		return new ArrayList<>(ordered);
 	}
 
 	private ImageRecognitionCandidateSnapshot toSnapshot(FoodSearchItem item) {

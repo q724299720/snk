@@ -218,11 +218,13 @@
 - 需要给自然食物图片返回候选食物列表
 - 客户端先调用 `POST /api/upload/image` 上传原图，再用返回的 `resourceUrl` 创建识别任务
 - `POST /api/recognition/tasks` 当前最小请求字段为 `userId`、`inputImageUrl`
+- `hintQuery` 当前为可选字段，用于把本地 OCR 或服务端 OCR 已提取出的文本提示继续透传给图片识别任务，提升兜底链路召回率
 - `POST /api/recognition/tasks` 与 `GET /api/recognition/tasks/{id}` 当前最小响应字段包含：`id`、`status`、`topCandidates`、`selectedFoodItemId`、`confidence`、`createdAt`、`finishedAt`、`statusReason`
 - 当前 `status` 至少支持 `processing / completed / failed`
 - 当任务仍处于 `processing` 时，客户端可以继续轮询 `GET /api/recognition/tasks/{id}`
 - MVP 当前允许服务端在创建任务时同步完成 provider 调用与候选回填，因此首个 `POST` 响应即可直接返回 `completed` 或 `failed`
 - Android 端当前已接入 “本地 OCR -> 服务端 OCR -> 图片识别任务 -> 手动创建” 自动回退链路
+- 当前服务端会优先使用 `hintQuery` 做一次文本召回，再继续消费图片识别 provider 返回的候选查询词
 
 ## 候选质量信号
 
@@ -271,3 +273,4 @@
 | 2026-06-14 | Codex | 补充后台统计报表接口 | Phase 4 已落地后台治理汇总概览闭环 |
 | 2026-06-14 | Codex | 补充记录点赞接口与 `likeCount` 响应字段 | Phase 5 已落地记录互动的最小聚合点赞闭环 |
 | 2026-06-14 | Codex | 补充相似食物推荐接口 | Phase 5 已落地记录页可消费的最小推荐闭环 |
+| 2026-06-16 | Codex | 补充图片识别任务可选 `hintQuery` 入参与服务端优先召回规则 | 让 OCR 已提取到的文本提示继续参与图片识别兜底链路，减少上下文丢失 |

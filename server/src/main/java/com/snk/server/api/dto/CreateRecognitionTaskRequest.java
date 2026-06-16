@@ -7,6 +7,7 @@ public record CreateRecognitionTaskRequest(
 	@NotNull
 	Long userId,
 	@NotBlank
-	String inputImageUrl
+	String inputImageUrl,
+	String hintQuery
 ) {
 }

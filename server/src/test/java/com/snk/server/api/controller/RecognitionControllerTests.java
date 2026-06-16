@@ -148,7 +148,8 @@ class RecognitionControllerTests {
 					"""
 					{
 					  "userId": 2,
-					  "inputImageUrl": "/uploads/images/demo.png"
+					  "inputImageUrl": "/uploads/images/demo.png",
+					  "hintQuery": "乐事 薯片 黄瓜味"
 					}
 					"""
 				)

@@ -92,7 +92,7 @@ class RecognitionTaskServiceTests {
 		when(foodItemRepository.findById(11L)).thenReturn(Optional.of(selectedFoodItem));
 
 		RecognitionTaskResult result = recognitionTaskService.createTask(
-			new ImageRecognitionTaskCommand(2L, "/uploads/images/demo.png")
+			new ImageRecognitionTaskCommand(2L, "/uploads/images/demo.png", null)
 		);
 
 		assertThat(result.id()).isEqualTo(8L);
@@ -120,7 +120,7 @@ class RecognitionTaskServiceTests {
 			.thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE, "image recognition provider is not configured"));
 
 		RecognitionTaskResult result = recognitionTaskService.createTask(
-			new ImageRecognitionTaskCommand(2L, "/uploads/images/demo.png")
+			new ImageRecognitionTaskCommand(2L, "/uploads/images/demo.png", null)
 		);
 
 		assertThat(result.id()).isEqualTo(9L);
@@ -131,9 +131,58 @@ class RecognitionTaskServiceTests {
 
 	@Test
 	void shouldRejectBlankImageUrl() {
-		assertThatThrownBy(() -> recognitionTaskService.createTask(new ImageRecognitionTaskCommand(2L, " ")))
+		assertThatThrownBy(() -> recognitionTaskService.createTask(new ImageRecognitionTaskCommand(2L, " ", null)))
 			.isInstanceOf(ResponseStatusException.class)
 			.hasMessageContaining("400 BAD_REQUEST");
+	}
+
+	@Test
+	void shouldPreferHintQueryBeforeProviderQuery() {
+		UserEntity user = new UserEntity();
+		setUserId(user, 2L);
+		when(userRepository.findById(2L)).thenReturn(Optional.of(user));
+		when(recognitionTaskRepository.save(any(RecognitionTaskEntity.class))).thenAnswer(invocation -> {
+			RecognitionTaskEntity entity = invocation.getArgument(0);
+			setTaskId(entity, entity.getId() == null ? 10L : entity.getId());
+			if (entity.getCreatedAt() == null) {
+				setCreatedAt(entity, OffsetDateTime.parse("2026-06-14T12:00:00Z"));
+			}
+			return entity;
+		});
+		when(imageRecognitionTaskProvider.recognize(eq("/uploads/images/demo.png")))
+			.thenReturn(new ImageRecognitionTaskProviderResult(List.of("乐事黄瓜味"), new BigDecimal("0.8500")));
+		when(foodSearchService.search(eq("乐事 薯片 黄瓜味")))
+			.thenReturn(
+				new FoodSearchResult(
+					List.of(
+						new FoodSearchItem(
+							12L,
+							"Lays Cucumber Chips",
+							"packaged_product",
+							"snack",
+							"chips",
+							"Lays",
+							"6900000000011",
+							null,
+							"approved"
+						)
+					),
+					"strong"
+				)
+			);
+		FoodItemEntity selectedFoodItem = new FoodItemEntity();
+		setFoodItemId(selectedFoodItem, 12L);
+		when(foodItemRepository.findById(12L)).thenReturn(Optional.of(selectedFoodItem));
+
+		RecognitionTaskResult result = recognitionTaskService.createTask(
+			new ImageRecognitionTaskCommand(2L, "/uploads/images/demo.png", " 乐事 薯片 黄瓜味 ")
+		);
+
+		assertThat(result.id()).isEqualTo(10L);
+		assertThat(result.status()).isEqualTo("completed");
+		assertThat(result.selectedFoodItemId()).isEqualTo(12L);
+		assertThat(result.topCandidates()).hasSize(1);
+		assertThat(result.topCandidates().getFirst().name()).isEqualTo("Lays Cucumber Chips");
 	}
 
 	@Test

@@ -209,6 +209,7 @@ class FoodSearchRepository(
         imageBytes: ByteArray,
         fileName: String,
         contentType: String,
+        hintQuery: String? = null,
     ): FoodImageRecognitionResult {
         if (imageBytes.isEmpty()) {
             return FoodImageRecognitionResult.Failure("没有可上传的图片内容，暂时无法继续图片识别。")
@@ -226,6 +227,7 @@ class FoodSearchRepository(
                 CreateRecognitionTaskRequest(
                     userId = userId,
                     inputImageUrl = uploadResponse.resourceUrl,
+                    hintQuery = hintQuery?.trim()?.ifBlank { null },
                 ),
             )
             repeat(3) {
