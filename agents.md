@@ -30,8 +30,7 @@
 ## 当前全局结论
 
 - 产品定位：安卓端美食 / 零食分享与记录 App
-- 识别主路径：`条形码 > 本地 OCR 文本搜索 > 服务端 OCR 兜底 > 图像识别`
-- 当前图片识别默认模式：`stub` 演示模式，默认 `stub-query` 为 `乐事黄瓜味`，用于在未接真实模型时跑通候选确认链路
+- 识别主路径：`名称搜索 > OCR 文本提取辅助 > 手动创建`
 - 后端 MVP 原则：`All-in-PostgreSQL`
 - 数据策略：先解决冷启动，再扩智能识别
 - 客户端体验底线：支持离线草稿与弱网补传
@@ -51,8 +50,8 @@
 
 1. `Phase 0`：冷启动数据准备
 2. `Phase 1`：后端基础与数据库迁移
-3. `Phase 2`：安卓端基础记录闭环
-4. `Phase 3`：识别链路接入
+3. `Phase 2`：安卓端名称搜索与记录闭环
+4. `Phase 3`：OCR 文本辅助与搜索结果增强
 5. `Phase 4`：后台治理与审核
 6. `Phase 5`：增强能力与优化
 
@@ -74,7 +73,7 @@
 | `docs/database/schema.md` | 数据模型、字段约束、索引与迁移策略 |
 | `docs/database/seed-data-spec.md` | 冷启动种子数据字段规范、最低规模和导入校验规则 |
 | `docs/database/import-script-plan.md` | 冷启动种子数据导入脚本方案、目录约定与脚本骨架说明 |
-| `docs/recognition/recognition-plan.md` | 条形码、OCR、图像识别的策略与兜底流程 |
+| `docs/recognition/recognition-plan.md` | 名称搜索、OCR 文本辅助与手动创建的识别策略 |
 | `docs/process/document-governance.md` | 文档维护规则、审计记录规则、协作约束 |
 | `docs/process/github-workflow.md` | GitHub 仓库创建、远程连接记录与日常提交流程 |
 
@@ -113,3 +112,4 @@
 | 2026-06-14 | Codex | 补充正式公网域名 | 已确认后续真机联调与服务器部署统一使用 `https://snk.qiuxinmin.cn` |
 | 2026-06-14 | Codex | 补充本机 adb 路径 | 已确认后续真机安装、抓日志与自动化测试需复用固定 adb 可执行文件路径 |
 | 2026-06-14 | Codex | 补充图片识别默认 stub 演示模式 | 当前仓库默认图片识别 provider 使用 stub 演示模式，未接真实模型时也能跑通候选确认链路 |
+| 2026-06-16 | Codex | 将全局识别主路径收敛为名称搜索优先 | 已确认新方案去掉条形码与以图搜图，保留 OCR 作为文本输入辅助入口 |
