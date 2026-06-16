@@ -162,12 +162,6 @@ fun SnkApp() {
                         onCreateRecord = { item ->
                             openRecordCreate(item, "text_search")
                         },
-                        onOpenBarcodeScanner = {
-                            navController.navigate("barcode_scan")
-                        },
-                        onOpenOcrRecognition = {
-                            navController.navigate("ocr_recognition")
-                        },
                         onOpenManualCreate = ::openManualCreate,
                     )
                 }
@@ -187,12 +181,6 @@ fun SnkApp() {
                             sessionState = sessionState,
                             onCreateRecord = { item ->
                                 openRecordCreate(item, "text_search")
-                            },
-                            onOpenBarcodeScanner = {
-                                navController.navigate("barcode_scan")
-                            },
-                            onOpenOcrRecognition = {
-                                navController.navigate("ocr_recognition")
                             },
                             onOpenManualCreate = ::openManualCreate,
                         )
@@ -223,12 +211,6 @@ fun SnkApp() {
                             sessionState = sessionState,
                             onCreateRecord = { item ->
                                 openRecordCreate(item, "text_search")
-                            },
-                            onOpenBarcodeScanner = {
-                                navController.navigate("barcode_scan")
-                            },
-                            onOpenOcrRecognition = {
-                                navController.navigate("ocr_recognition")
                             },
                             onOpenManualCreate = ::openManualCreate,
                         )

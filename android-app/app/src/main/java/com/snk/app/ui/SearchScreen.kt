@@ -8,13 +8,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,9 +27,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.snk.app.BuildConfig
 import com.snk.app.SnkApplication
-import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodReportResult
+import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodSearchResult
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val recentQueries = listOf("乐事黄瓜味", "抹茶蛋糕", "拿铁", "牛肉汉堡")
@@ -38,8 +39,6 @@ private val recentQueries = listOf("乐事黄瓜味", "抹茶蛋糕", "拿铁", 
 fun SearchScreen(
     sessionState: SessionUiState,
     onCreateRecord: (FoodSearchItem) -> Unit,
-    onOpenBarcodeScanner: () -> Unit,
-    onOpenOcrRecognition: () -> Unit,
     onOpenManualCreate: (String) -> Unit,
 ) {
     val application = LocalContext.current.applicationContext as SnkApplication
@@ -49,13 +48,17 @@ fun SearchScreen(
     var isSearching by remember { mutableStateOf(false) }
     var reportMessage by remember { mutableStateOf<String?>(null) }
 
-    fun submitSearch(value: String) {
-        query = value
-        coroutineScope.launch {
-            isSearching = true
-            searchState = application.container.foodSearchRepository.search(value)
+    LaunchedEffect(query) {
+        val normalizedQuery = query.trim()
+        if (normalizedQuery.isBlank()) {
             isSearching = false
+            searchState = null
+            return@LaunchedEffect
         }
+        delay(300)
+        isSearching = true
+        searchState = application.container.foodSearchRepository.search(normalizedQuery)
+        isSearching = false
     }
 
     Column(
@@ -65,13 +68,13 @@ fun SearchScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            text = "文本搜索",
+            text = "名称搜索",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Black,
             color = Color(0xFF2B1E18),
         )
         Text(
-            text = "当前已打通游客身份和远程搜索，接下来从命中结果直接创建记录。",
+            text = "输入名称、品牌或口味词后，系统会自动联想候选条目，直接进入记录流程。",
             style = MaterialTheme.typography.bodyLarge,
             color = Color(0xFF5B4A42),
         )
@@ -79,7 +82,7 @@ fun SearchScreen(
             value = query,
             onValueChange = { query = it },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("输入食品名、品牌或口味") },
+            label = { Text("输入食物名称、品牌或口味") },
             singleLine = true,
             shape = RoundedCornerShape(20.dp),
         )
@@ -90,32 +93,9 @@ fun SearchScreen(
         ) {
             recentQueries.forEach { item ->
                 AssistChip(
-                    onClick = { submitSearch(item) },
+                    onClick = { query = item },
                     label = { Text(item) },
                 )
-            }
-        }
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Button(
-                onClick = { submitSearch(query) },
-                shape = RoundedCornerShape(18.dp),
-            ) {
-                Text(if (isSearching) "搜索中..." else "搜索")
-            }
-            Button(
-                onClick = onOpenBarcodeScanner,
-                shape = RoundedCornerShape(18.dp),
-            ) {
-                Text("扫码录入")
-            }
-            Button(
-                onClick = onOpenOcrRecognition,
-                shape = RoundedCornerShape(18.dp),
-            ) {
-                Text("图片识别")
             }
         }
         Card(
@@ -151,7 +131,7 @@ fun SearchScreen(
         FoodSearchResultsCard(
             searchState = searchState,
             isSearching = isSearching,
-            emptyHint = "输入名称后即可查询已审核的基础食物条目。",
+            emptyHint = "输入名称后即可自动联想已审核的基础食物条目。",
             onCreateRecord = onCreateRecord,
             onReportItem = { item ->
                 val userId = when (sessionState) {
@@ -177,7 +157,7 @@ fun SearchScreen(
             },
             noResultActionLabel = if (query.isNotBlank()) "没有找到？手动创建" else null,
             onNoResultAction = if (query.isNotBlank()) {
-                { onOpenManualCreate(query) }
+                { onOpenManualCreate(query.trim()) }
             } else {
                 null
             },
