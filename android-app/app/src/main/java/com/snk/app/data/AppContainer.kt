@@ -10,6 +10,7 @@ import com.snk.app.data.auth.InstallationIdStore
 import com.snk.app.data.draft.DraftRecordRepository
 import com.snk.app.data.food.FoodSearchApi
 import com.snk.app.data.food.FoodSearchRepository
+import com.snk.app.data.food.RecentSearchStore
 import com.snk.app.data.local.SnkDatabase
 import com.snk.app.data.record.FoodRecordApi
 import com.snk.app.data.record.FoodRecordRepository
@@ -60,6 +61,8 @@ class AppContainer(context: Context) {
     val foodSearchRepository = FoodSearchRepository(
         api = foodSearchApi,
     )
+
+    val recentSearchStore = RecentSearchStore(context)
 
     val foodRecordRepository = FoodRecordRepository(
         api = foodRecordApi,

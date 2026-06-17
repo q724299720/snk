@@ -19,6 +19,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,8 +49,6 @@ import com.snk.app.data.record.toFoodSearchItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val recentQueries = listOf("乐事黄瓜味", "抹茶蛋糕", "拿铁", "牛肉汉堡")
-
 @Composable
 fun SearchScreen(
     sessionState: SessionUiState,
@@ -63,6 +62,7 @@ fun SearchScreen(
     val application = LocalContext.current.applicationContext as SnkApplication
     val coroutineScope = rememberCoroutineScope()
     val sessionUserId = sessionState.userIdOrNull()
+    var recentQueries by remember { mutableStateOf<List<String>>(emptyList()) }
     val recentRecordState by produceState<FoodRecordHistoryResult?>(
         initialValue = null,
         key1 = sessionUserId,
@@ -78,6 +78,10 @@ fun SearchScreen(
     var isSearching by remember { mutableStateOf(false) }
     var reportMessage by remember { mutableStateOf<String?>(null) }
     var ocrSuggestedQueries by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        recentQueries = application.container.recentSearchStore.getRecentQueries()
+    }
 
     LaunchedEffect(externalQuerySeed, externalSuggestedQueries) {
         val seed = externalQuerySeed?.trim().orEmpty()
@@ -101,8 +105,12 @@ fun SearchScreen(
         }
         delay(300)
         isSearching = true
-        searchState = application.container.foodSearchRepository.search(normalizedQuery)
+        val result = application.container.foodSearchRepository.search(normalizedQuery)
+        searchState = result
         isSearching = false
+        if (result is FoodSearchResult.Success) {
+            recentQueries = application.container.recentSearchStore.rememberQuery(normalizedQuery)
+        }
     }
 
     LazyColumn(
@@ -145,11 +153,51 @@ fun SearchScreen(
                 ) {
                     Text("从图片提取文字")
                 }
-                recentQueries.forEach { item ->
-                    AssistChip(
-                        onClick = { query = item },
-                        label = { Text(item) },
-                    )
+            }
+        }
+        if (recentQueries.isNotEmpty()) {
+            item {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8EEE2)),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "最近搜索",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            TextButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        application.container.recentSearchStore.clearRecentQueries()
+                                        recentQueries = emptyList()
+                                    }
+                                },
+                            ) {
+                                Text("清空")
+                            }
+                        }
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            recentQueries.forEach { item ->
+                                AssistChip(
+                                    onClick = { query = item },
+                                    label = { Text(item) },
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
