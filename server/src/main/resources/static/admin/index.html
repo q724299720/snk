@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SNK 后台治理</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #23211f;
+      --muted: #6a625b;
+      --line: #ded8d0;
+      --paper: #fffdf8;
+      --panel: #f7f3ed;
+      --accent: #2d6a4f;
+      --danger: #a43d2d;
+      --warning: #9a6b1f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: #ffffff;
+      padding: 18px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    header .top {
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      margin: 0 auto;
+      max-width: 1280px;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 0;
+    }
+
+    main {
+      display: grid;
+      gap: 18px;
+      margin: 0 auto;
+      max-width: 1280px;
+      padding: 20px 24px 40px;
+    }
+
+    section {
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 0 0 12px;
+    }
+
+    .toolbar,
+    .actions,
+    .token-box {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .token-box input {
+      min-width: 260px;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font: inherit;
+      min-height: 36px;
+      padding: 7px 10px;
+    }
+
+    textarea {
+      min-height: 72px;
+      resize: vertical;
+    }
+
+    button {
+      background: #ffffff;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    button.danger {
+      color: var(--danger);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .stats-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 24px;
+    }
+
+    .metric span,
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+
+    table {
+      border-collapse: collapse;
+      min-width: 920px;
+      width: 100%;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--panel);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .status {
+      border-radius: 999px;
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 8px;
+    }
+
+    .status.pending {
+      background: #fff2cc;
+      color: var(--warning);
+    }
+
+    .status.approved {
+      background: #dff3e8;
+      color: var(--accent);
+    }
+
+    .status.rejected {
+      background: #f8dfdc;
+      color: var(--danger);
+    }
+
+    .message {
+      border-left: 4px solid var(--accent);
+      color: var(--muted);
+      min-height: 22px;
+      padding-left: 10px;
+    }
+
+    .message.error {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .word-form {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin-bottom: 12px;
+    }
+
+    .word-form textarea {
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 720px) {
+      header .top {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      main {
+        padding: 16px;
+      }
+
+      .token-box input,
+      input,
+      select,
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="top">
+      <h1>SNK 后台治理</h1>
+      <div class="token-box">
+        <input id="adminToken" type="password" placeholder="X-SNK-ADMIN-TOKEN">
+        <button id="saveToken">保存 Token</button>
+        <button id="reloadAll" class="primary">刷新</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <p id="message" class="message">后台页面已加载。</p>
+
+    <section>
+      <h2>治理概览</h2>
+      <div id="stats" class="stats-grid"></div>
+    </section>
+
+    <section>
+      <h2>食物条目管理</h2>
+      <div class="toolbar">
+        <select id="auditStatus">
+          <option value="">全部状态</option>
+          <option value="pending">待审核</option>
+          <option value="approved">已通过</option>
+          <option value="rejected">已拒绝</option>
+        </select>
+        <input id="foodQuery" placeholder="按名称 / 品牌搜索">
+        <input id="foodLimit" type="number" min="1" max="100" value="20">
+        <button id="loadFoodItems" class="primary">查询条目</button>
+        <button id="loadPending">待审核</button>
+        <button id="loadReported">报错条目</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>名称</th>
+              <th>分类</th>
+              <th>来源</th>
+              <th>状态</th>
+              <th>报错数</th>
+              <th>创建者</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="foodItems"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>审核词典</h2>
+      <div class="word-form">
+        <input id="wordText" placeholder="词条">
+        <select id="wordType">
+          <option value="valid_food_word">有效食物词</option>
+          <option value="blocked_word">拦截词</option>
+        </select>
+        <input id="wordSource" value="admin" placeholder="来源">
+        <select id="wordEnabled">
+          <option value="true">启用</option>
+          <option value="false">停用</option>
+        </select>
+        <input id="operatorId" value="admin-console" placeholder="operatorId">
+        <input id="operatorName" value="Admin Console" placeholder="operatorName">
+        <textarea id="wordRemark" placeholder="备注"></textarea>
+        <button id="createWord" class="primary">新增词条</button>
+        <button id="loadWords">刷新词典</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>词条</th>
+              <th>类型</th>
+              <th>状态</th>
+              <th>来源</th>
+              <th>备注</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="reviewWords"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>词典审计日志</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>动作</th>
+              <th>操作者</th>
+              <th>时间</th>
+              <th>变更后</th>
+            </tr>
+          </thead>
+          <tbody id="auditLogs"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const tokenInput = document.querySelector("#adminToken");
+    const message = document.querySelector("#message");
+    const savedToken = sessionStorage.getItem("snkAdminToken") || "";
+    tokenInput.value = savedToken;
+
+    function setMessage(text, isError = false) {
+      message.textContent = text;
+      message.classList.toggle("error", isError);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll("\"", "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    async function requestJson(url, options = {}) {
+      const headers = new Headers(options.headers || {});
+      const token = tokenInput.value.trim();
+      if (token) {
+        headers.set("X-SNK-ADMIN-TOKEN", token);
+      }
+      if (options.body && !headers.has("Content-Type")) {
+        headers.set("Content-Type", "application/json");
+      }
+      const response = await fetch(url, { ...options, headers });
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    }
+
+    function statusBadge(status) {
+      const value = String(status || "unknown");
+      return `<span class="status ${escapeHtml(value)}">${escapeHtml(value)}</span>`;
+    }
+
+    function renderStats(stats) {
+      const fields = [
+        ["totalFoodItems", "全部条目"],
+        ["pendingFoodItems", "待审核"],
+        ["approvedFoodItems", "已通过"],
+        ["rejectedFoodItems", "已拒绝"],
+        ["reportedFoodItems", "报错条目"],
+        ["enabledReviewWords", "启用词条"],
+        ["disabledReviewWords", "停用词条"],
+      ];
+      document.querySelector("#stats").innerHTML = fields.map(([key, label]) => `
+        <div class="metric">
+          <strong>${escapeHtml(stats[key] ?? 0)}</strong>
+          <span>${label}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderFoodItems(items) {
+      document.querySelector("#foodItems").innerHTML = items.map((item) => `
+        <tr>
+          <td>${escapeHtml(item.id)}</td>
+          <td>
+            <strong>${escapeHtml(item.name)}</strong><br>
+            <span class="muted">${escapeHtml(item.brand || "无品牌")}</span>
+          </td>
+          <td>${escapeHtml(item.category)}${item.subcategory ? " / " + escapeHtml(item.subcategory) : ""}</td>
+          <td>${escapeHtml(item.source)}</td>
+          <td>${statusBadge(item.auditStatus)}</td>
+          <td>${escapeHtml(item.reportCount)}</td>
+          <td>${escapeHtml(item.createdByUserId || "-")}</td>
+          <td class="actions">
+            <button data-action="approve" data-id="${escapeHtml(item.id)}">通过</button>
+            <button class="danger" data-action="reject" data-id="${escapeHtml(item.id)}">拒绝</button>
+            <button data-action="clear" data-id="${escapeHtml(item.id)}">清报错</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function renderWords(words) {
+      document.querySelector("#reviewWords").innerHTML = words.map((word) => `
+        <tr>
+          <td>${escapeHtml(word.id)}</td>
+          <td><strong>${escapeHtml(word.word)}</strong></td>
+          <td>${escapeHtml(word.wordType)}</td>
+          <td>${word.enabled ? statusBadge("approved") : statusBadge("rejected")}</td>
+          <td>${escapeHtml(word.source)}</td>
+          <td>${escapeHtml(word.remark || "")}</td>
+          <td class="actions">
+            <button data-word-action="enable" data-id="${escapeHtml(word.id)}">启用</button>
+            <button data-word-action="disable" data-id="${escapeHtml(word.id)}">停用</button>
+            <button data-word-action="logs" data-id="${escapeHtml(word.id)}">日志</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function renderAuditLogs(logs) {
+      document.querySelector("#auditLogs").innerHTML = logs.map((log) => `
+        <tr>
+          <td>${escapeHtml(log.id)}</td>
+          <td>${escapeHtml(log.actionType)}</td>
+          <td>${escapeHtml(log.operatorName)}<br><span class="muted">${escapeHtml(log.operatorId)}</span></td>
+          <td>${escapeHtml(log.createdAt)}</td>
+          <td><code>${escapeHtml(JSON.stringify(log.afterValue || {}, null, 0))}</code></td>
+        </tr>
+      `).join("");
+    }
+
+    async function loadStats() {
+      renderStats(await requestJson("/api/admin/stats"));
+    }
+
+    async function loadFoodItems(mode = "query") {
+      let url = "/api/admin/food-items";
+      if (mode === "pending") {
+        url = "/api/admin/food-items/pending";
+      } else if (mode === "reported") {
+        url = "/api/admin/food-items/reported?minReportCount=1";
+      } else {
+        const params = new URLSearchParams();
+        const auditStatus = document.querySelector("#auditStatus").value;
+        const query = document.querySelector("#foodQuery").value.trim();
+        const limit = document.querySelector("#foodLimit").value || "20";
+        if (auditStatus) params.set("auditStatus", auditStatus);
+        if (query) params.set("q", query);
+        params.set("limit", limit);
+        url = `/api/admin/food-items?${params.toString()}`;
+      }
+      renderFoodItems(await requestJson(url));
+    }
+
+    async function mutateFoodItem(id, action) {
+      const endpoint = action === "clear" ? "clear-reports" : action;
+      await requestJson(`/api/admin/food-items/${id}/${endpoint}`, { method: "POST" });
+      await Promise.all([loadStats(), loadFoodItems()]);
+      setMessage(`条目 ${id} 已处理。`);
+    }
+
+    async function loadWords() {
+      renderWords(await requestJson("/api/admin/review-config-words"));
+    }
+
+    async function createWord() {
+      const payload = {
+        word: document.querySelector("#wordText").value.trim(),
+        wordType: document.querySelector("#wordType").value,
+        source: document.querySelector("#wordSource").value.trim() || "admin",
+        enabled: document.querySelector("#wordEnabled").value === "true",
+        remark: document.querySelector("#wordRemark").value.trim() || null,
+        operatorId: document.querySelector("#operatorId").value.trim() || "admin-console",
+        operatorName: document.querySelector("#operatorName").value.trim() || "Admin Console",
+      };
+      await requestJson("/api/admin/review-config-words", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      document.querySelector("#wordText").value = "";
+      document.querySelector("#wordRemark").value = "";
+      await Promise.all([loadStats(), loadWords()]);
+      setMessage("词条已新增。");
+    }
+
+    async function mutateWord(id, action) {
+      const payload = {
+        operatorId: document.querySelector("#operatorId").value.trim() || "admin-console",
+        operatorName: document.querySelector("#operatorName").value.trim() || "Admin Console",
+      };
+      await requestJson(`/api/admin/review-config-words/${id}/${action}`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      await Promise.all([loadStats(), loadWords()]);
+      setMessage(`词条 ${id} 已${action === "enable" ? "启用" : "停用"}。`);
+    }
+
+    async function loadAuditLogs(id) {
+      renderAuditLogs(await requestJson(`/api/admin/review-config-words/${id}/audit-logs`));
+      setMessage(`已加载词条 ${id} 的审计日志。`);
+    }
+
+    async function reloadAll() {
+      try {
+        await Promise.all([loadStats(), loadFoodItems(), loadWords()]);
+        setMessage("后台数据已刷新。");
+      } catch (error) {
+        setMessage(`加载失败：${error.message}`, true);
+      }
+    }
+
+    document.querySelector("#saveToken").addEventListener("click", () => {
+      sessionStorage.setItem("snkAdminToken", tokenInput.value.trim());
+      setMessage("Token 已保存到当前浏览器会话。");
+    });
+    document.querySelector("#reloadAll").addEventListener("click", reloadAll);
+    document.querySelector("#loadFoodItems").addEventListener("click", () => loadFoodItems().catch((error) => setMessage(error.message, true)));
+    document.querySelector("#loadPending").addEventListener("click", () => loadFoodItems("pending").catch((error) => setMessage(error.message, true)));
+    document.querySelector("#loadReported").addEventListener("click", () => loadFoodItems("reported").catch((error) => setMessage(error.message, true)));
+    document.querySelector("#createWord").addEventListener("click", () => createWord().catch((error) => setMessage(error.message, true)));
+    document.querySelector("#loadWords").addEventListener("click", () => loadWords().catch((error) => setMessage(error.message, true)));
+
+    document.querySelector("#foodItems").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+      mutateFoodItem(button.dataset.id, button.dataset.action).catch((error) => setMessage(error.message, true));
+    });
+
+    document.querySelector("#reviewWords").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-word-action]");
+      if (!button) return;
+      const action = button.dataset.wordAction;
+      if (action === "logs") {
+        loadAuditLogs(button.dataset.id).catch((error) => setMessage(error.message, true));
+      } else {
+        mutateWord(button.dataset.id, action).catch((error) => setMessage(error.message, true));
+      }
+    });
+
+    reloadAll();
+  </script>
+</body>
+</html>

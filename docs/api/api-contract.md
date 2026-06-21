@@ -100,6 +100,16 @@
 
 ## 管理后台接口范围
 
+当前轻量后台入口：
+
+- `GET /admin/index.html`
+
+后台 API 访问保护：
+
+- 默认未配置 token 时，`/api/admin/**` 保持放行，便于本地开发和现有部署平滑升级
+- 配置环境变量 `SNK_ADMIN_API_TOKEN` 后，`/api/admin/**` 请求必须携带 `X-SNK-ADMIN-TOKEN: <token>`
+- 可通过 `SNK_ADMIN_TOKEN_HEADER` 覆盖默认 header 名称
+
 - 食物条目管理
 - 图片样本管理
 - 用户记录审核
@@ -255,3 +265,4 @@
 | 2026-06-14 | Codex | 补充记录点赞接口与 `likeCount` 响应字段 | Phase 5 已落地记录互动的最小聚合点赞闭环 |
 | 2026-06-14 | Codex | 补充相似食物推荐接口 | Phase 5 已落地记录页可消费的最小推荐闭环 |
 | 2026-06-16 | Codex | 补充图片识别任务可选 `hintQuery` 入参与服务端优先召回规则 | 让 OCR 已提取到的文本提示继续参与图片识别兜底链路，减少上下文丢失 |
+| 2026-06-21 | Codex | 补充轻量后台入口与 Admin Token 访问约束 | Phase 4 已新增 `/admin/index.html` 静态后台，并通过可选 token 保护后台 API |

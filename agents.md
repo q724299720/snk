@@ -42,6 +42,8 @@
 - 目标部署环境：腾讯轻量云 `2 核 4G / 40GB`，已安装宝塔面板
 - 正式公网域名：`https://snk.qiuxinmin.cn`
 - 本机 Android 调试工具：`E:\programdata\androidstodio\platform-tools\adb.exe`
+- 后台治理页面：`https://snk.qiuxinmin.cn/admin/index.html`
+- 后台 API 可通过宝塔环境变量 `SNK_ADMIN_API_TOKEN` 启用 `X-SNK-ADMIN-TOKEN` 保护，生产环境上线后台页时应配置非空 token
 - 架构决策必须优先考虑低运维复杂度、低常驻进程数量和可在单机上稳定运行
 - MVP 阶段避免引入 Elasticsearch、Redis、独立向量库、消息队列等额外常驻基础设施，除非后续容量数据明确证明必要
 
@@ -115,3 +117,4 @@
 | 2026-06-14 | Codex | 补充图片识别默认 stub 演示模式 | 当前仓库默认图片识别 provider 使用 stub 演示模式，未接真实模型时也能跑通候选确认链路 |
 | 2026-06-16 | Codex | 将全局识别主路径收敛为名称搜索优先 | 已确认新方案去掉条形码与以图搜图，保留 OCR 作为文本输入辅助入口 |
 | 2026-06-21 | Codex | 补充 Android 端识别入口收口结论 | 当前 App 已移除条码扫描、以图搜图和独立候选确认入口，避免后续开发误回旧链路 |
+| 2026-06-21 | Codex | 补充后台治理页面与 Admin Token 部署约束 | Phase 4 开始提供轻量后台页，生产环境需要用 `SNK_ADMIN_API_TOKEN` 保护后台 API |

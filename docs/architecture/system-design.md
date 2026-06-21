@@ -233,6 +233,7 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 接口限流
 - 敏感操作审计
 - 管理后台 RBAC
+- MVP 当前先采用静态后台页 + 可选 Admin API Token；配置 `SNK_ADMIN_API_TOKEN` 后，`/api/admin/**` 必须携带 `X-SNK-ADMIN-TOKEN`
 
 ### 运维
 
@@ -246,6 +247,7 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 逻辑删除记录后，已上传图片通过异步或定期回收策略清理，而不是立即物理删除
 - API 日志与链路追踪
 - 识别失败率与外部数据导入告警
+- 生产环境开放后台页前，应在宝塔 Java 项目环境变量中配置非空 `SNK_ADMIN_API_TOKEN`
 
 ## 当前仓库落地状态
 
@@ -298,6 +300,8 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 已补充审核词典后台能力的最小落地：`GET /api/admin/review-config-words`、`POST /api/admin/review-config-words`、`PUT /api/admin/review-config-words/{wordId}`、`POST /api/admin/review-config-words/{wordId}/enable`、`POST /api/admin/review-config-words/{wordId}/disable`、`GET /api/admin/review-config-words/{wordId}/audit-logs`
 - 已补充识别任务监控能力的最小落地：`GET /api/admin/recognition-tasks`、`GET /api/admin/recognition-tasks/{taskId}`
 - 已补充后台统计报表能力的最小落地：`GET /api/admin/stats`
+- 已补充轻量静态后台页：`/admin/index.html`，可在浏览器操作治理概览、条目审核、报错清零、审核词典和审计日志
+- 已补充后台 API Token 保护：配置 `SNK_ADMIN_API_TOKEN` 后，`/api/admin/**` 需携带 `X-SNK-ADMIN-TOKEN`
 - 已补充相似食物推荐能力的最小落地：`GET /api/foods/{foodItemId}/related`
 - 已补充 `pending` 超时自动审核服务：超过 24 小时的待审条目按保守规则扫描，仅对明显垃圾数据执行拒绝
 - 已补充用户报错信号接口：`POST /api/foods/{foodItemId}/report`，用于累加 `report_count`
@@ -360,3 +364,4 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-14 | Codex | 回填相似食物推荐能力 | 当前仓库已落地 Phase 5 的最小推荐闭环 |
 | 2026-06-14 | Codex | 回填记录分享能力 | 当前仓库已落地安卓端系统分享摘要入口 |
 | 2026-06-14 | Codex | 回填记录点赞能力 | 当前仓库已落地安卓端创建成功页的点赞交互入口 |
+| 2026-06-21 | Codex | 回填轻量后台页与 Admin Token 保护 | Phase 4 需要可直接操作的浏览器后台，并为生产后台 API 增加最低限度访问保护 |

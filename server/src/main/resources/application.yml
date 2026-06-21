@@ -51,6 +51,9 @@ logging:
     org.flywaydb: info
 
 snk:
+  admin:
+    api-token: ${SNK_ADMIN_API_TOKEN:}
+    token-header: ${SNK_ADMIN_TOKEN_HEADER:X-SNK-ADMIN-TOKEN}
   storage:
     root-path: ${SNK_STORAGE_ROOT:./runtime/storage}
     public-path: ${SNK_STORAGE_PUBLIC_PATH:/uploads}
