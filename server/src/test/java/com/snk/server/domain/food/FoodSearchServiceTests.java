@@ -2,6 +2,7 @@ package com.snk.server.domain.food;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.when;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
@@ -14,6 +15,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -48,6 +50,22 @@ class FoodSearchServiceTests {
 
 		assertThat(result.qualitySignal()).isEqualTo("weak");
 		assertThat(result.items()).isEmpty();
+	}
+
+	@Test
+	void shouldRetrySearchWithCompactedQueryWhenSpacedNameMisses() {
+		when(foodItemRepository.searchApproved(eq("康师傅 红烧 牛肉面"))).thenReturn(List.of());
+		when(foodItemRepository.searchApproved(eq("康师傅红烧牛肉面")))
+			.thenReturn(List.of(searchProjection(12L, "康师傅红烧牛肉面", "康师傅", null, "approved", "4.2")));
+
+		FoodSearchResult result = foodSearchService.search("康师傅 红烧 牛肉面");
+
+		assertThat(result.qualitySignal()).isEqualTo("strong");
+		assertThat(result.items()).hasSize(1);
+		assertThat(result.items().getFirst().name()).isEqualTo("康师傅红烧牛肉面");
+		InOrder inOrder = inOrder(foodItemRepository);
+		inOrder.verify(foodItemRepository).searchApproved("康师傅 红烧 牛肉面");
+		inOrder.verify(foodItemRepository).searchApproved("康师傅红烧牛肉面");
 	}
 
 	@Test

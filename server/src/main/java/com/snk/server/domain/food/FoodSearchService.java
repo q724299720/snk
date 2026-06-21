@@ -9,6 +9,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -24,10 +25,7 @@ public class FoodSearchService {
 
 	public FoodSearchResult search(String rawQuery) {
 		String query = rawQuery == null ? "" : rawQuery.trim();
-		List<FoodSearchItem> items = foodItemRepository.searchApproved(query).stream()
-			.map(this::toItem)
-			.toList();
-		return new FoodSearchResult(items, resolveQualitySignal(query, items));
+		return searchWithQueryVariants(query, foodItemRepository::searchApproved);
 	}
 
 	public FoodSearchResult search(String rawQuery, Long userId) {
@@ -35,10 +33,7 @@ public class FoodSearchService {
 			return search(rawQuery);
 		}
 		String query = rawQuery == null ? "" : rawQuery.trim();
-		List<FoodSearchItem> items = foodItemRepository.searchVisibleToUser(query, userId).stream()
-			.map(this::toItem)
-			.toList();
-		return new FoodSearchResult(items, resolveQualitySignal(query, items));
+		return searchWithQueryVariants(query, searchQuery -> foodItemRepository.searchVisibleToUser(searchQuery, userId));
 	}
 
 	public Optional<FoodSearchItem> lookupByBarcode(String rawBarcode) {
@@ -101,6 +96,29 @@ public class FoodSearchService {
 		);
 	}
 
+	private FoodSearchResult searchWithQueryVariants(
+		String query,
+		Function<String, List<FoodSearchProjection>> searcher
+	) {
+		LinkedHashMap<Long, FoodSearchItem> items = new LinkedHashMap<>();
+		String matchedQuery = query;
+		for (String searchQuery : buildSearchQueries(query)) {
+			List<FoodSearchProjection> projections = searcher.apply(searchQuery);
+			if (projections == null || projections.isEmpty()) {
+				continue;
+			}
+			matchedQuery = searchQuery;
+			for (FoodSearchProjection projection : projections) {
+				items.putIfAbsent(projection.getId(), toItem(projection));
+			}
+			if ("strong".equals(resolveQualitySignal(searchQuery, new ArrayList<>(items.values())))) {
+				break;
+			}
+		}
+		List<FoodSearchItem> resultItems = new ArrayList<>(items.values());
+		return new FoodSearchResult(resultItems, resolveQualitySignal(matchedQuery, resultItems));
+	}
+
 	private String resolveQualitySignal(String query, List<FoodSearchItem> items) {
 		if (items.isEmpty()) {
 			return "weak";
@@ -112,6 +130,14 @@ public class FoodSearchService {
 			return "strong";
 		}
 		return "weak";
+	}
+
+	private List<String> buildSearchQueries(String query) {
+		Set<String> queries = new LinkedHashSet<>();
+		addQuery(queries, query);
+		String compacted = query.replaceAll("\\s+", "");
+		addQuery(queries, compacted);
+		return new ArrayList<>(queries);
 	}
 
 	private List<String> buildRecommendationQueries(FoodItemEntity entity) {

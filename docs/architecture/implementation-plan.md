@@ -216,6 +216,7 @@
 - 当前仓库已落地记录点赞计数接口与创建成功页的点赞按钮，作为互动能力的最小闭环
 - 当前仓库已落地公开记录流：记录创建时公开状态默认关闭，用户主动开启后才进入首页公开分享区
 - 当前仓库已落地公开记录评论最小闭环：公开记录可查看最新评论并提交评论，私有记录不开放评论入口
+- 当前仓库已落地名称搜索查询变体兜底：原始词组未命中时，服务端会继续尝试去空格紧凑词组并去重返回结果
 
 ### 增量测试
 
@@ -227,6 +228,7 @@
 - 点赞按钮能在手机端直接更新记录点赞数
 - 公开记录评论列表可返回最新评论，评论提交后会立即回显
 - 私有记录的评论接口必须拒绝访问，避免绕过公开权限边界
+- OCR / 手输带空格词组在原始搜索为空时，可通过紧凑查询兜底命中同名条目
 - 高并发下搜索与识别链路仍稳定
 - 记录页可展示推荐结果，并支持切换到推荐条目继续记一笔
 - 记录成功后可拉起系统分享面板并分享记录摘要
@@ -319,6 +321,7 @@
 | 2026-06-21 | Codex | 扩展审核词典新增 / 编辑 `wordType` 枚举校验 | 后台新增或编辑审核词条时应在入参阶段拒绝未知类型，避免写入不可治理词条 |
 | 2026-06-21 | Codex | 回填公开记录流与主动公开开关 | Phase 5 社区分享能力需要最小公开列表和权限边界，记录默认仍保持私有 |
 | 2026-06-21 | Codex | 回填公开记录评论闭环 | Phase 5 评论点赞交付物需要先落地公开记录的最小评论能力，并验证私有记录不开放评论 |
+| 2026-06-21 | Codex | 回填名称搜索查询变体兜底 | Phase 5 搜索优化需要提升 OCR / 手输分词场景的召回率，同时保持 All-in-PostgreSQL 低复杂度 |
 # Audit Trail Addendum
 
 | Date | Author | Scope | Reason |
@@ -343,3 +346,9 @@
 - Public feed cards can load latest comments from `GET /api/records/{recordId}/comments`.
 - Signed anonymous users can submit a lightweight comment through `POST /api/records/{recordId}/comments`.
 - Private or deleted records must not expose comments through the community endpoints.
+
+## Phase 5 Addendum: Search Query Fallback
+
+- Food search first uses the original query string.
+- If the original spaced query misses, the server retries with a compacted no-space query.
+- Results are de-duplicated by food item ID before being returned to the App.

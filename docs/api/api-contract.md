@@ -33,6 +33,7 @@
 - `userId` 为可选参数；传入当前游客 / 用户 id 时，搜索结果可额外包含该用户自己创建且仍为 `pending` 的条目
 - 未传 `userId` 或 `userId` 非法时，不返回任何 `pending` 条目
 - 空白 `q` 直接返回 `400`
+- 服务端会先按原始 `q` 搜索；当原始词组未命中时，会继续尝试去空格后的紧凑查询，并按食物条目 ID 去重
 - 当前响应包含 `items` 与 `qualitySignal`
 - `items[*]` 当前最小字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`、`averageRating`、`auditStatus`
 - `qualitySignal` 当前最小取值：`strong / weak`
@@ -363,6 +364,7 @@ Public record feed contract:
 | 2026-06-21 | Codex | 补充记录列表与点赞 ID 正数校验约束 | 记录列表和点赞入口应拒绝非正数 `userId`、`limit` 与 `recordId`，避免无效请求进入服务层 |
 | 2026-06-21 | Codex | 补充公开记录流接口约束 | Phase 5 需要最小公开分享列表，只暴露用户主动公开且未删除的记录 |
 | 2026-06-21 | Codex | 补充公开记录评论接口约束 | Phase 5 评论能力需要固定公开记录评论的读取、提交、字段和权限边界 |
+| 2026-06-21 | Codex | 补充名称搜索查询变体兜底约束 | Phase 5 搜索优化需要让带空格词组在原始搜索未命中时继续尝试紧凑查询 |
 # Audit Trail Addendum
 
 | Date | Author | Scope | Reason |
@@ -370,3 +372,4 @@ Public record feed contract:
 | 2026-06-21 | Codex | Record image request/response contract | Support uploaded record photos being attached to records and shown in recent-record cards |
 | 2026-06-21 | Codex | Public record feed request/response contract | Define `GET /api/records/public` and keep record publication explicit opt-in |
 | 2026-06-21 | Codex | Public record comments request/response contract | Define latest-comment listing and comment creation for public records only |
+| 2026-06-21 | Codex | Search query fallback contract | Define compacted-query retry for spaced food names |
