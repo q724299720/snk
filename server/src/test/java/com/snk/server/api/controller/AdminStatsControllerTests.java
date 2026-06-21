@@ -38,13 +38,14 @@ class AdminStatsControllerTests {
 	@Test
 	void shouldReturnDashboardStats() throws Exception {
 		when(adminStatsService.getStats())
-			.thenReturn(new AdminStatsService.AdminStatsResult(17, 3, 12, 2, 4, 8, 1, 5, 2, 8, 1));
+			.thenReturn(new AdminStatsService.AdminStatsResult(17, 3, 12, 2, 4, 10, 2, 1, 5, 2, 8, 1));
 
 		mockMvc.perform(get("/api/admin/stats"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.totalFoodItems").value(17))
 			.andExpect(jsonPath("$.reportedFoodItems").value(4))
-			.andExpect(jsonPath("$.totalRecognitionTasks").value(8))
+			.andExpect(jsonPath("$.totalRecognitionTasks").value(10))
+			.andExpect(jsonPath("$.pendingRecognitionTasks").value(2))
 			.andExpect(jsonPath("$.enabledReviewWords").value(8));
 	}
 }

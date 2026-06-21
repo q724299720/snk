@@ -40,6 +40,7 @@ class AdminConsoleStaticPageTests {
 		String html = readAdminConsoleHtml();
 
 		assertThat(html).contains("id=\"recognitionTasks\"");
+		assertThat(html).contains("pendingRecognitionTasks");
 		assertThat(html).contains("data-task-action=\"detail\"");
 		assertThat(html).contains("async function loadRecognitionTasks");
 		assertThat(html).contains("async function loadRecognitionTaskDetail");

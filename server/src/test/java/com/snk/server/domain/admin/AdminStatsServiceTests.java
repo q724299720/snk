@@ -46,6 +46,7 @@ class AdminStatsServiceTests {
 		assertThat(result.pendingFoodItems()).isEqualTo(3L);
 		assertThat(result.reportedFoodItems()).isEqualTo(4L);
 		assertThat(result.totalRecognitionTasks()).isEqualTo(10L);
+		assertThat(result.pendingRecognitionTasks()).isEqualTo(2L);
 		assertThat(result.enabledReviewWords()).isEqualTo(8L);
 	}
 }

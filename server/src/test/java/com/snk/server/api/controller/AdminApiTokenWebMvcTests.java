@@ -46,7 +46,7 @@ class AdminApiTokenWebMvcTests {
 	@Test
 	void shouldAllowAdminApiRequestWithConfiguredToken() throws Exception {
 		when(adminStatsService.getStats())
-			.thenReturn(new AdminStatsService.AdminStatsResult(17, 3, 12, 2, 4, 8, 1, 5, 2, 8, 1));
+			.thenReturn(new AdminStatsService.AdminStatsResult(17, 3, 12, 2, 4, 10, 2, 1, 5, 2, 8, 1));
 
 		mockMvc.perform(get("/api/admin/stats").header("X-SNK-ADMIN-TOKEN", "test-admin-token"))
 			.andExpect(status().isOk())
