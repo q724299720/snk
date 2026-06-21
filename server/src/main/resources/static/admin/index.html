@@ -543,6 +543,12 @@
       `).join("");
     }
 
+    function clearMergeTargetPreview() {
+      mergeTargetPreviewItem = null;
+      document.querySelector("#mergeTargetFoodItemId").value = "";
+      document.querySelector("#mergeTargetPreview").innerHTML = "";
+    }
+
     function renderFoodItemReports(reports) {
       if (!reports.length) {
         document.querySelector("#foodItemReports").innerHTML = '<p class="muted">暂无报错记录。</p>';
@@ -701,6 +707,7 @@
         body: JSON.stringify({ targetFoodItemId }),
       });
       await Promise.all([loadStats(), loadFoodItems(), loadFoodItemDetail(id)]);
+      clearMergeTargetPreview();
       setMessage(`条目 ${id} 已合并到 ${targetFoodItemId}，迁移记录 ${result.migratedRecordCount} 条。`);
     }
 
