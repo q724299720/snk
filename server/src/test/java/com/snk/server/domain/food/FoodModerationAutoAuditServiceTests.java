@@ -109,6 +109,20 @@ class FoodModerationAutoAuditServiceTests {
 		verifyNoInteractions(foodItemRepository, foodModerationService);
 	}
 
+	@Test
+	void shouldSkipDictionaryLoadWhenNoPendingCandidates() {
+		when(foodItemRepository.findByAuditStatusAndCreatedAtBeforeOrderByCreatedAtAsc(eq("pending"), any(OffsetDateTime.class)))
+			.thenReturn(List.of());
+
+		FoodModerationAutoAuditService.AutoAuditSummary summary = foodModerationAutoAuditService.runAutoAudit();
+
+		assertThat(summary.scannedCount()).isZero();
+		assertThat(summary.rejectedCount()).isZero();
+		assertThat(summary.keptPendingCount()).isZero();
+		assertThat(summary.rejectedFoodItemIds()).isEmpty();
+		verifyNoInteractions(reviewConfigWordRepository, foodModerationService);
+	}
+
 	private FoodModerationService.FoodModerationItem moderationItem(Long id, String name, String auditStatus) {
 		return new FoodModerationService.FoodModerationItem(
 			id,

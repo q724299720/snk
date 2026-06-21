@@ -58,6 +58,9 @@ public class FoodModerationAutoAuditService {
 
 		OffsetDateTime cutoffAt = OffsetDateTime.now(clock).minusHours(Math.max(autoAudit.getPendingAgeHours(), 1));
 		List<FoodItemEntity> candidates = foodItemRepository.findByAuditStatusAndCreatedAtBeforeOrderByCreatedAtAsc("pending", cutoffAt);
+		if (candidates.isEmpty()) {
+			return new AutoAuditSummary(0, 0, 0, cutoffAt, List.of());
+		}
 		List<String> validFoodWords = loadEnabledValidFoodWords();
 		List<Long> rejectedIds = new ArrayList<>();
 
