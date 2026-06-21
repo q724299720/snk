@@ -158,4 +158,37 @@ class FoodRecordControllerTests {
 		)
 			.andExpect(status().isBadRequest());
 	}
+
+	@Test
+	void shouldRejectUnsupportedSourceType() throws Exception {
+		when(foodRecordService.createRecord(any())).thenReturn(
+			new FoodRecordResult(
+				1L,
+				100L,
+				200L,
+				"barcode",
+				false,
+				(short) 5,
+				null,
+				0,
+				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+				OffsetDateTime.parse("2026-06-13T23:30:00Z")
+			)
+		);
+
+		mockMvc.perform(
+			post("/api/records")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "userId": 100,
+					  "foodItemId": 200,
+					  "sourceType": "barcode",
+					  "isPublic": false,
+					  "rating": 5
+					}
+					""")
+		)
+			.andExpect(status().isBadRequest());
+	}
 }

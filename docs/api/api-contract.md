@@ -87,6 +87,7 @@
 - `comment`、`recordTime` 当前为可选字段
 - 当前 `rating` 允许范围为 `1-5`
 - 当前客户端只应发送：`text_search / manual`
+- 服务端创建记录时仅接受 `text_search / manual`，其他 `sourceType` 直接返回 `400`
 - 历史服务端约束中仍保留 `image_search`，仅用于兼容旧数据，不作为当前 MVP 入口
 - 当前成功响应返回：`id`、`userId`、`foodItemId`、`sourceType`、`isPublic`、`rating`、`comment`、`likeCount`、`recordTime`、`createdAt`
 
@@ -325,3 +326,4 @@
 | 2026-06-21 | Codex | 补充后台食物条目列表 `auditStatus` 枚举校验约束 | 后台食物条目列表按审核状态过滤时应拒绝未知状态，避免后台误判为空结果 |
 | 2026-06-21 | Codex | 补充审核词典列表 `wordType` 枚举校验约束 | 后台审核词典列表按类型过滤时应拒绝未知类型，避免后台误判为空结果 |
 | 2026-06-21 | Codex | 扩展审核词典新增 / 编辑 `wordType` 枚举校验约束 | 后台新增或编辑审核词条时应拒绝未知类型，避免写入不可治理词条 |
+| 2026-06-21 | Codex | 补充记录创建 `sourceType` 写入校验约束 | 记录创建接口应拒绝非当前入口来源类型，避免旧链路或未知来源继续写入新记录 |
