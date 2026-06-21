@@ -2,6 +2,7 @@ package com.snk.server.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -57,6 +58,14 @@ class AdminReviewConfigWordControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].word").value("apple"))
 			.andExpect(jsonPath("$[0].enabled").value(true));
+	}
+
+	@Test
+	void shouldRejectListWordsWhenWordTypeIsInvalid() throws Exception {
+		mockMvc.perform(get("/api/admin/review-config-words").param("wordType", "unknown_type"))
+			.andExpect(status().isBadRequest());
+
+		verify(reviewConfigWordService, never()).listWords(isNull(), eq("unknown_type"));
 	}
 
 	@Test

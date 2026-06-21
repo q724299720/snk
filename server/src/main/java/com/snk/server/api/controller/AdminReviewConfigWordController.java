@@ -10,6 +10,7 @@ import com.snk.server.domain.review.UpdateReviewConfigWordCommand;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
+import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,11 +22,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/admin/review-config-words")
 @Validated
 public class AdminReviewConfigWordController {
+
+	private static final Set<String> ALLOWED_WORD_TYPES = Set.of("valid_food_word", "blocked_word");
 
 	private final ReviewConfigWordService reviewConfigWordService;
 
@@ -38,7 +42,7 @@ public class AdminReviewConfigWordController {
 		@RequestParam(value = "enabled", required = false) Boolean enabled,
 		@RequestParam(value = "wordType", required = false) String wordType
 	) {
-		return reviewConfigWordService.listWords(enabled, wordType)
+		return reviewConfigWordService.listWords(enabled, validateWordType(wordType))
 			.stream()
 			.map(ReviewConfigWordResponse::from)
 			.toList();
@@ -110,5 +114,19 @@ public class AdminReviewConfigWordController {
 		@jakarta.validation.constraints.Size(max = 128)
 		String operatorName
 	) {
+	}
+
+	private String validateWordType(String wordType) {
+		if (wordType == null) {
+			return null;
+		}
+		String normalizedWordType = wordType.trim();
+		if (normalizedWordType.isBlank()) {
+			return null;
+		}
+		if (!ALLOWED_WORD_TYPES.contains(normalizedWordType)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid review config word type.");
+		}
+		return normalizedWordType;
 	}
 }
