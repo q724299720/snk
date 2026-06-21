@@ -6,6 +6,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.nio.file.Files
+import java.nio.file.Path
 
 class RecordCreateScreenTest {
 
@@ -64,5 +66,18 @@ class RecordCreateScreenTest {
         assertNull(valid.message)
         assertTrue(overlong.hasError)
         assertEquals("备注最长支持 500 个字符，当前 501 个。", overlong.message)
+    }
+
+    @Test
+    fun `record create screen content remains reachable on short screens`() {
+        val sourcePath = listOf(
+            Path.of("src/main/java/com/snk/app/ui/RecordCreateScreen.kt"),
+            Path.of("app/src/main/java/com/snk/app/ui/RecordCreateScreen.kt"),
+        ).first(Files::exists)
+        val source = String(Files.readAllBytes(sourcePath))
+
+        assertTrue(source.contains(".verticalScroll("))
+        assertTrue(source.contains(".imePadding()"))
+        assertTrue(source.contains(".navigationBarsPadding()"))
     }
 }
