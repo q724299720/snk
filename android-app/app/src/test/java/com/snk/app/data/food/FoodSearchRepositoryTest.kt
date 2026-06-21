@@ -120,6 +120,22 @@ class FoodSearchRepositoryTest {
     }
 
     @Test
+    fun `search rejects overlong query before calling backend`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody("""{"qualitySignal":"strong","items":[]}"""),
+        )
+
+        val result = repository.search("a".repeat(129))
+
+        assertTrue(result is FoodSearchResult.Failure)
+        val failure = result as FoodSearchResult.Failure
+        assertEquals("搜索词最长支持 128 个字符，请缩短后再试。", failure.message)
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
     fun `createManualFoodItem returns pending item when backend succeeds`() = runTest {
         server.enqueue(
             MockResponse()

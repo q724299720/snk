@@ -14,6 +14,9 @@ class FoodSearchRepository(
         if (normalizedQuery.isBlank()) {
             return FoodSearchResult.Failure("请输入要搜索的食物名称。")
         }
+        if (normalizedQuery.length > MAX_SEARCH_QUERY_LENGTH) {
+            return FoodSearchResult.Failure("搜索词最长支持 128 个字符，请缩短后再试。")
+        }
 
         return try {
             val response = api.searchFoods(normalizedQuery, userId)
@@ -185,6 +188,10 @@ class FoodSearchRepository(
                 message = exception.asServerOcrMessage(),
             )
         }
+    }
+
+    private companion object {
+        const val MAX_SEARCH_QUERY_LENGTH = 128
     }
 }
 
