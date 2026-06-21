@@ -402,6 +402,7 @@
 | --- | --- | --- | --- |
 | 2026-06-21 | Codex | Phase 2 record detail/edit increment | Complete the missing recent-record detail and owner edit loop |
 | 2026-06-21 | Codex | Phase 2 record edit image replacement increment | Fix the edit flow so users can replace or remove record photos |
+| 2026-06-21 | Codex | Phase 2 record image upload normalization | Mobile create/edit flows normalize selected gallery media to JPEG before upload to avoid server rejection for unsupported formats |
 
 ## Phase 2 Addendum: Record Edit Images
 
@@ -409,3 +410,4 @@
 - Record edit supports removing all existing record images by saving `images: []`.
 - Saving while a replacement image is still uploading must be blocked.
 - Backend update replaces the complete image list for the record after owner validation.
+- Record create and edit must normalize selected device media to `image/jpeg` before calling `POST /api/upload/image`, so HEIC/WEBP/PNG gallery formats do not fail server-side thumbnail generation.

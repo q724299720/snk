@@ -108,6 +108,20 @@ class RecordCreateScreenTest {
     }
 
     @Test
+    fun `record create image upload normalizes selected media to jpeg`() {
+        val sourcePath = listOf(
+            Path.of("src/main/java/com/snk/app/ui/RecordCreateScreen.kt"),
+            Path.of("app/src/main/java/com/snk/app/ui/RecordCreateScreen.kt"),
+        ).first(Files::exists)
+        val source = String(Files.readAllBytes(sourcePath))
+
+        assertTrue(source.contains("ImageDecoder.decodeBitmap"))
+        assertTrue(source.contains("Bitmap.CompressFormat.JPEG"))
+        assertTrue(source.contains("contentType = \"image/jpeg\""))
+        assertTrue(source.contains("record-${'$'}{System.currentTimeMillis()}.jpg"))
+    }
+
+    @Test
     fun `record submit feedback makes save result visible`() {
         val submitted = FoodRecordSubmissionResult.Submitted(
             recordId = 88L,

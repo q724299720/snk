@@ -91,6 +91,7 @@ Record image contract:
 - `POST /api/upload/image` uploads the raw image first and returns `resourceUrl` plus optional `thumbnailUrl`.
 - `POST /api/records` may include optional `images: [{ imageUrl, thumbnailUrl }]`.
 - `imageUrl` must come from a successful upload response; `thumbnailUrl` should be reused when available.
+- Mobile record create/edit clients should normalize selected device media to JPEG and upload with `contentType = image/jpeg`, avoiding server rejection for formats that cannot be decoded for thumbnail generation.
 - `POST /api/records` success response returns the same `images` array.
 - `GET /api/records?userId=&limit=` returns each record with `images`; mobile recent-record cards must prefer `images[0].thumbnailUrl`, then `images[0].imageUrl`, then `foodCoverImageUrl`.
 - Offline draft image retry is not expanded in this increment; if a record is submitted while offline, existing draft retry remains text-record only until a later draft-media migration.
@@ -379,6 +380,7 @@ Public record feed contract:
 | 2026-06-21 | Codex | Search query fallback contract | Define compacted-query retry for spaced food names |
 | 2026-06-21 | Codex | Record detail and edit API contract | Add owner-only detail/update endpoints for the mobile record edit flow |
 | 2026-06-21 | Codex | Record edit image replacement contract | Allow mobile record edit to replace or remove record images through the update API |
+| 2026-06-21 | Codex | Record image upload normalization contract | Require mobile create/edit flows to upload JPEG-normalized record images to avoid unsupported gallery format rejection |
 
 ## Phase 2 Addendum: Record Detail And Edit
 

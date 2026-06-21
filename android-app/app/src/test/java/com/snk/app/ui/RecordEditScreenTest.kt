@@ -50,6 +50,20 @@ class RecordEditScreenTest {
     }
 
     @Test
+    fun `record edit image upload normalizes selected media to jpeg`() {
+        val sourcePath = listOf(
+            Path.of("src/main/java/com/snk/app/ui/RecordEditScreen.kt"),
+            Path.of("app/src/main/java/com/snk/app/ui/RecordEditScreen.kt"),
+        ).first(Files::exists)
+        val source = String(Files.readAllBytes(sourcePath))
+
+        assertTrue(source.contains("ImageDecoder.decodeBitmap"))
+        assertTrue(source.contains("Bitmap.CompressFormat.JPEG"))
+        assertTrue(source.contains("contentType = \"image/jpeg\""))
+        assertTrue(source.contains("record-edit-${'$'}{System.currentTimeMillis()}.jpg"))
+    }
+
+    @Test
     fun `search screen exposes record edit entry`() {
         val sourcePath = listOf(
             Path.of("src/main/java/com/snk/app/ui/SearchScreen.kt"),

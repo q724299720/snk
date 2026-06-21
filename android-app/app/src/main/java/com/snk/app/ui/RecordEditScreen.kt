@@ -1,7 +1,11 @@
 package com.snk.app.ui
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -48,6 +52,7 @@ import com.snk.app.data.record.FoodRecordImageAttachment
 import com.snk.app.data.record.FoodRecordUpdateResult
 import com.snk.app.data.record.RecordImageUploadResult
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
 @Composable
 fun RecordEditScreen(
@@ -424,13 +429,26 @@ private data class EditableRecordImagePayload(
 )
 
 private fun readEditableRecordImagePayload(context: Context, imageUri: Uri): EditableRecordImagePayload {
-    val resolver = context.contentResolver
-    val bytes = resolver.openInputStream(imageUri)?.use { it.readBytes() }
-        ?: error("Unable to read selected image.")
-    val contentType = resolver.getType(imageUri) ?: "image/jpeg"
+    val bitmap = decodeEditableRecordBitmap(context, imageUri)
+    val bytes = ByteArrayOutputStream().use { output ->
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
+        output.toByteArray()
+    }
     return EditableRecordImagePayload(
         bytes = bytes,
         fileName = "record-edit-${System.currentTimeMillis()}.jpg",
-        contentType = contentType,
+        contentType = "image/jpeg",
     )
+}
+
+private fun decodeEditableRecordBitmap(context: Context, imageUri: Uri): Bitmap {
+    val resolver = context.contentResolver
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        ImageDecoder.decodeBitmap(ImageDecoder.createSource(resolver, imageUri)) { decoder, _, _ ->
+            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+        }
+    } else {
+        @Suppress("DEPRECATION")
+        MediaStore.Images.Media.getBitmap(resolver, imageUri)
+    }
 }
