@@ -1,6 +1,11 @@
 package com.snk.server.api.controller;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -58,5 +63,43 @@ class FoodFeedbackControllerTests {
 			.andExpect(jsonPath("$.foodItemId").value(18))
 			.andExpect(jsonPath("$.reportCount").value(4))
 			.andExpect(jsonPath("$.auditStatus").value("approved"));
+	}
+
+	@Test
+	void shouldRejectReportWhenFoodItemIdIsNotPositive() throws Exception {
+		mockMvc.perform(
+			post("/api/foods/0/report")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(
+					"""
+					{
+					  "userId": 2,
+					  "reason": "识别错误"
+					}
+					"""
+				)
+		)
+			.andExpect(status().isBadRequest());
+
+		verify(foodFeedbackService, never()).reportFoodItem(anyLong(), anyLong(), anyString());
+	}
+
+	@Test
+	void shouldRejectReportWhenUserIdIsNotPositive() throws Exception {
+		mockMvc.perform(
+			post("/api/foods/18/report")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(
+					"""
+					{
+					  "userId": 0,
+					  "reason": null
+					}
+					"""
+				)
+		)
+			.andExpect(status().isBadRequest());
+
+		verify(foodFeedbackService, never()).reportFoodItem(anyLong(), anyLong(), isNull());
 	}
 }
