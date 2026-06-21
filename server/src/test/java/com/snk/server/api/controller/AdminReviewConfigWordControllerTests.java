@@ -92,6 +92,29 @@ class AdminReviewConfigWordControllerTests {
 	}
 
 	@Test
+	void shouldRejectCreateWordWhenWordTypeIsInvalid() throws Exception {
+		when(reviewConfigWordService.createWord(any(CreateReviewConfigWordCommand.class)))
+			.thenReturn(wordItem(8L, "banana", "unknown_type", true));
+
+		mockMvc.perform(post("/api/admin/review-config-words")
+			.contentType("application/json")
+			.content("""
+				{
+				  "word": "banana",
+				  "wordType": "unknown_type",
+				  "source": "manual",
+				  "remark": "fruit",
+				  "enabled": true,
+				  "operatorId": "admin-1",
+				  "operatorName": "Admin"
+				}
+				"""))
+			.andExpect(status().isBadRequest());
+
+		verify(reviewConfigWordService, never()).createWord(any(CreateReviewConfigWordCommand.class));
+	}
+
+	@Test
 	void shouldUpdateWord() throws Exception {
 		when(reviewConfigWordService.updateWord(any(UpdateReviewConfigWordCommand.class)))
 			.thenReturn(wordItem(3L, "melon", "valid_food_word", false));
@@ -111,6 +134,28 @@ class AdminReviewConfigWordControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.word").value("melon"))
 			.andExpect(jsonPath("$.enabled").value(false));
+	}
+
+	@Test
+	void shouldRejectUpdateWordWhenWordTypeIsInvalid() throws Exception {
+		when(reviewConfigWordService.updateWord(any(UpdateReviewConfigWordCommand.class)))
+			.thenReturn(wordItem(9L, "melon", "unknown_type", false));
+
+		mockMvc.perform(put("/api/admin/review-config-words/3")
+			.contentType("application/json")
+			.content("""
+				{
+				  "word": "melon",
+				  "wordType": "unknown_type",
+				  "source": "manual",
+				  "remark": "updated",
+				  "operatorId": "admin-2",
+				  "operatorName": "Moderator"
+				}
+				"""))
+			.andExpect(status().isBadRequest());
+
+		verify(reviewConfigWordService, never()).updateWord(any(UpdateReviewConfigWordCommand.class));
 	}
 
 	@Test

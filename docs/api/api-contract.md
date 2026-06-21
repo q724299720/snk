@@ -189,7 +189,8 @@
 审核词典当前约定：
 
 - 列表支持按 `enabled` 和 `wordType` 过滤，默认按 `updatedAt` 倒序
-- `wordType` 为可选参数；传入时仅允许 `valid_food_word / blocked_word`，其他值直接返回 `400`
+- `wordType` 在列表过滤时为可选参数；传入时仅允许 `valid_food_word / blocked_word`，其他值直接返回 `400`
+- `wordType` 在新增 / 编辑词条时为必填参数，且仅允许 `valid_food_word / blocked_word`，其他值直接返回 `400`
 - 返回字段至少包含：`id`、`word`、`wordType`、`enabled`、`source`、`remark`、`updatedBy`、`createdAt`、`updatedAt`
 - 新增 / 编辑 / 启停都会追加审计日志
 - 审计日志返回 `beforeValue` 与 `afterValue` 的结构化 JSON 快照
@@ -323,3 +324,4 @@
 | 2026-06-21 | Codex | 补充历史识别任务列表 `status` 枚举校验约束 | 后台历史识别任务列表按状态过滤时应拒绝未知状态，避免后台误判为空结果 |
 | 2026-06-21 | Codex | 补充后台食物条目列表 `auditStatus` 枚举校验约束 | 后台食物条目列表按审核状态过滤时应拒绝未知状态，避免后台误判为空结果 |
 | 2026-06-21 | Codex | 补充审核词典列表 `wordType` 枚举校验约束 | 后台审核词典列表按类型过滤时应拒绝未知类型，避免后台误判为空结果 |
+| 2026-06-21 | Codex | 扩展审核词典新增 / 编辑 `wordType` 枚举校验约束 | 后台新增或编辑审核词条时应拒绝未知类型，避免写入不可治理词条 |

@@ -62,7 +62,7 @@ public class AdminReviewConfigWordController {
 		return ReviewConfigWordResponse.from(reviewConfigWordService.createWord(
 			new CreateReviewConfigWordCommand(
 				request.word(),
-				request.wordType(),
+				validateWordType(request.wordType()),
 				request.source(),
 				request.remark(),
 				request.enabled(),
@@ -81,7 +81,7 @@ public class AdminReviewConfigWordController {
 			new UpdateReviewConfigWordCommand(
 				wordId,
 				request.word(),
-				request.wordType(),
+				validateWordType(request.wordType()),
 				request.source(),
 				request.remark(),
 				request.operatorId(),
