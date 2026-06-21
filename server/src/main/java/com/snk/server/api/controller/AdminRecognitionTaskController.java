@@ -2,7 +2,9 @@ package com.snk.server.api.controller;
 
 import com.snk.server.api.dto.RecognitionTaskResponse;
 import com.snk.server.domain.recognition.RecognitionTaskService;
+import jakarta.validation.constraints.Positive;
 import java.util.List;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/admin/recognition-tasks")
+@Validated
 public class AdminRecognitionTaskController {
 
 	private final RecognitionTaskService recognitionTaskService;
@@ -32,7 +35,7 @@ public class AdminRecognitionTaskController {
 	}
 
 	@GetMapping("/{taskId}")
-	public RecognitionTaskResponse getTask(@PathVariable("taskId") Long taskId) {
+	public RecognitionTaskResponse getTask(@PathVariable("taskId") @Positive Long taskId) {
 		return RecognitionTaskResponse.from(recognitionTaskService.getTask(taskId));
 	}
 }

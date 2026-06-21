@@ -2,6 +2,8 @@ package com.snk.server.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -66,6 +68,14 @@ class AdminRecognitionTaskControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("failed"))
 			.andExpect(jsonPath("$.statusReason").value("image recognition provider is not configured"));
+	}
+
+	@Test
+	void shouldRejectDetailWhenTaskIdIsNotPositive() throws Exception {
+		mockMvc.perform(get("/api/admin/recognition-tasks/0"))
+			.andExpect(status().isBadRequest());
+
+		verify(recognitionTaskService, never()).getTask(any());
 	}
 
 	private RecognitionTaskResult recognitionTask(Long id, Long userId, String status) {

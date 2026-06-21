@@ -201,6 +201,7 @@
 - 列表支持按 `status` 和 `userId` 过滤，`limit` 默认 `20`
 - 列表按创建时间倒序返回，最多返回 `100` 条
 - 返回字段至少包含：`id`、`userId`、`inputImageUrl`、`status`、`topCandidates`、`selectedFoodItemId`、`confidence`、`createdAt`、`finishedAt`、`statusReason`
+- `GET /api/admin/recognition-tasks/{taskId}` 要求 `taskId` 为正整数，`0` 或负数直接返回 `400`
 - 当前 Android MVP 不再调用图片识别任务创建接口
 - 该接口仅用于查看历史预留任务数据，后续若服务端正式下线图片识别任务，应同步移除此段
 
@@ -305,3 +306,4 @@
 | 2026-06-21 | Codex | 补充审核词典审计日志未知词条返回 404 约束 | 后台查询不存在词条的审计日志不应返回空列表，避免误导治理判断 |
 | 2026-06-21 | Codex | 补充审核词典 `wordId` 正数校验约束 | 后台词典操作接口应在控制器层拒绝 `0` 或负数 ID，避免无效请求进入服务层 |
 | 2026-06-21 | Codex | 补充后台食物条目 `foodItemId` 正数校验约束 | 后台食物条目操作接口应在控制器层拒绝 `0` 或负数 ID，避免无效请求进入服务层 |
+| 2026-06-21 | Codex | 补充历史识别任务 `taskId` 正数校验约束 | 后台历史识别任务详情接口应在控制器层拒绝 `0` 或负数 ID，避免无效请求进入服务层 |
