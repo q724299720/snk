@@ -3,6 +3,7 @@ package com.snk.server.domain.food;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -71,6 +72,17 @@ class FoodFeedbackServiceTests {
 		assertThatThrownBy(() -> foodFeedbackService.reportFoodItem(2L, 18L, null))
 			.isInstanceOf(ResponseStatusException.class)
 			.hasMessageContaining("404 NOT_FOUND");
+	}
+
+	@Test
+	void shouldRejectReportListForUnknownFoodItem() {
+		when(foodItemRepository.findById(99L)).thenReturn(Optional.empty());
+
+		assertThatThrownBy(() -> foodFeedbackService.listFoodItemReports(99L))
+			.isInstanceOf(ResponseStatusException.class)
+			.hasMessageContaining("404 NOT_FOUND");
+
+		verify(foodItemReportRepository, never()).findByFoodItem_IdOrderByCreatedAtDesc(99L);
 	}
 
 	private void setField(Object target, String fieldName, Object value) {

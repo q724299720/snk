@@ -58,6 +58,8 @@ public class FoodFeedbackService {
 
 	@Transactional(readOnly = true)
 	public List<FoodItemReportItem> listFoodItemReports(Long foodItemId) {
+		foodItemRepository.findById(foodItemId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food item not found."));
 		return foodItemReportRepository.findByFoodItem_IdOrderByCreatedAtDesc(foodItemId)
 			.stream()
 			.map(FoodFeedbackService::toReportItem)
