@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.snk.server.domain.food.FoodModerationService;
 import com.snk.server.domain.food.FoodModerationService.FoodModerationItem;
+import com.snk.server.domain.food.FoodFeedbackService;
 import com.snk.server.infrastructure.storage.StorageProperties;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -30,6 +31,9 @@ class AdminFoodItemControllerTests {
 
 	@MockBean
 	private FoodModerationService foodModerationService;
+
+	@MockBean
+	private FoodFeedbackService foodFeedbackService;
 
 	@TestConfiguration
 	static class ControllerTestConfiguration {
@@ -87,6 +91,25 @@ class AdminFoodItemControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].name").value("Reported Item"))
 			.andExpect(jsonPath("$[0].reportCount").value(3));
+	}
+
+	@Test
+	void shouldReturnFoodItemReports() throws Exception {
+		when(foodFeedbackService.listFoodItemReports(18L))
+			.thenReturn(List.of(new FoodFeedbackService.FoodItemReportItem(
+				9L,
+				18L,
+				2L,
+				"识别错误",
+				OffsetDateTime.parse("2026-06-21T12:00:00Z")
+			)));
+
+		mockMvc.perform(get("/api/admin/food-items/18/reports"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].id").value(9))
+			.andExpect(jsonPath("$[0].foodItemId").value(18))
+			.andExpect(jsonPath("$[0].reporterUserId").value(2))
+			.andExpect(jsonPath("$[0].reason").value("识别错误"));
 	}
 
 	@Test

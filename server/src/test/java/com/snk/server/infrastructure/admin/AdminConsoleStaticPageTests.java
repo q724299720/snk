@@ -28,8 +28,11 @@ class AdminConsoleStaticPageTests {
 		assertThat(html).contains("id=\"foodItemDetail\"");
 		assertThat(html).contains("data-action=\"detail\"");
 		assertThat(html).contains("async function loadFoodItemDetail");
+		assertThat(html).contains("async function loadFoodItemReports");
 		assertThat(html).contains("function renderFoodItemDetail");
+		assertThat(html).contains("function renderFoodItemReports");
 		assertThat(html).contains("/api/admin/food-items/${id}");
+		assertThat(html).contains("/api/admin/food-items/${id}/reports");
 	}
 
 	private String readAdminConsoleHtml() throws Exception {

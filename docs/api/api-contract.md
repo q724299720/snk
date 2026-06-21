@@ -119,6 +119,7 @@
 - `GET /api/admin/food-items/pending`
 - `GET /api/admin/food-items?auditStatus=&q=&limit=`
 - `GET /api/admin/food-items/{foodItemId}`
+- `GET /api/admin/food-items/{foodItemId}/reports`
 - `GET /api/admin/food-items/reported?minReportCount=`
 - `POST /api/admin/food-items/{foodItemId}/approve`
 - `POST /api/admin/food-items/{foodItemId}/reject`
@@ -132,6 +133,7 @@
 - 返回字段与后台条目治理一致，详情接口复用同一响应模型
 - 详情接口返回单条完整管理视图，便于后台核查与处理
 - `clear-reports` 用于将已处理条目的 `reportCount` 清零，作为报错处理闭环的结束动作
+- `reports` 用于查看单个条目的报错 / 纠错明细，便于后台核查具体反馈原因
 
 后台统计报表当前约定：
 
@@ -147,6 +149,7 @@
 - 后台返回字段至少包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`source`、`auditStatus`、`reportCount`、`createdByUserId`、`createdAt`、`updatedAt`
 - `approve` 会将条目标记为 `approved`，并允许继续进入全局搜索
 - `reject` 会将条目标记为 `rejected`，并阻止进入全局搜索
+- `GET /api/admin/food-items/{foodItemId}/reports` 当前最小响应字段包含：`id`、`foodItemId`、`reporterUserId`、`reason`、`createdAt`
 
 审核词典后台接口：
 
@@ -183,6 +186,7 @@
 - `POST /api/foods/{foodItemId}/report` 用于提交用户对条目的报错或纠错信号
 - 当前最小请求字段为 `userId`，`reason` 可选
 - 服务端成功后会将目标条目的 `report_count` 加 `1`
+- 服务端成功后会写入一条 `food_item_reports` 明细记录，保留提交用户、原因与时间
 - 当前最小响应字段为 `foodItemId`、`reportCount`、`auditStatus`
 
 ## OCR 与识别接口边界
@@ -266,3 +270,4 @@
 | 2026-06-14 | Codex | 补充相似食物推荐接口 | Phase 5 已落地记录页可消费的最小推荐闭环 |
 | 2026-06-16 | Codex | 补充图片识别任务可选 `hintQuery` 入参与服务端优先召回规则 | 让 OCR 已提取到的文本提示继续参与图片识别兜底链路，减少上下文丢失 |
 | 2026-06-21 | Codex | 补充轻量后台入口与 Admin Token 访问约束 | Phase 4 已新增 `/admin/index.html` 静态后台，并通过可选 token 保护后台 API |
+| 2026-06-21 | Codex | 补充后台食物条目报错明细接口 | Phase 4 需要后台可追踪用户报错原因，报错治理不能只依赖聚合计数 |

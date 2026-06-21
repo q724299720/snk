@@ -38,6 +38,7 @@ class FlywayMigrationIntegrationTests {
 	void flywayShouldCreateCoreTablesAndExtensions() {
 		assertThat(countTable("users")).isEqualTo(1);
 		assertThat(countTable("food_items")).isEqualTo(1);
+		assertThat(countTable("food_item_reports")).isEqualTo(1);
 		assertThat(countTable("food_images")).isEqualTo(1);
 		assertThat(countTable("food_records")).isEqualTo(1);
 		assertThat(countTable("food_record_images")).isEqualTo(1);

@@ -70,6 +70,23 @@
 - `report_count`：用于累计用户报错 / 纠错次数，辅助后台识别低质量 UGC 条目
 - `created_by_user_id`：仅对 `user_generated` 条目有值，用于标记创建者、控制 `pending` 可见性，并支持后续审核追溯
 
+### FoodItemReport
+
+- 物理表名：`food_item_reports`
+- `id`
+- `food_item_id`
+- `reporter_user_id`
+- `reason`
+- `created_at`
+
+字段说明：
+
+- `FoodItemReport` 用于保留用户每次报错 / 纠错提交的明细记录，不只依赖 `FoodItem.report_count`
+- `food_item_id` 指向被报错的食物条目
+- `reporter_user_id` 指向提交报错的用户，便于后续排查重复反馈和恶意反馈
+- `reason` 保留用户提交的轻量文本原因，空白原因会规范化为空
+- `created_at` 用于后台按时间倒序查看最新报错信号
+
 ### FoodImage
 
 - 物理表名：`food_images`
@@ -217,6 +234,8 @@
 - `FoodItem.barcode` 对 `packaged_product` 建立唯一索引或等价唯一约束
 - `FoodItem.audit_status` 建立筛选索引
 - `FoodItem.created_by_user_id + audit_status + created_at` 建立组合索引，支撑创建者查看待审核条目
+- `FoodItemReport.food_item_id + created_at` 建立组合索引，支撑后台查看单个条目的报错明细
+- `FoodItemReport.reporter_user_id + created_at` 建立组合索引，支撑后续排查用户反馈行为
 - `FoodRecord.user_id + record_time` 建立组合索引
 - 向量字段与图片 embedding 字段按 `pgvector` 能力设计索引
 - 当前首版迁移已为 `FoodItem.name / alias / search_keywords` 落地 `pg_trgm` GIN 索引
@@ -240,7 +259,7 @@
 - 创建者看到自己的 `pending` 条目时，UI 应明确显示“待审核”状态
 - 若 `FoodRecord` 绑定 `pending FoodItem`，则在用户记录列表中也应显示轻量待审核提示
 - 审核通过后方可进入全局搜索结果
-- 报错 / 纠错会影响 `report_count`，供后台排查
+- 报错 / 纠错会影响 `report_count`，并写入 `food_item_reports` 明细，供后台排查
 - 缩略图与原图都属于长期可追溯资源，删除策略需谨慎
 - 记录逻辑删除时，已上传图片和缩略图不立即物理删除，后续由统一清理策略回收
 - 后台应支持 `FoodItem` 合并，将历史 `FoodRecord` 迁移到保留条目
@@ -295,3 +314,4 @@
 | 2026-06-14 | Codex | 为 `FoodItem` 补充 `created_by_user_id` 字段说明 | Phase 3 已落地手动创建待审核条目，需要记录创建者归属与可见性依赖字段 |
 | 2026-06-14 | Codex | 为 `FoodRecord.like_count` 补充字段说明 | Phase 5 已落地记录点赞聚合计数，需要同步数据模型与后端响应 |
 | 2026-06-21 | Codex | 收口 `FoodRecord.source_type` 当前客户端取值 | 当前 Android MVP 已去掉图片识别任务入口，`image_search` 仅作为历史兼容值保留 |
+| 2026-06-21 | Codex | 增加 `FoodItemReport` 报错明细模型 | Phase 4 需要后台可追踪用户报错记录，不能只保留聚合 `report_count` |

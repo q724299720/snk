@@ -1,6 +1,7 @@
 package com.snk.server;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
+import com.snk.server.infrastructure.persistence.food.FoodItemReportRepository;
 import com.snk.server.infrastructure.persistence.review.ReviewConfigWordAuditLogRepository;
 import com.snk.server.infrastructure.persistence.review.ReviewConfigWordRepository;
 import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
@@ -22,6 +23,9 @@ class ServerApplicationTests {
 
 	@MockBean
 	private FoodItemRepository foodItemRepository;
+
+	@MockBean
+	private FoodItemReportRepository foodItemReportRepository;
 
 	@MockBean
 	private FoodRecordRepository foodRecordRepository;

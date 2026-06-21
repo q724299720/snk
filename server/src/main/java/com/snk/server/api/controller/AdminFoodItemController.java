@@ -1,6 +1,8 @@
 package com.snk.server.api.controller;
 
 import com.snk.server.api.dto.AdminFoodItemResponse;
+import com.snk.server.api.dto.AdminFoodItemReportResponse;
+import com.snk.server.domain.food.FoodFeedbackService;
 import com.snk.server.domain.food.FoodModerationService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -17,9 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminFoodItemController {
 
 	private final FoodModerationService foodModerationService;
+	private final FoodFeedbackService foodFeedbackService;
 
-	public AdminFoodItemController(FoodModerationService foodModerationService) {
+	public AdminFoodItemController(FoodModerationService foodModerationService, FoodFeedbackService foodFeedbackService) {
 		this.foodModerationService = foodModerationService;
+		this.foodFeedbackService = foodFeedbackService;
 	}
 
 	@GetMapping
@@ -37,6 +41,14 @@ public class AdminFoodItemController {
 	@GetMapping("/{foodItemId}")
 	public AdminFoodItemResponse getFoodItem(@PathVariable("foodItemId") Long foodItemId) {
 		return AdminFoodItemResponse.from(foodModerationService.getFoodItem(foodItemId));
+	}
+
+	@GetMapping("/{foodItemId}/reports")
+	public List<AdminFoodItemReportResponse> listFoodItemReports(@PathVariable("foodItemId") Long foodItemId) {
+		return foodFeedbackService.listFoodItemReports(foodItemId)
+			.stream()
+			.map(AdminFoodItemReportResponse::from)
+			.toList();
 	}
 
 	@GetMapping("/pending")

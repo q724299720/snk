@@ -3,15 +3,19 @@ package com.snk.server.domain.food;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
+import com.snk.server.infrastructure.persistence.food.FoodItemReportEntity;
+import com.snk.server.infrastructure.persistence.food.FoodItemReportRepository;
 import com.snk.server.infrastructure.persistence.user.UserEntity;
 import com.snk.server.infrastructure.persistence.user.UserRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,6 +29,9 @@ class FoodFeedbackServiceTests {
 
 	@Mock
 	private UserRepository userRepository;
+
+	@Mock
+	private FoodItemReportRepository foodItemReportRepository;
 
 	@InjectMocks
 	private FoodFeedbackService foodFeedbackService;
@@ -48,6 +55,13 @@ class FoodFeedbackServiceTests {
 		assertThat(result.auditStatus()).isEqualTo("pending");
 		assertThat(result.reporterUserId()).isEqualTo(2L);
 		assertThat(result.reason()).isEqualTo("识别错误");
+
+		ArgumentCaptor<FoodItemReportEntity> reportCaptor = ArgumentCaptor.forClass(FoodItemReportEntity.class);
+		verify(foodItemReportRepository).save(reportCaptor.capture());
+		FoodItemReportEntity report = reportCaptor.getValue();
+		assertThat(report.getFoodItem()).isSameAs(foodItem);
+		assertThat(report.getReporterUser()).isSameAs(user);
+		assertThat(report.getReason()).isEqualTo("识别错误");
 	}
 
 	@Test

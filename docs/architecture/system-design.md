@@ -300,11 +300,12 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 已补充审核词典后台能力的最小落地：`GET /api/admin/review-config-words`、`POST /api/admin/review-config-words`、`PUT /api/admin/review-config-words/{wordId}`、`POST /api/admin/review-config-words/{wordId}/enable`、`POST /api/admin/review-config-words/{wordId}/disable`、`GET /api/admin/review-config-words/{wordId}/audit-logs`
 - 已补充识别任务监控能力的最小落地：`GET /api/admin/recognition-tasks`、`GET /api/admin/recognition-tasks/{taskId}`
 - 已补充后台统计报表能力的最小落地：`GET /api/admin/stats`
-- 已补充轻量静态后台页：`/admin/index.html`，可在浏览器操作治理概览、条目列表详情、条目审核、报错清零、审核词典新增 / 编辑 / 启停和审计日志
+- 已补充轻量静态后台页：`/admin/index.html`，可在浏览器操作治理概览、条目列表详情、报错明细查看、条目审核、报错清零、审核词典新增 / 编辑 / 启停和审计日志
 - 已补充后台 API Token 保护：配置 `SNK_ADMIN_API_TOKEN` 后，`/api/admin/**` 需携带 `X-SNK-ADMIN-TOKEN`
 - 已补充相似食物推荐能力的最小落地：`GET /api/foods/{foodItemId}/related`
 - 已补充 `pending` 超时自动审核服务：超过 24 小时的待审条目按保守规则扫描，仅对明显垃圾数据执行拒绝
 - 已补充用户报错信号接口：`POST /api/foods/{foodItemId}/report`，用于累加 `report_count`
+- 已补充食物条目报错明细记录与后台查询能力：`GET /api/admin/food-items/{foodItemId}/reports`
 
 ## 变更记录维护规则
 
@@ -367,3 +368,4 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-21 | Codex | 回填轻量后台页与 Admin Token 保护 | Phase 4 需要可直接操作的浏览器后台，并为生产后台 API 增加最低限度访问保护 |
 | 2026-06-21 | Codex | 回填后台页审核词典编辑入口 | Phase 4 后台页需要直接覆盖审核词典新增、编辑、启停和审计查看闭环 |
 | 2026-06-21 | Codex | 回填后台页食物条目详情入口 | Phase 4 后台页需要直接覆盖食物条目列表到详情查看闭环 |
+| 2026-06-21 | Codex | 回填食物条目报错明细记录与查询 | Phase 4 报错治理需要从聚合计数扩展到可追踪的用户报错明细 |

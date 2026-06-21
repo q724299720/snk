@@ -312,6 +312,7 @@
         </table>
       </div>
       <div id="foodItemDetail" class="detail-grid"></div>
+      <div id="foodItemReports" class="table-wrap"></div>
     </section>
 
     <section>
@@ -479,6 +480,35 @@
       `).join("");
     }
 
+    function renderFoodItemReports(reports) {
+      if (!reports.length) {
+        document.querySelector("#foodItemReports").innerHTML = '<p class="muted">暂无报错记录。</p>';
+        return;
+      }
+      document.querySelector("#foodItemReports").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>报错 ID</th>
+              <th>用户</th>
+              <th>原因</th>
+              <th>时间</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${reports.map((report) => `
+              <tr>
+                <td>${escapeHtml(report.id)}</td>
+                <td>${escapeHtml(report.reporterUserId)}</td>
+                <td>${escapeHtml(report.reason || "-")}</td>
+                <td>${escapeHtml(report.createdAt || "-")}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
     function renderWords(words) {
       reviewWordCache = words;
       document.querySelector("#reviewWords").innerHTML = words.map((word) => `
@@ -542,8 +572,17 @@
     }
 
     async function loadFoodItemDetail(id) {
-      renderFoodItemDetail(await requestJson(`/api/admin/food-items/${id}`));
+      const [detail, reports] = await Promise.all([
+        requestJson(`/api/admin/food-items/${id}`),
+        loadFoodItemReports(id),
+      ]);
+      renderFoodItemDetail(detail);
+      renderFoodItemReports(reports);
       setMessage(`已加载条目 ${id} 的详情。`);
+    }
+
+    async function loadFoodItemReports(id) {
+      return requestJson(`/api/admin/food-items/${id}/reports`);
     }
 
     async function loadWords() {
