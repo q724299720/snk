@@ -69,6 +69,14 @@ class AdminRecognitionTaskControllerTests {
 	}
 
 	@Test
+	void shouldRejectRecognitionTaskListWhenUserIdIsNotPositive() throws Exception {
+		mockMvc.perform(get("/api/admin/recognition-tasks").param("userId", "0"))
+			.andExpect(status().isBadRequest());
+
+		verify(recognitionTaskService, never()).listTasks(any(), any(), anyInt());
+	}
+
+	@Test
 	void shouldReturnRecognitionTaskDetail() throws Exception {
 		when(recognitionTaskService.getTask(20L))
 			.thenReturn(recognitionTask(20L, 5L, "failed"));
