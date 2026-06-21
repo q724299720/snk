@@ -35,6 +35,20 @@ class AdminConsoleStaticPageTests {
 		assertThat(html).contains("/api/admin/food-items/${id}/reports");
 	}
 
+	@Test
+	void adminConsoleExposesRecognitionTaskMonitorFlow() throws Exception {
+		String html = readAdminConsoleHtml();
+
+		assertThat(html).contains("id=\"recognitionTasks\"");
+		assertThat(html).contains("data-task-action=\"detail\"");
+		assertThat(html).contains("async function loadRecognitionTasks");
+		assertThat(html).contains("async function loadRecognitionTaskDetail");
+		assertThat(html).contains("function renderRecognitionTasks");
+		assertThat(html).contains("function renderRecognitionTaskDetail");
+		assertThat(html).contains("/api/admin/recognition-tasks");
+		assertThat(html).contains("/api/admin/recognition-tasks/${id}");
+	}
+
 	private String readAdminConsoleHtml() throws Exception {
 		try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("static/admin/index.html")) {
 			assertThat(inputStream).as("static admin console page").isNotNull();

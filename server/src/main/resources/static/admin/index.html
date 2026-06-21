@@ -355,6 +355,40 @@
     </section>
 
     <section>
+      <h2>历史识别任务监控</h2>
+      <div class="toolbar">
+        <select id="recognitionStatus">
+          <option value="">全部状态</option>
+          <option value="pending">pending</option>
+          <option value="processing">processing</option>
+          <option value="completed">completed</option>
+          <option value="failed">failed</option>
+        </select>
+        <input id="recognitionUserId" type="number" min="1" placeholder="userId">
+        <input id="recognitionLimit" type="number" min="1" max="100" value="20">
+        <button id="loadRecognitionTasks" class="primary">查询任务</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>用户</th>
+              <th>状态</th>
+              <th>置信度</th>
+              <th>选中条目</th>
+              <th>创建时间</th>
+              <th>原因</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="recognitionTasks"></tbody>
+        </table>
+      </div>
+      <div id="recognitionTaskDetail" class="detail-grid"></div>
+    </section>
+
+    <section>
       <h2>词典审计日志</h2>
       <div class="table-wrap">
         <table>
@@ -541,6 +575,47 @@
       `).join("");
     }
 
+    function renderRecognitionTasks(tasks) {
+      document.querySelector("#recognitionTasks").innerHTML = tasks.map((task) => `
+        <tr>
+          <td>${escapeHtml(task.id)}</td>
+          <td>${escapeHtml(task.userId)}</td>
+          <td>${statusBadge(task.status)}</td>
+          <td>${escapeHtml(task.confidence || "-")}</td>
+          <td>${escapeHtml(task.selectedFoodItemId || "-")}</td>
+          <td>${escapeHtml(task.createdAt || "-")}</td>
+          <td>${escapeHtml(task.statusReason || "-")}</td>
+          <td class="actions">
+            <button data-task-action="detail" data-id="${escapeHtml(task.id)}">详情</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function renderRecognitionTaskDetail(task) {
+      const candidates = (task.topCandidates || [])
+        .map((candidate) => `${candidate.id || candidate.foodItemId || "-"} ${candidate.name || ""}`)
+        .join("；") || "-";
+      const fields = [
+        ["任务 ID", task.id],
+        ["用户", task.userId],
+        ["状态", task.status],
+        ["图片", task.inputImageUrl || "-"],
+        ["候选", candidates],
+        ["选中条目", task.selectedFoodItemId || "-"],
+        ["置信度", task.confidence || "-"],
+        ["状态原因", task.statusReason || "-"],
+        ["创建时间", task.createdAt || "-"],
+        ["完成时间", task.finishedAt || "-"],
+      ];
+      document.querySelector("#recognitionTaskDetail").innerHTML = fields.map(([label, value]) => `
+        <div class="detail-field">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value)}</strong>
+        </div>
+      `).join("");
+    }
+
     async function loadStats() {
       renderStats(await requestJson("/api/admin/stats"));
     }
@@ -587,6 +662,22 @@
 
     async function loadWords() {
       renderWords(await requestJson("/api/admin/review-config-words"));
+    }
+
+    async function loadRecognitionTasks() {
+      const params = new URLSearchParams();
+      const status = document.querySelector("#recognitionStatus").value;
+      const userId = document.querySelector("#recognitionUserId").value;
+      const limit = document.querySelector("#recognitionLimit").value || "20";
+      if (status) params.set("status", status);
+      if (userId) params.set("userId", userId);
+      params.set("limit", limit);
+      renderRecognitionTasks(await requestJson(`/api/admin/recognition-tasks?${params.toString()}`));
+    }
+
+    async function loadRecognitionTaskDetail(id) {
+      renderRecognitionTaskDetail(await requestJson(`/api/admin/recognition-tasks/${id}`));
+      setMessage(`已加载识别任务 ${id} 的详情。`);
     }
 
     async function createWord() {
@@ -681,7 +772,7 @@
 
     async function reloadAll() {
       try {
-        await Promise.all([loadStats(), loadFoodItems(), loadWords()]);
+        await Promise.all([loadStats(), loadFoodItems(), loadWords(), loadRecognitionTasks()]);
         setMessage("后台数据已刷新。");
       } catch (error) {
         setMessage(`加载失败：${error.message}`, true);
@@ -703,6 +794,7 @@
       setMessage("已取消编辑。");
     });
     document.querySelector("#loadWords").addEventListener("click", () => loadWords().catch((error) => setMessage(error.message, true)));
+    document.querySelector("#loadRecognitionTasks").addEventListener("click", () => loadRecognitionTasks().catch((error) => setMessage(error.message, true)));
 
     document.querySelector("#foodItems").addEventListener("click", (event) => {
       const button = event.target.closest("button[data-action]");
@@ -724,6 +816,14 @@
         startEditWord(button.dataset.id);
       } else {
         mutateWord(button.dataset.id, action).catch((error) => setMessage(error.message, true));
+      }
+    });
+
+    document.querySelector("#recognitionTasks").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-task-action]");
+      if (!button) return;
+      if (button.dataset.taskAction === "detail") {
+        loadRecognitionTaskDetail(button.dataset.id).catch((error) => setMessage(error.message, true));
       }
     });
 
