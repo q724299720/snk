@@ -95,6 +95,8 @@ data class UpdateFoodRecordRequest(
     val comment: String? = null,
     @SerialName("isPublic")
     val isPublic: Boolean,
+    @SerialName("images")
+    val images: List<FoodRecordImageRequest> = emptyList(),
 )
 
 @Serializable

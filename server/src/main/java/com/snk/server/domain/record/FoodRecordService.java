@@ -86,7 +86,13 @@ public class FoodRecordService {
 		entity.setRating(command.rating());
 		entity.setComment(command.comment());
 		entity.setPublic(command.isPublic());
-		return toResult(foodRecordRepository.save(entity));
+		FoodRecordEntity savedRecord = foodRecordRepository.save(entity);
+		foodRecordImageRepository.deleteByRecord_Id(savedRecord.getId());
+		List<FoodRecordImageValue> images = normalizeImages(command.images());
+		if (!images.isEmpty()) {
+			foodRecordImageRepository.saveAll(toImageEntities(savedRecord, images));
+		}
+		return toResult(savedRecord, images);
 	}
 
 	@Transactional

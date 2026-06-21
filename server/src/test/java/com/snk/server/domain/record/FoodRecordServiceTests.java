@@ -343,15 +343,8 @@ class FoodRecordServiceTests {
 		record.setComment("old comment");
 		record.setPublic(false);
 
-		FoodRecordImageEntity image = new FoodRecordImageEntity();
-		image.setRecord(record);
-		image.setImageUrl("https://snk.qiuxinmin.cn/uploads/records/noodle.jpg");
-		image.setThumbnailUrl("https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg");
-
 		when(foodRecordRepository.findById(1L)).thenReturn(Optional.of(record));
 		when(foodRecordRepository.save(record)).thenReturn(record);
-		when(foodRecordImageRepository.findByRecord_IdInOrderByCreatedAtAsc(List.of(1L)))
-			.thenReturn(List.of(image));
 
 		FoodRecordResult result = foodRecordService.updateRecord(
 			new FoodRecordUpdateCommand(
@@ -359,7 +352,13 @@ class FoodRecordServiceTests {
 				100L,
 				(short) 5,
 				"better after edit",
-				true
+				true,
+				List.of(
+					new FoodRecordImageValue(
+						"https://snk.qiuxinmin.cn/uploads/records/new.jpg",
+						"https://snk.qiuxinmin.cn/uploads/records/new-thumb.jpg"
+					)
+				)
 			)
 		);
 
@@ -370,7 +369,16 @@ class FoodRecordServiceTests {
 		assertThat(result.comment()).isEqualTo("better after edit");
 		assertThat(result.isPublic()).isTrue();
 		assertThat(result.images()).hasSize(1);
+		assertThat(result.images().getFirst().imageUrl())
+			.isEqualTo("https://snk.qiuxinmin.cn/uploads/records/new.jpg");
 		verify(foodRecordRepository).save(record);
+		verify(foodRecordImageRepository).deleteByRecord_Id(1L);
+		ArgumentCaptor<List<FoodRecordImageEntity>> imageCaptor = ArgumentCaptor.forClass(List.class);
+		verify(foodRecordImageRepository).saveAll(imageCaptor.capture());
+		assertThat(imageCaptor.getValue()).hasSize(1);
+		assertThat(imageCaptor.getValue().getFirst().getRecord().getId()).isEqualTo(1L);
+		assertThat(imageCaptor.getValue().getFirst().getThumbnailUrl())
+			.isEqualTo("https://snk.qiuxinmin.cn/uploads/records/new-thumb.jpg");
 	}
 
 	@Test
@@ -392,7 +400,8 @@ class FoodRecordServiceTests {
 					999L,
 					(short) 5,
 					"not mine",
-					true
+					true,
+					List.of()
 				)
 			);
 		} catch (ResponseStatusException exception) {

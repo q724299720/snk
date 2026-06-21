@@ -99,7 +99,10 @@ public class FoodRecordController {
 					request.userId(),
 					request.rating(),
 					request.comment(),
-					request.isPublic()
+					request.isPublic(),
+					request.imagesOrEmpty().stream()
+						.map(image -> new FoodRecordImageValue(image.imageUrl(), image.thumbnailUrl()))
+						.toList()
 				)
 			)
 		);

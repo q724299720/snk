@@ -36,6 +36,20 @@ class RecordEditScreenTest {
     }
 
     @Test
+    fun `record edit screen supports image replacement controls`() {
+        val sourcePath = listOf(
+            Path.of("src/main/java/com/snk/app/ui/RecordEditScreen.kt"),
+            Path.of("app/src/main/java/com/snk/app/ui/RecordEditScreen.kt"),
+        ).first(Files::exists)
+        val source = String(Files.readAllBytes(sourcePath))
+
+        assertTrue(source.contains("PickVisualMedia"))
+        assertTrue(source.contains("uploadRecordImage"))
+        assertTrue(source.contains("选择新图片"))
+        assertTrue(source.contains("移除图片"))
+    }
+
+    @Test
     fun `search screen exposes record edit entry`() {
         val sourcePath = listOf(
             Path.of("src/main/java/com/snk/app/ui/SearchScreen.kt"),

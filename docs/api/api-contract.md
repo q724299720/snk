@@ -378,12 +378,14 @@ Public record feed contract:
 | 2026-06-21 | Codex | Public record comments request/response contract | Define latest-comment listing and comment creation for public records only |
 | 2026-06-21 | Codex | Search query fallback contract | Define compacted-query retry for spaced food names |
 | 2026-06-21 | Codex | Record detail and edit API contract | Add owner-only detail/update endpoints for the mobile record edit flow |
+| 2026-06-21 | Codex | Record edit image replacement contract | Allow mobile record edit to replace or remove record images through the update API |
 
 ## Phase 2 Addendum: Record Detail And Edit
 
 - `GET /api/records/{recordId}?userId=` returns the full record view for the owner, including existing `images`.
-- `PUT /api/records/{recordId}` updates only owner-editable fields: `rating`, `comment`, and `isPublic`.
-- The update request body is `{ userId, rating, comment, isPublic }`.
+- `PUT /api/records/{recordId}` updates owner-editable fields: `rating`, `comment`, `isPublic`, and `images`.
+- The update request body is `{ userId, rating, comment, isPublic, images }`.
 - `rating` must stay in `1..5`; `comment` must stay at or below `500` characters.
 - The server must reject editing another user's record with `403` and missing/deleted records with `404`.
-- Record images are read-only in this increment; image add/replace remains a later media-edit task.
+- `images` is the complete replacement list after edit. Clients must upload a new image through `POST /api/upload/image` first, then send the returned `{ imageUrl, thumbnailUrl }` in `PUT /api/records/{recordId}`.
+- Sending `images: []` removes all record images.

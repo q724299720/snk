@@ -168,6 +168,12 @@ class FoodRecordRepositoryTest {
             rating = 5,
             comment = "  better after edit  ",
             isPublic = true,
+            images = listOf(
+                FoodRecordImageAttachment(
+                    imageUrl = "https://snk.qiuxinmin.cn/uploads/records/new.jpg",
+                    thumbnailUrl = "https://snk.qiuxinmin.cn/uploads/records/new-thumb.jpg",
+                ),
+            ),
         )
 
         assertTrue(result is FoodRecordUpdateResult.Success)
@@ -184,6 +190,8 @@ class FoodRecordRepositoryTest {
         assertTrue(requestBody.contains("\"rating\":5"))
         assertTrue(requestBody.contains("\"comment\":\"better after edit\""))
         assertTrue(requestBody.contains("\"isPublic\":true"))
+        assertTrue(requestBody.contains("\"images\""))
+        assertTrue(requestBody.contains("https://snk.qiuxinmin.cn/uploads/records/new-thumb.jpg"))
     }
 
     @Test

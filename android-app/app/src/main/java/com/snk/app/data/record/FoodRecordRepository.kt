@@ -96,6 +96,7 @@ class FoodRecordRepository(
         rating: Int,
         comment: String,
         isPublic: Boolean,
+        images: List<FoodRecordImageAttachment> = emptyList(),
     ): FoodRecordUpdateResult {
         if (recordId <= 0L || userId <= 0L) {
             return FoodRecordUpdateResult.Failure("记录或游客身份无效，暂时无法保存修改。")
@@ -116,6 +117,12 @@ class FoodRecordRepository(
                     rating = rating,
                     comment = normalizedComment.ifBlank { null },
                     isPublic = isPublic,
+                    images = images.map {
+                        FoodRecordImageRequest(
+                            imageUrl = it.imageUrl,
+                            thumbnailUrl = it.thumbnailUrl,
+                        )
+                    },
                 ),
             )
             FoodRecordUpdateResult.Success(

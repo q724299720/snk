@@ -109,7 +109,13 @@ class FoodRecordControllerTests {
 					  "userId": 100,
 					  "rating": 5,
 					  "comment": "better after edit",
-					  "isPublic": true
+					  "isPublic": true,
+					  "images": [
+					    {
+					      "imageUrl": "https://snk.qiuxinmin.cn/uploads/records/new.jpg",
+					      "thumbnailUrl": "https://snk.qiuxinmin.cn/uploads/records/new-thumb.jpg"
+					    }
+					  ]
 					}
 					""")
 		)
@@ -127,6 +133,9 @@ class FoodRecordControllerTests {
 		org.assertj.core.api.Assertions.assertThat(command.rating()).isEqualTo((short) 5);
 		org.assertj.core.api.Assertions.assertThat(command.comment()).isEqualTo("better after edit");
 		org.assertj.core.api.Assertions.assertThat(command.isPublic()).isTrue();
+		org.assertj.core.api.Assertions.assertThat(command.images()).hasSize(1);
+		org.assertj.core.api.Assertions.assertThat(command.images().getFirst().thumbnailUrl())
+			.isEqualTo("https://snk.qiuxinmin.cn/uploads/records/new-thumb.jpg");
 	}
 
 	@Test

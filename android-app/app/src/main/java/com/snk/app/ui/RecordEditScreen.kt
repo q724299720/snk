@@ -1,5 +1,10 @@
 package com.snk.app.ui
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,7 +44,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.snk.app.SnkApplication
 import com.snk.app.data.record.FoodRecordHistoryItem
+import com.snk.app.data.record.FoodRecordImageAttachment
 import com.snk.app.data.record.FoodRecordUpdateResult
+import com.snk.app.data.record.RecordImageUploadResult
 import kotlinx.coroutines.launch
 
 @Composable
@@ -49,6 +56,7 @@ fun RecordEditScreen(
     onUpdated: (FoodRecordHistoryItem) -> Unit,
 ) {
     val application = LocalContext.current.applicationContext as SnkApplication
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     var rating by remember(record.id) { mutableIntStateOf(record.rating) }
@@ -56,8 +64,49 @@ fun RecordEditScreen(
     var isPublic by remember(record.id) { mutableStateOf(record.isPublic) }
     var isSaving by remember(record.id) { mutableStateOf(false) }
     var updateResult by remember(record.id) { mutableStateOf<FoodRecordUpdateResult?>(null) }
+    var currentImages by remember(record.id) { mutableStateOf(record.images) }
+    var selectedImageUri by remember(record.id) { mutableStateOf<Uri?>(null) }
+    var imageUploadMessage by remember(record.id) { mutableStateOf<String?>(null) }
+    var isUploadingImage by remember(record.id) { mutableStateOf(false) }
     val commentValidation = validateRecordCommentForUi(comment)
     val feedback = buildRecordEditFeedback(updateResult)
+    val imageSaveValidation = validateRecordImageForSave(
+        hasSelectedImage = selectedImageUri != null,
+        hasUploadedImage = selectedImageUri == null || currentImages.isNotEmpty(),
+        isUploadingImage = isUploadingImage,
+    )
+    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) {
+            return@rememberLauncherForActivityResult
+        }
+        selectedImageUri = uri
+        currentImages = emptyList()
+        imageUploadMessage = "图片上传中..."
+        updateResult = null
+        coroutineScope.launch {
+            isUploadingImage = true
+            imageUploadMessage = try {
+                val payload = readEditableRecordImagePayload(context, uri)
+                when (
+                    val result = application.container.foodRecordRepository.uploadRecordImage(
+                        imageBytes = payload.bytes,
+                        fileName = payload.fileName,
+                        contentType = payload.contentType,
+                    )
+                ) {
+                    is RecordImageUploadResult.Success -> {
+                        currentImages = listOf(result.image)
+                        "图片已上传，保存修改后会替换原图片。"
+                    }
+
+                    is RecordImageUploadResult.Failure -> result.message
+                }
+            } catch (exception: Exception) {
+                "图片读取失败，请重新选择。"
+            }
+            isUploadingImage = false
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -100,7 +149,31 @@ fun RecordEditScreen(
                 )
             }
         }
-        ExistingRecordImagesCard(record)
+        EditableRecordImagesCard(
+            record = record,
+            selectedImageUri = selectedImageUri,
+            currentImages = currentImages,
+            imageUploadMessage = imageUploadMessage,
+            isUploadingImage = isUploadingImage,
+            onPickImage = {
+                imagePickerLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                )
+            },
+            onRemoveImage = {
+                selectedImageUri = null
+                currentImages = emptyList()
+                imageUploadMessage = "图片已移除，保存修改后记录将不再显示图片。"
+                updateResult = null
+            },
+        )
+        imageSaveValidation.message?.let { message ->
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF8A2E1C),
+            )
+        }
         Text(
             text = "评分",
             style = MaterialTheme.typography.titleMedium,
@@ -202,6 +275,7 @@ fun RecordEditScreen(
                             rating = rating,
                             comment = comment,
                             isPublic = isPublic,
+                            images = currentImages,
                         )
                         updateResult = result
                         if (result is FoodRecordUpdateResult.Success) {
@@ -210,6 +284,7 @@ fun RecordEditScreen(
                                     rating = result.rating,
                                     comment = result.comment,
                                     isPublic = result.isPublic,
+                                    images = currentImages,
                                 ),
                             )
                         }
@@ -218,7 +293,7 @@ fun RecordEditScreen(
                 },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(18.dp),
-                enabled = !isSaving && !commentValidation.hasError,
+                enabled = !isSaving && !isUploadingImage && imageSaveValidation.canSave && !commentValidation.hasError,
             ) {
                 Text(if (isSaving) "保存中..." else "保存修改")
             }
@@ -227,12 +302,16 @@ fun RecordEditScreen(
 }
 
 @Composable
-private fun ExistingRecordImagesCard(record: FoodRecordHistoryItem) {
-    val displayImages = record.images.ifEmpty {
-        record.foodCoverImageUrl?.let {
-            listOf(com.snk.app.data.record.FoodRecordImageAttachment(imageUrl = it, thumbnailUrl = it))
-        } ?: emptyList()
-    }
+private fun EditableRecordImagesCard(
+    record: FoodRecordHistoryItem,
+    selectedImageUri: Uri?,
+    currentImages: List<FoodRecordImageAttachment>,
+    imageUploadMessage: String?,
+    isUploadingImage: Boolean,
+    onPickImage: () -> Unit,
+    onRemoveImage: () -> Unit,
+) {
+    val previewImages = currentImages
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -248,7 +327,17 @@ private fun ExistingRecordImagesCard(record: FoodRecordHistoryItem) {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
-            if (displayImages.isEmpty()) {
+            selectedImageUri?.let { uri ->
+                AsyncImage(
+                    model = uri,
+                    contentDescription = "Selected replacement record image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(18.dp)),
+                    contentScale = ContentScale.Crop,
+                )
+            } ?: if (previewImages.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -264,7 +353,7 @@ private fun ExistingRecordImagesCard(record: FoodRecordHistoryItem) {
                     )
                 }
             } else {
-                displayImages.forEachIndexed { index, image ->
+                previewImages.forEachIndexed { index, image ->
                     AsyncImage(
                         model = image.thumbnailUrl ?: image.imageUrl,
                         contentDescription = "Record image ${index + 1}",
@@ -276,9 +365,34 @@ private fun ExistingRecordImagesCard(record: FoodRecordHistoryItem) {
                     )
                 }
                 Text(
-                    text = "本次支持查看已保存图片；新增或替换图片会在后续图片编辑增量中处理。",
+                    text = "可选择新图片替换当前图片，也可以移除图片后保存。",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF5B4A42),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(
+                    onClick = onPickImage,
+                    shape = RoundedCornerShape(16.dp),
+                    enabled = !isUploadingImage,
+                ) {
+                    Text(if (isUploadingImage) "上传中..." else "选择新图片")
+                }
+                if (previewImages.isNotEmpty() || selectedImageUri != null) {
+                    Button(
+                        onClick = onRemoveImage,
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = !isUploadingImage,
+                    ) {
+                        Text("移除图片")
+                    }
+                }
+            }
+            imageUploadMessage?.let { message ->
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (currentImages.isNotEmpty()) Color(0xFF3D6B35) else Color(0xFF8A5A44),
                 )
             }
         }
@@ -301,4 +415,22 @@ private fun formatRecordEditMeta(record: FoodRecordHistoryItem): String = buildS
         append(" / ")
         append(it)
     }
+}
+
+private data class EditableRecordImagePayload(
+    val bytes: ByteArray,
+    val fileName: String,
+    val contentType: String,
+)
+
+private fun readEditableRecordImagePayload(context: Context, imageUri: Uri): EditableRecordImagePayload {
+    val resolver = context.contentResolver
+    val bytes = resolver.openInputStream(imageUri)?.use { it.readBytes() }
+        ?: error("Unable to read selected image.")
+    val contentType = resolver.getType(imageUri) ?: "image/jpeg"
+    return EditableRecordImagePayload(
+        bytes = bytes,
+        fileName = "record-edit-${System.currentTimeMillis()}.jpg",
+        contentType = contentType,
+    )
 }
