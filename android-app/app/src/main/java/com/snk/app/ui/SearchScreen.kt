@@ -23,6 +23,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -40,6 +41,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.snk.app.BuildConfig
 import com.snk.app.SnkApplication
+import com.snk.app.data.draft.DraftSyncStatus
+import com.snk.app.data.draft.FoodRecordDraft
 import com.snk.app.data.food.FoodReportResult
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodSearchResult
@@ -70,8 +73,14 @@ fun SearchScreen(
         value = if (sessionUserId == null) {
             null
         } else {
-            application.container.foodRecordRepository.listRecentRecords(sessionUserId, 10)
+            application.container.foodRecordRepository.listRecentRecords(sessionUserId, HOME_RECENT_RECORD_LIMIT)
         }
+    }
+    val drafts by application.container.draftRecordRepository
+        .observeDrafts()
+        .collectAsState(initial = emptyList())
+    val pendingDrafts = remember(drafts) {
+        drafts.filter { it.syncStatus != DraftSyncStatus.SYNCED }
     }
     var query by remember { mutableStateOf("") }
     var searchState by remember { mutableStateOf<FoodSearchResult?>(null) }
@@ -295,9 +304,30 @@ fun SearchScreen(
                 },
             )
         }
+        if (pendingDrafts.isNotEmpty()) {
+            item {
+                Text(
+                    text = "待上传草稿 / 失败重试",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF8A2E1C),
+                )
+            }
+            items(pendingDrafts, key = { "draft-${it.id}" }) { draft ->
+                DraftItemCard(
+                    draft = draft,
+                    onRetry = {
+                        coroutineScope.launch {
+                            application.container.draftRecordRepository.requestRetry(draft.id)
+                            application.container.scheduleDraftRetry(draft.id)
+                        }
+                    },
+                )
+            }
+        }
         item {
             Text(
-                text = "之前录入的信息",
+                text = "最近记录",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF2B1E18),
@@ -458,6 +488,9 @@ private fun SessionUiState.userIdOrNull(): Long? = when (this) {
     SessionUiState.Loading -> null
     is SessionUiState.Failure -> null
 }
+
+/** 首页最近记录默认展示条数，对齐 PRD「首页最近记录默认展示最近 5 条」。 */
+private const val HOME_RECENT_RECORD_LIMIT = 5
 
 private fun formatRecordTime(recordTime: String): String {
     return recordTime.replace("T", " ").removeSuffix("Z").take(16)
