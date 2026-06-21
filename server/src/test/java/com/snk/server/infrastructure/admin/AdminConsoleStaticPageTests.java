@@ -37,6 +37,9 @@ class AdminConsoleStaticPageTests {
 		assertThat(html).contains("id=\"mergeTargetPreview\"");
 		assertThat(html).contains("async function mergeFoodItem");
 		assertThat(html).contains("async function previewMergeTarget");
+		assertThat(html).contains("let mergeTargetPreviewItem = null");
+		assertThat(html).contains("mergeTargetPreviewItem.auditStatus !== \"approved\"");
+		assertThat(html).contains("mergeTargetPreviewItem.id !== targetFoodItemId");
 		assertThat(html).contains("/api/admin/food-items/${id}/merge");
 		assertThat(html).contains("/api/admin/food-items/${id}");
 		assertThat(html).contains("/api/admin/food-items/${id}/reports");

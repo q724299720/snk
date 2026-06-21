@@ -418,6 +418,7 @@
     const message = document.querySelector("#message");
     const savedToken = sessionStorage.getItem("snkAdminToken") || "";
     let reviewWordCache = [];
+    let mergeTargetPreviewItem = null;
     let editingWordId = null;
     tokenInput.value = savedToken;
 
@@ -527,6 +528,7 @@
     }
 
     function renderMergeTargetPreview(item) {
+      mergeTargetPreviewItem = item;
       const fields = [
         ["合并目标 ID", item.id],
         ["合并目标名称", item.name],
@@ -684,6 +686,14 @@
       const targetFoodItemId = Number(document.querySelector("#mergeTargetFoodItemId").value);
       if (!targetFoodItemId) {
         setMessage("请先填写合并目标条目 ID。", true);
+        return;
+      }
+      if (!mergeTargetPreviewItem || mergeTargetPreviewItem.id !== targetFoodItemId) {
+        setMessage("请先预览当前合并目标条目。", true);
+        return;
+      }
+      if (mergeTargetPreviewItem.auditStatus !== "approved") {
+        setMessage("合并目标必须是已通过条目，请更换目标后重试。", true);
         return;
       }
       const result = await requestJson(`/api/admin/food-items/${id}/merge`, {
