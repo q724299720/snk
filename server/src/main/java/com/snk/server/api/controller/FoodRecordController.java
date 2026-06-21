@@ -7,6 +7,7 @@ import com.snk.server.domain.record.FoodRecordCreateCommand;
 import com.snk.server.domain.record.FoodRecordResult;
 import com.snk.server.domain.record.FoodRecordService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import java.util.List;
 import java.util.Set;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,8 +35,8 @@ public class FoodRecordController {
 
 	@GetMapping
 	public List<FoodRecordHistoryResponse> listRecentRecords(
-		@RequestParam("userId") Long userId,
-		@RequestParam(value = "limit", defaultValue = "10") int limit
+		@RequestParam("userId") @Positive Long userId,
+		@RequestParam(value = "limit", defaultValue = "10") @Positive int limit
 	) {
 		return foodRecordService.listRecentRecords(userId, limit).stream()
 			.map(FoodRecordHistoryResponse::from)
@@ -80,7 +81,7 @@ public class FoodRecordController {
 
 	@PostMapping("/{recordId}/like")
 	@ResponseStatus(HttpStatus.OK)
-	public FoodRecordResponse likeRecord(@PathVariable Long recordId) {
+	public FoodRecordResponse likeRecord(@PathVariable @Positive Long recordId) {
 		FoodRecordResult result = foodRecordService.likeRecord(recordId);
 		return new FoodRecordResponse(
 			result.id(),

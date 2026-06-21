@@ -75,7 +75,7 @@
 ### 记录管理
 
 - `POST /api/records`
-- `GET /api/records/my`
+- `GET /api/records?userId=&limit=`
 - `GET /api/records/{id}`
 - `PUT /api/records/{id}`
 - `DELETE /api/records/{id}`
@@ -93,7 +93,9 @@
 
 记录点赞当前约定：
 
+- `GET /api/records` 当前用于按用户读取最近记录；`userId` 和 `limit` 必须为正整数，`0` 或负数直接返回 `400`
 - `POST /api/records/{id}/like` 用于对记录增加一次聚合点赞
+- `{id}` 必须为正整数，`0` 或负数直接返回 `400`
 - 当前实现不做用户级去重，只累计 `likeCount`
 - 当前成功响应返回与记录创建一致的完整记录视图，并包含更新后的 `likeCount`
 
@@ -327,3 +329,4 @@
 | 2026-06-21 | Codex | 补充审核词典列表 `wordType` 枚举校验约束 | 后台审核词典列表按类型过滤时应拒绝未知类型，避免后台误判为空结果 |
 | 2026-06-21 | Codex | 扩展审核词典新增 / 编辑 `wordType` 枚举校验约束 | 后台新增或编辑审核词条时应拒绝未知类型，避免写入不可治理词条 |
 | 2026-06-21 | Codex | 补充记录创建 `sourceType` 写入校验约束 | 记录创建接口应拒绝非当前入口来源类型，避免旧链路或未知来源继续写入新记录 |
+| 2026-06-21 | Codex | 补充记录列表与点赞 ID 正数校验约束 | 记录列表和点赞入口应拒绝非正数 `userId`、`limit` 与 `recordId`，避免无效请求进入服务层 |

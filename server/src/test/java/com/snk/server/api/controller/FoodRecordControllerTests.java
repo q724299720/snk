@@ -1,6 +1,7 @@
 package com.snk.server.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -77,6 +78,18 @@ class FoodRecordControllerTests {
 	}
 
 	@Test
+	void shouldRejectRecentRecordsWhenUserIdIsNotPositive() throws Exception {
+		mockMvc.perform(get("/api/records").param("userId", "0"))
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void shouldRejectRecentRecordsWhenLimitIsNotPositive() throws Exception {
+		mockMvc.perform(get("/api/records").param("userId", "100").param("limit", "0"))
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
 	void shouldCreateRecord() throws Exception {
 		when(foodRecordService.createRecord(any())).thenReturn(
 			new FoodRecordResult(
@@ -139,6 +152,30 @@ class FoodRecordControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id").value(1))
 			.andExpect(jsonPath("$.likeCount").value(3));
+	}
+
+	@Test
+	void shouldRejectLikeWhenRecordIdIsNotPositive() throws Exception {
+		when(foodRecordService.likeRecord(anyLong())).thenReturn(
+			new FoodRecordResult(
+				0L,
+				100L,
+				200L,
+				"text_search",
+				false,
+				(short) 5,
+				"tasty",
+				1,
+				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+				OffsetDateTime.parse("2026-06-13T23:30:00Z")
+			)
+		);
+
+		mockMvc.perform(
+			post("/api/records/0/like")
+				.contentType(MediaType.APPLICATION_JSON)
+		)
+			.andExpect(status().isBadRequest());
 	}
 
 	@Test
