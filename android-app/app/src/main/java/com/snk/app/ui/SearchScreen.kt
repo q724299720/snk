@@ -51,6 +51,7 @@ import com.snk.app.data.record.FoodRecordCommentCreateResult
 import com.snk.app.data.record.FoodRecordCommentsResult
 import com.snk.app.data.record.FoodRecordHistoryItem
 import com.snk.app.data.record.FoodRecordHistoryResult
+import com.snk.app.data.record.FoodRecordLikeResult
 import com.snk.app.data.record.toFoodSearchItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -393,6 +394,9 @@ fun SearchScreen(
                                     )
                                 }
                             },
+                            onLikeRecord = { recordId ->
+                                application.container.foodRecordRepository.likeRecord(recordId)
+                            },
                         )
                     }
                 }
@@ -463,6 +467,7 @@ private fun RecentRecordCard(
     sessionUserId: Long? = null,
     onLoadComments: (suspend (Long) -> FoodRecordCommentsResult)? = null,
     onSubmitComment: (suspend (Long, String) -> FoodRecordCommentCreateResult)? = null,
+    onLikeRecord: (suspend (Long) -> FoodRecordLikeResult)? = null,
 ) {
     val displayImageUrl = record.images.firstOrNull()?.thumbnailUrl
         ?: record.images.firstOrNull()?.imageUrl
@@ -471,7 +476,12 @@ private fun RecentRecordCard(
     var comments by remember(record.id) { mutableStateOf<List<FoodRecordComment>>(emptyList()) }
     var commentMessage by remember(record.id) { mutableStateOf<String?>(null) }
     var commentInput by remember(record.id) { mutableStateOf("") }
+    var likeState by remember(record.id, record.likeCount) {
+        mutableStateOf(RecordLikeUiState(likeCount = record.likeCount))
+    }
+    var isLiking by remember(record.id) { mutableStateOf(false) }
     val commentsEnabled = record.isPublic && onLoadComments != null && onSubmitComment != null
+    val likeEnabled = onLikeRecord != null
 
     LaunchedEffect(record.id, commentsEnabled) {
         if (!commentsEnabled) {
@@ -570,11 +580,44 @@ private fun RecentRecordCard(
                     color = Color(0xFF5B4A42),
                 )
             }
-            Text(
-                text = "点赞 ${record.likeCount}",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF8A5A44),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = "点赞 ${likeState.likeCount}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF8A5A44),
+                    )
+                    likeState.message?.takeIf { it.isNotBlank() }?.let { message ->
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF8A5A44),
+                        )
+                    }
+                }
+                if (likeEnabled) {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                val liker = onLikeRecord ?: return@launch
+                                isLiking = true
+                                likeState = likeState.afterLikeResult(liker(record.id))
+                                isLiking = false
+                            }
+                        },
+                        enabled = !isLiking,
+                        shape = RoundedCornerShape(14.dp),
+                    ) {
+                        Text(if (isLiking) "提交中" else "点赞")
+                    }
+                }
+            }
             Button(
                 onClick = onReuseFood,
                 shape = RoundedCornerShape(14.dp),
