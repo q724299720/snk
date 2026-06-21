@@ -76,6 +76,7 @@ fun RecordCreateScreen(
     var uploadedRecordImage by remember { mutableStateOf<FoodRecordImageAttachment?>(null) }
     var imageUploadMessage by remember { mutableStateOf<String?>(null) }
     var isUploadingImage by remember { mutableStateOf(false) }
+    val commentValidation = validateRecordCommentForUi(comment)
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) {
             return@rememberLauncherForActivityResult
@@ -259,6 +260,10 @@ fun RecordCreateScreen(
             onValueChange = { comment = it },
             modifier = Modifier.fillMaxWidth(),
             label = { Text("备注，可选") },
+            supportingText = {
+                Text(commentValidation.message ?: "${comment.trim().length}/$MAX_RECORD_COMMENT_LENGTH")
+            },
+            isError = commentValidation.hasError,
             minLines = 3,
             maxLines = 5,
             shape = RoundedCornerShape(20.dp),
@@ -413,7 +418,11 @@ fun RecordCreateScreen(
                     isSubmitting = false
                 }
             },
-            enabled = !isSubmitting && !isUploadingImage && sessionState !is SessionUiState.Loading && sessionState !is SessionUiState.Failure,
+            enabled = !isSubmitting &&
+                !isUploadingImage &&
+                !commentValidation.hasError &&
+                sessionState !is SessionUiState.Loading &&
+                sessionState !is SessionUiState.Failure,
             shape = RoundedCornerShape(18.dp),
         ) {
             Text(if (isSubmitting) "保存中..." else "保存记录")
@@ -553,6 +562,27 @@ fun RecordCreateScreen(
 }
 
 internal const val DEFAULT_RECORD_RATING = 4
+internal const val MAX_RECORD_COMMENT_LENGTH = 500
+
+internal data class RecordCommentUiValidation(
+    val hasError: Boolean,
+    val message: String?,
+)
+
+internal fun validateRecordCommentForUi(comment: String): RecordCommentUiValidation {
+    val length = comment.trim().length
+    return if (length > MAX_RECORD_COMMENT_LENGTH) {
+        RecordCommentUiValidation(
+            hasError = true,
+            message = "备注最长支持 500 个字符，当前 $length 个。",
+        )
+    } else {
+        RecordCommentUiValidation(
+            hasError = false,
+            message = null,
+        )
+    }
+}
 
 internal data class RecordCreateTransientState(
     val rating: Int = DEFAULT_RECORD_RATING,

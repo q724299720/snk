@@ -54,4 +54,15 @@ class RecordCreateScreenTest {
         assertNull(reset.imageUploadMessage)
         assertFalse(reset.isUploadingImage)
     }
+
+    @Test
+    fun `record comment validation disables submit when comment is too long`() {
+        val valid = validateRecordCommentForUi("a".repeat(500))
+        val overlong = validateRecordCommentForUi("a".repeat(501))
+
+        assertFalse(valid.hasError)
+        assertNull(valid.message)
+        assertTrue(overlong.hasError)
+        assertEquals("备注最长支持 500 个字符，当前 501 个。", overlong.message)
+    }
 }
