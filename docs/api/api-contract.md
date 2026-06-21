@@ -142,6 +142,7 @@
 - `GET /api/admin/stats` 用于返回后台治理的汇总概览
 - 当前最小响应字段包含：`totalFoodItems`、`pendingFoodItems`、`approvedFoodItems`、`rejectedFoodItems`、`reportedFoodItems`、`totalRecognitionTasks`、`processingRecognitionTasks`、`completedRecognitionTasks`、`failedRecognitionTasks`、`enabledReviewWords`、`disabledReviewWords`
 - 识别任务统计字段仅兼容历史服务端预留能力，当前 Android MVP 不再创建图片识别任务
+- `totalRecognitionTasks` 统计所有历史识别任务状态，至少包含 `pending / processing / completed / failed`
 - 统计口径只做后台管理概览，不承诺分页或趋势图
 
 后台条目治理当前约定：
@@ -274,3 +275,4 @@
 | 2026-06-21 | Codex | 补充轻量后台入口与 Admin Token 访问约束 | Phase 4 已新增 `/admin/index.html` 静态后台，并通过可选 token 保护后台 API |
 | 2026-06-21 | Codex | 补充后台食物条目报错明细接口 | Phase 4 需要后台可追踪用户报错原因，报错治理不能只依赖聚合计数 |
 | 2026-06-21 | Codex | 补充搜索接口的创建者 pending 可见性参数 | Phase 4 要求待审核条目仅创建者可见，普通全局搜索仍只暴露已审核条目 |
+| 2026-06-21 | Codex | 修正后台识别任务总数统计口径 | 历史识别任务监控仍保留，统计总数需要包含 pending 任务以避免后台概览低估遗留任务 |
