@@ -2,6 +2,7 @@ package com.snk.server.api.dto;
 
 import com.snk.server.domain.record.FoodRecordHistoryItem;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public record FoodRecordHistoryResponse(
 	Long id,
@@ -19,7 +20,8 @@ public record FoodRecordHistoryResponse(
 	String comment,
 	int likeCount,
 	OffsetDateTime recordTime,
-	OffsetDateTime createdAt
+	OffsetDateTime createdAt,
+	List<FoodRecordImageResponse> images
 ) {
 
 	public static FoodRecordHistoryResponse from(FoodRecordHistoryItem item) {
@@ -39,7 +41,10 @@ public record FoodRecordHistoryResponse(
 			item.comment(),
 			item.likeCount(),
 			item.recordTime(),
-			item.createdAt()
+			item.createdAt(),
+			item.images().stream()
+				.map(FoodRecordImageResponse::from)
+				.toList()
 		);
 	}
 }

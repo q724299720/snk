@@ -1,6 +1,7 @@
 package com.snk.server.domain.record;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public record FoodRecordCreateCommand(
 	Long userId,
@@ -9,6 +10,7 @@ public record FoodRecordCreateCommand(
 	boolean isPublic,
 	short rating,
 	String comment,
-	OffsetDateTime recordTime
+	OffsetDateTime recordTime,
+	List<FoodRecordImageValue> images
 ) {
 }

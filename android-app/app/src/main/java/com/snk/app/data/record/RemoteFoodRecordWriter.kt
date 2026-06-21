@@ -7,5 +7,6 @@ interface RemoteFoodRecordWriter {
         rating: Int,
         comment: String,
         sourceType: String = "text_search",
+        images: List<FoodRecordImageAttachment> = emptyList(),
     ): FoodRecordCreateResult
 }

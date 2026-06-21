@@ -88,6 +88,7 @@ private class FakeRemoteWriter(
         rating: Int,
         comment: String,
         sourceType: String,
+        images: List<FoodRecordImageAttachment>,
     ): FoodRecordCreateResult = result
 }
 

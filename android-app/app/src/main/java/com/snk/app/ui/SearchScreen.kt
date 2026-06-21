@@ -388,6 +388,9 @@ private fun RecentRecordCard(
     record: FoodRecordHistoryItem,
     onReuseFood: () -> Unit,
 ) {
+    val displayImageUrl = record.images.firstOrNull()?.thumbnailUrl
+        ?: record.images.firstOrNull()?.imageUrl
+        ?: record.foodCoverImageUrl
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDF8F2)),
@@ -400,9 +403,9 @@ private fun RecentRecordCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                if (!record.foodCoverImageUrl.isNullOrBlank()) {
+                if (!displayImageUrl.isNullOrBlank()) {
                     AsyncImage(
-                        model = record.foodCoverImageUrl,
+                        model = displayImageUrl,
                         contentDescription = record.foodName,
                         modifier = Modifier
                             .size(88.dp)

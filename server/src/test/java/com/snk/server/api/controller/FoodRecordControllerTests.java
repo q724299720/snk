@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.snk.server.domain.record.FoodRecordResult;
 import com.snk.server.domain.record.FoodRecordService;
 import com.snk.server.domain.record.FoodRecordHistoryItem;
+import com.snk.server.domain.record.FoodRecordImageValue;
 import com.snk.server.infrastructure.storage.StorageProperties;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -64,7 +65,13 @@ class FoodRecordControllerTests {
 					"tasty",
 					2,
 					OffsetDateTime.parse("2026-06-13T23:30:00Z"),
-					OffsetDateTime.parse("2026-06-13T23:30:00Z")
+					OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+					List.of(
+						new FoodRecordImageValue(
+							"https://snk.qiuxinmin.cn/uploads/records/chips.jpg",
+							"https://snk.qiuxinmin.cn/uploads/records/chips-thumb.jpg"
+						)
+					)
 				)
 			)
 		);
@@ -74,7 +81,9 @@ class FoodRecordControllerTests {
 			.andExpect(jsonPath("$[0].id").value(1))
 			.andExpect(jsonPath("$[0].foodName").value("Lays Cucumber Chips"))
 			.andExpect(jsonPath("$[0].foodCoverImageUrl").value("https://snk.qiuxinmin.cn/images/1.png"))
-			.andExpect(jsonPath("$[0].rating").value(5));
+			.andExpect(jsonPath("$[0].rating").value(5))
+			.andExpect(jsonPath("$[0].images[0].thumbnailUrl")
+				.value("https://snk.qiuxinmin.cn/uploads/records/chips-thumb.jpg"));
 	}
 
 	@Test
@@ -102,7 +111,13 @@ class FoodRecordControllerTests {
 				"tasty",
 				0,
 				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
-				OffsetDateTime.parse("2026-06-13T23:30:00Z")
+				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+				List.of(
+					new FoodRecordImageValue(
+						"https://snk.qiuxinmin.cn/uploads/records/noodle.jpg",
+						"https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg"
+					)
+				)
 			)
 		);
 
@@ -116,7 +131,13 @@ class FoodRecordControllerTests {
 					  "sourceType": "text_search",
 					  "isPublic": false,
 					  "rating": 5,
-					  "comment": "tasty"
+					  "comment": "tasty",
+					  "images": [
+					    {
+					      "imageUrl": "https://snk.qiuxinmin.cn/uploads/records/noodle.jpg",
+					      "thumbnailUrl": "https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg"
+					    }
+					  ]
 					}
 					""")
 		)
@@ -125,7 +146,9 @@ class FoodRecordControllerTests {
 			.andExpect(jsonPath("$.userId").value(100))
 			.andExpect(jsonPath("$.foodItemId").value(200))
 			.andExpect(jsonPath("$.rating").value(5))
-			.andExpect(jsonPath("$.likeCount").value(0));
+			.andExpect(jsonPath("$.likeCount").value(0))
+			.andExpect(jsonPath("$.images[0].imageUrl")
+				.value("https://snk.qiuxinmin.cn/uploads/records/noodle.jpg"));
 	}
 
 	@Test
@@ -141,7 +164,8 @@ class FoodRecordControllerTests {
 				"tasty",
 				3,
 				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
-				OffsetDateTime.parse("2026-06-13T23:30:00Z")
+				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+				List.of()
 			)
 		);
 
@@ -167,7 +191,8 @@ class FoodRecordControllerTests {
 				"tasty",
 				1,
 				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
-				OffsetDateTime.parse("2026-06-13T23:30:00Z")
+				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+				List.of()
 			)
 		);
 
@@ -209,7 +234,8 @@ class FoodRecordControllerTests {
 				null,
 				0,
 				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
-				OffsetDateTime.parse("2026-06-13T23:30:00Z")
+				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+				List.of()
 			)
 		);
 

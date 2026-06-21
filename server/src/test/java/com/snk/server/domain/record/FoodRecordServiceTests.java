@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
 import com.snk.server.infrastructure.persistence.record.FoodRecordEntity;
+import com.snk.server.infrastructure.persistence.record.FoodRecordImageEntity;
+import com.snk.server.infrastructure.persistence.record.FoodRecordImageRepository;
 import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
 import com.snk.server.infrastructure.persistence.user.UserEntity;
 import com.snk.server.infrastructure.persistence.user.UserRepository;
@@ -30,6 +32,9 @@ class FoodRecordServiceTests {
 	private FoodRecordRepository foodRecordRepository;
 
 	@Mock
+	private FoodRecordImageRepository foodRecordImageRepository;
+
+	@Mock
 	private UserRepository userRepository;
 
 	@Mock
@@ -39,7 +44,7 @@ class FoodRecordServiceTests {
 	private FoodRecordService foodRecordService;
 
 	@Test
-	void shouldCreateFoodRecord() throws Exception {
+	void shouldCreateFoodRecordWithImages() throws Exception {
 		UserEntity user = new UserEntity();
 		setUserId(user, 100L);
 
@@ -65,8 +70,14 @@ class FoodRecordServiceTests {
 				"text_search",
 				false,
 				(short) 4,
-				"口味不错",
-				OffsetDateTime.parse("2026-06-13T23:29:00Z")
+				"tasty",
+				OffsetDateTime.parse("2026-06-13T23:29:00Z"),
+				List.of(
+					new FoodRecordImageValue(
+						"https://snk.qiuxinmin.cn/uploads/records/noodle.jpg",
+						"https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg"
+					)
+				)
 			)
 		);
 
@@ -80,6 +91,16 @@ class FoodRecordServiceTests {
 		assertThat(result.likeCount()).isZero();
 		assertThat(result.id()).isEqualTo(1L);
 		assertThat(result.foodItemId()).isEqualTo(200L);
+		assertThat(result.images()).hasSize(1);
+		assertThat(result.images().getFirst().thumbnailUrl())
+			.isEqualTo("https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg");
+
+		ArgumentCaptor<List<FoodRecordImageEntity>> imageCaptor = ArgumentCaptor.forClass(List.class);
+		verify(foodRecordImageRepository).saveAll(imageCaptor.capture());
+		assertThat(imageCaptor.getValue()).hasSize(1);
+		assertThat(imageCaptor.getValue().getFirst().getRecord().getId()).isEqualTo(1L);
+		assertThat(imageCaptor.getValue().getFirst().getImageUrl())
+			.isEqualTo("https://snk.qiuxinmin.cn/uploads/records/noodle.jpg");
 	}
 
 	@Test
@@ -90,17 +111,8 @@ class FoodRecordServiceTests {
 		FoodItemEntity foodItem = new FoodItemEntity();
 		setFoodItemId(foodItem, 200L);
 
-		FoodRecordEntity record = new FoodRecordEntity();
-		setRecordId(record, 1L);
-		setCreatedAt(record, OffsetDateTime.parse("2026-06-13T23:30:00Z"));
-		record.setUser(user);
-		record.setFoodItem(foodItem);
-		record.setSourceType("text_search");
-		record.setPublic(false);
-		record.setRating((short) 4);
-		record.setComment("鍙ｅ懗涓嶉敊");
+		FoodRecordEntity record = createRecordEntity(user, foodItem);
 		record.setLikeCount(2);
-		record.setRecordTime(OffsetDateTime.parse("2026-06-13T23:29:00Z"));
 
 		when(foodRecordRepository.findById(1L)).thenReturn(Optional.of(record));
 		when(foodRecordRepository.save(any(FoodRecordEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -112,7 +124,7 @@ class FoodRecordServiceTests {
 	}
 
 	@Test
-	void shouldListRecentRecords() throws Exception {
+	void shouldListRecentRecordsWithImages() throws Exception {
 		UserEntity user = new UserEntity();
 		setUserId(user, 100L);
 
@@ -125,20 +137,19 @@ class FoodRecordServiceTests {
 		foodItem.setBrand("Lays");
 		foodItem.setCoverImageUrl("https://snk.qiuxinmin.cn/images/1.png");
 
-		FoodRecordEntity record = new FoodRecordEntity();
-		setRecordId(record, 1L);
-		setCreatedAt(record, OffsetDateTime.parse("2026-06-13T23:30:00Z"));
-		record.setUser(user);
-		record.setFoodItem(foodItem);
-		record.setSourceType("text_search");
-		record.setPublic(false);
+		FoodRecordEntity record = createRecordEntity(user, foodItem);
 		record.setRating((short) 5);
 		record.setComment("tasty");
 		record.setLikeCount(2);
-		record.setRecordTime(OffsetDateTime.parse("2026-06-13T23:29:00Z"));
 
 		when(foodRecordRepository.findByUser_IdAndDeletedAtIsNullOrderByRecordTimeDesc(eq(100L), any()))
 			.thenReturn(List.of(record));
+		FoodRecordImageEntity image = new FoodRecordImageEntity();
+		image.setRecord(record);
+		image.setImageUrl("https://snk.qiuxinmin.cn/uploads/records/chips.jpg");
+		image.setThumbnailUrl("https://snk.qiuxinmin.cn/uploads/records/chips-thumb.jpg");
+		when(foodRecordImageRepository.findByRecord_IdInOrderByCreatedAtAsc(List.of(1L)))
+			.thenReturn(List.of(image));
 
 		List<FoodRecordHistoryItem> result = foodRecordService.listRecentRecords(100L, 10);
 
@@ -147,6 +158,23 @@ class FoodRecordServiceTests {
 		assertThat(result.getFirst().foodItemType()).isEqualTo("packaged_product");
 		assertThat(result.getFirst().foodCoverImageUrl()).isEqualTo("https://snk.qiuxinmin.cn/images/1.png");
 		assertThat(result.getFirst().rating()).isEqualTo((short) 5);
+		assertThat(result.getFirst().images()).hasSize(1);
+		assertThat(result.getFirst().images().getFirst().imageUrl())
+			.isEqualTo("https://snk.qiuxinmin.cn/uploads/records/chips.jpg");
+	}
+
+	private FoodRecordEntity createRecordEntity(UserEntity user, FoodItemEntity foodItem) throws Exception {
+		FoodRecordEntity record = new FoodRecordEntity();
+		setRecordId(record, 1L);
+		setCreatedAt(record, OffsetDateTime.parse("2026-06-13T23:30:00Z"));
+		record.setUser(user);
+		record.setFoodItem(foodItem);
+		record.setSourceType("text_search");
+		record.setPublic(false);
+		record.setRating((short) 4);
+		record.setComment("good");
+		record.setRecordTime(OffsetDateTime.parse("2026-06-13T23:29:00Z"));
+		return record;
 	}
 
 	private void setUserId(UserEntity entity, Long id) throws Exception {

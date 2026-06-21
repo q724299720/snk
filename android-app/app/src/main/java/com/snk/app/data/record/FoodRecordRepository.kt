@@ -2,6 +2,9 @@ package com.snk.app.data.record
 
 import com.snk.app.data.food.FoodSearchItem
 import java.io.IOException
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
 
 class FoodRecordRepository(
@@ -30,6 +33,7 @@ class FoodRecordRepository(
         rating: Int,
         comment: String,
         sourceType: String,
+        images: List<FoodRecordImageAttachment>,
     ): FoodRecordCreateResult {
         if (rating !in 1..5) {
             return FoodRecordCreateResult.Failure(
@@ -47,6 +51,12 @@ class FoodRecordRepository(
                     isPublic = false,
                     rating = rating,
                     comment = comment.trim().ifBlank { null },
+                    images = images.map {
+                        FoodRecordImageRequest(
+                            imageUrl = it.imageUrl,
+                            thumbnailUrl = it.thumbnailUrl,
+                        )
+                    },
                 ),
             )
             FoodRecordCreateResult.Success(
@@ -75,7 +85,37 @@ class FoodRecordRepository(
             )
         }
     }
+
+    suspend fun uploadRecordImage(
+        imageBytes: ByteArray,
+        fileName: String,
+        contentType: String,
+    ): RecordImageUploadResult {
+        if (imageBytes.isEmpty()) {
+            return RecordImageUploadResult.Failure("没有可上传的图片内容。")
+        }
+
+        return try {
+            val requestBody = imageBytes.toRequestBody(contentType.toMediaTypeOrNull())
+            val response = api.uploadImage(
+                MultipartBody.Part.createFormData("file", fileName, requestBody),
+            )
+            RecordImageUploadResult.Success(
+                FoodRecordImageAttachment(
+                    imageUrl = response.resourceUrl,
+                    thumbnailUrl = response.thumbnailUrl,
+                ),
+            )
+        } catch (exception: Exception) {
+            RecordImageUploadResult.Failure(exception.asImageUploadMessage())
+        }
+    }
 }
+
+data class FoodRecordImageAttachment(
+    val imageUrl: String,
+    val thumbnailUrl: String?,
+)
 
 data class FoodRecordHistoryItem(
     val id: Long,
@@ -94,6 +134,7 @@ data class FoodRecordHistoryItem(
     val likeCount: Int,
     val recordTime: String,
     val createdAt: String,
+    val images: List<FoodRecordImageAttachment>,
 )
 
 fun FoodRecordHistoryItem.toFoodSearchItem(): FoodSearchItem = FoodSearchItem(
@@ -115,6 +156,12 @@ sealed interface FoodRecordHistoryResult {
     ) : FoodRecordHistoryResult
 
     data class Failure(val message: String) : FoodRecordHistoryResult
+}
+
+sealed interface RecordImageUploadResult {
+    data class Success(val image: FoodRecordImageAttachment) : RecordImageUploadResult
+
+    data class Failure(val message: String) : RecordImageUploadResult
 }
 
 enum class FoodRecordCreateFailureReason {
@@ -170,6 +217,12 @@ private fun FoodRecordHistoryResponse.toModel(): FoodRecordHistoryItem = FoodRec
     likeCount = likeCount,
     recordTime = recordTime,
     createdAt = createdAt,
+    images = images.map {
+        FoodRecordImageAttachment(
+            imageUrl = it.imageUrl,
+            thumbnailUrl = it.thumbnailUrl,
+        )
+    },
 )
 
 private fun Exception.asUserFacingMessage(): String = when (this) {
@@ -194,4 +247,10 @@ private fun Exception.asLikeFailureReason(): FoodRecordLikeFailureReason = when 
     is IOException -> FoodRecordLikeFailureReason.NETWORK
     is HttpException -> FoodRecordLikeFailureReason.SERVER
     else -> FoodRecordLikeFailureReason.UNKNOWN
+}
+
+private fun Exception.asImageUploadMessage(): String = when (this) {
+    is IOException -> "无法连接服务端上传图片，请稍后重试。"
+    is HttpException -> "服务端拒绝了这张图片，请更换图片后重试。"
+    else -> "图片上传失败，请稍后重试。"
 }

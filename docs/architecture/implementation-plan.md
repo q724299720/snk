@@ -311,3 +311,14 @@
 | 2026-06-21 | Codex | 补充后台食物条目列表 `auditStatus` 枚举校验 | 后台食物条目列表按审核状态过滤时应在入参阶段拒绝未知状态，避免后台误判为空结果 |
 | 2026-06-21 | Codex | 补充审核词典列表 `wordType` 枚举校验 | 后台审核词典列表按类型过滤时应在入参阶段拒绝未知类型，避免后台误判为空结果 |
 | 2026-06-21 | Codex | 扩展审核词典新增 / 编辑 `wordType` 枚举校验 | 后台新增或编辑审核词条时应在入参阶段拒绝未知类型，避免写入不可治理词条 |
+# Audit Trail Addendum
+
+| Date | Author | Scope | Reason |
+| --- | --- | --- | --- |
+| 2026-06-21 | Codex | Phase 2 record image upload/display increment | Mobile records can attach uploaded images and recent-record cards can display record photos |
+
+## Phase 2 Addendum: Record Images
+
+- Record creation supports optional uploaded images by first calling `POST /api/upload/image`, then sending `images: [{ imageUrl, thumbnailUrl }]` to `POST /api/records`.
+- Recent-record cards must prefer the record image thumbnail, then the record original image, then the food item cover image.
+- This increment keeps offline draft media out of scope; text-only draft retry remains unchanged until a later Room migration.

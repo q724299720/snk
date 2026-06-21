@@ -1,6 +1,7 @@
 package com.snk.server.domain.record;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public record FoodRecordHistoryItem(
 	Long id,
@@ -18,6 +19,7 @@ public record FoodRecordHistoryItem(
 	String comment,
 	int likeCount,
 	OffsetDateTime recordTime,
-	OffsetDateTime createdAt
+	OffsetDateTime createdAt,
+	List<FoodRecordImageValue> images
 ) {
 }

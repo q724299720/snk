@@ -32,6 +32,7 @@ class DraftSyncWorker(
                 rating = draft.rating,
                 comment = draft.comment,
                 sourceType = draft.sourceType,
+                images = emptyList(),
             )
         ) {
             is FoodRecordCreateResult.Success -> {

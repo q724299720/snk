@@ -2,8 +2,10 @@ package com.snk.server.api.controller;
 
 import com.snk.server.api.dto.CreateFoodRecordRequest;
 import com.snk.server.api.dto.FoodRecordHistoryResponse;
+import com.snk.server.api.dto.FoodRecordImageResponse;
 import com.snk.server.api.dto.FoodRecordResponse;
 import com.snk.server.domain.record.FoodRecordCreateCommand;
+import com.snk.server.domain.record.FoodRecordImageValue;
 import com.snk.server.domain.record.FoodRecordResult;
 import com.snk.server.domain.record.FoodRecordService;
 import jakarta.validation.Valid;
@@ -54,21 +56,13 @@ public class FoodRecordController {
 				request.isPublic(),
 				request.rating(),
 				request.comment(),
-				request.recordTime()
+				request.recordTime(),
+				request.imagesOrEmpty().stream()
+					.map(image -> new FoodRecordImageValue(image.imageUrl(), image.thumbnailUrl()))
+					.toList()
 			)
 		);
-		return new FoodRecordResponse(
-			result.id(),
-			result.userId(),
-			result.foodItemId(),
-			result.sourceType(),
-			result.isPublic(),
-			result.rating(),
-			result.comment(),
-			result.likeCount(),
-			result.recordTime(),
-			result.createdAt()
-		);
+		return toResponse(result);
 	}
 
 	private String validateSourceType(String sourceType) {
@@ -83,6 +77,10 @@ public class FoodRecordController {
 	@ResponseStatus(HttpStatus.OK)
 	public FoodRecordResponse likeRecord(@PathVariable @Positive Long recordId) {
 		FoodRecordResult result = foodRecordService.likeRecord(recordId);
+		return toResponse(result);
+	}
+
+	private FoodRecordResponse toResponse(FoodRecordResult result) {
 		return new FoodRecordResponse(
 			result.id(),
 			result.userId(),
@@ -93,7 +91,10 @@ public class FoodRecordController {
 			result.comment(),
 			result.likeCount(),
 			result.recordTime(),
-			result.createdAt()
+			result.createdAt(),
+			result.images().stream()
+				.map(FoodRecordImageResponse::from)
+				.toList()
 		);
 	}
 }

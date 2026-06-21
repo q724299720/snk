@@ -2,10 +2,13 @@ package com.snk.app.data.record
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import okhttp3.MultipartBody
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.Path
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Query
 
 interface FoodRecordApi {
@@ -24,6 +27,12 @@ interface FoodRecordApi {
     suspend fun likeRecord(
         @Path("recordId") recordId: Long,
     ): FoodRecordResponse
+
+    @Multipart
+    @POST("/api/upload/image")
+    suspend fun uploadImage(
+        @Part file: MultipartBody.Part,
+    ): UploadImageResponse
 }
 
 @Serializable
@@ -40,6 +49,24 @@ data class CreateFoodRecordRequest(
     val rating: Int,
     @SerialName("comment")
     val comment: String? = null,
+    @SerialName("images")
+    val images: List<FoodRecordImageRequest> = emptyList(),
+)
+
+@Serializable
+data class FoodRecordImageRequest(
+    @SerialName("imageUrl")
+    val imageUrl: String,
+    @SerialName("thumbnailUrl")
+    val thumbnailUrl: String? = null,
+)
+
+@Serializable
+data class FoodRecordImageResponse(
+    @SerialName("imageUrl")
+    val imageUrl: String,
+    @SerialName("thumbnailUrl")
+    val thumbnailUrl: String? = null,
 )
 
 @Serializable
@@ -76,6 +103,8 @@ data class FoodRecordHistoryResponse(
     val recordTime: String,
     @SerialName("createdAt")
     val createdAt: String,
+    @SerialName("images")
+    val images: List<FoodRecordImageResponse> = emptyList(),
 )
 
 @Serializable
@@ -100,4 +129,14 @@ data class FoodRecordResponse(
     val recordTime: String,
     @SerialName("createdAt")
     val createdAt: String,
+    @SerialName("images")
+    val images: List<FoodRecordImageResponse> = emptyList(),
+)
+
+@Serializable
+data class UploadImageResponse(
+    @SerialName("resourceUrl")
+    val resourceUrl: String,
+    @SerialName("thumbnailUrl")
+    val thumbnailUrl: String? = null,
 )

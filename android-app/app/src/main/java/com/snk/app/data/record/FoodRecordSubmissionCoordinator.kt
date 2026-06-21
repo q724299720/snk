@@ -17,6 +17,7 @@ class FoodRecordSubmissionCoordinator(
         rating: Int,
         comment: String,
         sourceType: String = "text_search",
+        images: List<FoodRecordImageAttachment> = emptyList(),
     ): FoodRecordSubmissionResult {
         return when (
             val result = remoteWriter.createRecord(
@@ -25,6 +26,7 @@ class FoodRecordSubmissionCoordinator(
                 rating = rating,
                 comment = comment,
                 sourceType = sourceType,
+                images = images,
             )
         ) {
             is FoodRecordCreateResult.Success -> {

@@ -48,7 +48,7 @@ class FoodRecordRepositoryTest {
     }
 
     @Test
-    fun `createRecord returns success when backend accepts request`() = runTest {
+    fun `createRecord sends images and returns success when backend accepts request`() = runTest {
         server.enqueue(
             MockResponse()
                 .setHeader("Content-Type", "application/json")
@@ -62,10 +62,16 @@ class FoodRecordRepositoryTest {
                       "sourceType": "text_search",
                       "isPublic": false,
                       "rating": 5,
-                      "comment": "很好吃",
+                      "comment": "good",
                       "likeCount": 0,
                       "recordTime": "2026-06-13T23:40:00Z",
-                      "createdAt": "2026-06-13T23:40:00Z"
+                      "createdAt": "2026-06-13T23:40:00Z",
+                      "images": [
+                        {
+                          "imageUrl": "https://snk.qiuxinmin.cn/uploads/records/noodle.jpg",
+                          "thumbnailUrl": "https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg"
+                        }
+                      ]
                     }
                     """.trimIndent(),
                 ),
@@ -75,12 +81,52 @@ class FoodRecordRepositoryTest {
             userId = 100,
             foodItemId = 200,
             rating = 5,
-            comment = "很好吃",
+            comment = "good",
+            sourceType = "text_search",
+            images = listOf(
+                FoodRecordImageAttachment(
+                    imageUrl = "https://snk.qiuxinmin.cn/uploads/records/noodle.jpg",
+                    thumbnailUrl = "https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg",
+                ),
+            ),
         )
 
         assertTrue(result is FoodRecordCreateResult.Success)
         assertEquals(55L, (result as FoodRecordCreateResult.Success).recordId)
         assertEquals(0, result.likeCount)
+        val requestBody = server.takeRequest().body.readUtf8()
+        assertTrue(requestBody.contains("\"images\""))
+        assertTrue(requestBody.contains("https://snk.qiuxinmin.cn/uploads/records/noodle.jpg"))
+    }
+
+    @Test
+    fun `uploadRecordImage returns uploaded image urls`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(200)
+                .setBody(
+                    """
+                    {
+                      "resourceUrl": "https://snk.qiuxinmin.cn/uploads/records/noodle.jpg",
+                      "thumbnailUrl": "https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg"
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.uploadRecordImage(
+            imageBytes = "image-content".toByteArray(),
+            fileName = "noodle.jpg",
+            contentType = "image/jpeg",
+        )
+
+        assertTrue(result is RecordImageUploadResult.Success)
+        assertEquals(
+            "https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg",
+            (result as RecordImageUploadResult.Success).image.thumbnailUrl,
+        )
+        assertTrue(server.takeRequest().path.orEmpty().contains("/api/upload/image"))
     }
 
     @Test
@@ -98,7 +144,7 @@ class FoodRecordRepositoryTest {
                       "sourceType": "text_search",
                       "isPublic": false,
                       "rating": 5,
-                      "comment": "很好吃",
+                      "comment": "good",
                       "likeCount": 4,
                       "recordTime": "2026-06-13T23:40:00Z",
                       "createdAt": "2026-06-13T23:40:00Z"
@@ -121,7 +167,9 @@ class FoodRecordRepositoryTest {
             userId = 100,
             foodItemId = 200,
             rating = 5,
-            comment = "很好吃",
+            comment = "good",
+            sourceType = "text_search",
+            images = emptyList(),
         )
 
         assertTrue(result is FoodRecordCreateResult.Failure)

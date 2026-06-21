@@ -1,11 +1,19 @@
 package com.snk.app.ui
 
 import android.content.Intent
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -22,8 +30,11 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,8 +42,11 @@ import com.snk.app.SnkApplication
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodSearchResult
 import com.snk.app.data.record.FoodRecordLikeResult
+import com.snk.app.data.record.FoodRecordImageAttachment
 import com.snk.app.data.record.FoodRecordSubmissionCoordinator
 import com.snk.app.data.record.FoodRecordSubmissionResult
+import com.snk.app.data.record.RecordImageUploadResult
+import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 
 @Composable
@@ -55,6 +69,41 @@ fun RecordCreateScreen(
     var interactionMessage by remember { mutableStateOf<String?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
     var isLiking by remember { mutableStateOf(false) }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var uploadedRecordImage by remember { mutableStateOf<FoodRecordImageAttachment?>(null) }
+    var imageUploadMessage by remember { mutableStateOf<String?>(null) }
+    var isUploadingImage by remember { mutableStateOf(false) }
+    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) {
+            return@rememberLauncherForActivityResult
+        }
+        selectedImageUri = uri
+        uploadedRecordImage = null
+        imageUploadMessage = "Uploading image..."
+        coroutineScope.launch {
+            isUploadingImage = true
+            imageUploadMessage = try {
+                val payload = readRecordImagePayload(context, uri)
+                when (
+                    val result = application.container.foodRecordRepository.uploadRecordImage(
+                        imageBytes = payload.bytes,
+                        fileName = payload.fileName,
+                        contentType = payload.contentType,
+                    )
+                ) {
+                    is RecordImageUploadResult.Success -> {
+                        uploadedRecordImage = result.image
+                        "Image uploaded. It will be saved with this record."
+                    }
+
+                    is RecordImageUploadResult.Failure -> result.message
+                }
+            } catch (exception: Exception) {
+                "Image read failed. Please choose another image."
+            }
+            isUploadingImage = false
+        }
+    }
     val relatedFoodState by produceState<FoodSearchResult?>(initialValue = null, key1 = selectedFood.id) {
         value = application.container.foodSearchRepository.recommendRelatedFoods(selectedFood.id)
     }
@@ -190,6 +239,84 @@ fun RecordCreateScreen(
             shape = RoundedCornerShape(20.dp),
             enabled = !isSubmitting,
         )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F1E7)),
+        ) {
+            Column(
+                modifier = Modifier.padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = "Record photo",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "Optional. The uploaded photo will appear in Recent Records.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF5B4A42),
+                )
+                selectedImageUri?.let { uri ->
+                    AsyncImage(
+                        model = uri,
+                        contentDescription = "Selected record photo",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .clip(RoundedCornerShape(18.dp)),
+                        contentScale = ContentScale.Crop,
+                    )
+                } ?: Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(96.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0xFFF2E3D3)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "No photo selected",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF8A5A44),
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = {
+                            imagePickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                            )
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = !isSubmitting && !isUploadingImage,
+                    ) {
+                        Text(if (isUploadingImage) "Uploading..." else "Choose photo")
+                    }
+                    if (selectedImageUri != null) {
+                        Button(
+                            onClick = {
+                                selectedImageUri = null
+                                uploadedRecordImage = null
+                                imageUploadMessage = null
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            enabled = !isSubmitting && !isUploadingImage,
+                        ) {
+                            Text("Remove")
+                        }
+                    }
+                }
+                imageUploadMessage?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (uploadedRecordImage != null) Color(0xFF3D6B35) else Color(0xFF8A5A44),
+                    )
+                }
+            }
+        }
         Text(
             text = when (sessionState) {
                 SessionUiState.Loading -> "游客身份初始化中，暂时不能提交。"
@@ -216,6 +343,7 @@ fun RecordCreateScreen(
                         rating = rating,
                         comment = comment,
                         sourceType = sourceType,
+                        images = uploadedRecordImage?.let { listOf(it) }.orEmpty(),
                     )
                     submitState = result
                     interactionMessage = null
@@ -225,7 +353,7 @@ fun RecordCreateScreen(
                     isSubmitting = false
                 }
             },
-            enabled = !isSubmitting && sessionState !is SessionUiState.Loading && sessionState !is SessionUiState.Failure,
+            enabled = !isSubmitting && !isUploadingImage && sessionState !is SessionUiState.Loading && sessionState !is SessionUiState.Failure,
             shape = RoundedCornerShape(18.dp),
         ) {
             Text(if (isSubmitting) "保存中..." else "保存记录")
@@ -391,4 +519,22 @@ internal fun buildRecordShareText(
         append("record_time：")
         append(recordTime)
     }
+}
+
+private data class RecordImagePayload(
+    val bytes: ByteArray,
+    val fileName: String,
+    val contentType: String,
+)
+
+private fun readRecordImagePayload(context: Context, imageUri: Uri): RecordImagePayload {
+    val resolver = context.contentResolver
+    val bytes = resolver.openInputStream(imageUri)?.use { it.readBytes() }
+        ?: error("Unable to read selected image.")
+    val contentType = resolver.getType(imageUri) ?: "image/jpeg"
+    return RecordImagePayload(
+        bytes = bytes,
+        fileName = "record-${System.currentTimeMillis()}.jpg",
+        contentType = contentType,
+    )
 }

@@ -81,6 +81,15 @@
 - `DELETE /api/records/{id}`
 - `POST /api/records/{id}/like`
 
+Record image contract:
+
+- `POST /api/upload/image` uploads the raw image first and returns `resourceUrl` plus optional `thumbnailUrl`.
+- `POST /api/records` may include optional `images: [{ imageUrl, thumbnailUrl }]`.
+- `imageUrl` must come from a successful upload response; `thumbnailUrl` should be reused when available.
+- `POST /api/records` success response returns the same `images` array.
+- `GET /api/records?userId=&limit=` returns each record with `images`; mobile recent-record cards must prefer `images[0].thumbnailUrl`, then `images[0].imageUrl`, then `foodCoverImageUrl`.
+- Offline draft image retry is not expanded in this increment; if a record is submitted while offline, existing draft retry remains text-record only until a later draft-media migration.
+
 记录创建当前约束：
 
 - `POST /api/records` 当前最小请求字段包含：`userId`、`foodItemId`、`sourceType`、`isPublic`、`rating`
@@ -330,3 +339,8 @@
 | 2026-06-21 | Codex | 扩展审核词典新增 / 编辑 `wordType` 枚举校验约束 | 后台新增或编辑审核词条时应拒绝未知类型，避免写入不可治理词条 |
 | 2026-06-21 | Codex | 补充记录创建 `sourceType` 写入校验约束 | 记录创建接口应拒绝非当前入口来源类型，避免旧链路或未知来源继续写入新记录 |
 | 2026-06-21 | Codex | 补充记录列表与点赞 ID 正数校验约束 | 记录列表和点赞入口应拒绝非正数 `userId`、`limit` 与 `recordId`，避免无效请求进入服务层 |
+# Audit Trail Addendum
+
+| Date | Author | Scope | Reason |
+| --- | --- | --- | --- |
+| 2026-06-21 | Codex | Record image request/response contract | Support uploaded record photos being attached to records and shown in recent-record cards |
