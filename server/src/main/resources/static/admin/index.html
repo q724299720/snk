@@ -220,6 +220,26 @@
       grid-column: 1 / -1;
     }
 
+    .detail-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .detail-field {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .detail-field span {
+      color: var(--muted);
+      display: block;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
     @media (max-width: 720px) {
       header .top {
         align-items: stretch;
@@ -291,6 +311,7 @@
           <tbody id="foodItems"></tbody>
         </table>
       </div>
+      <div id="foodItemDetail" class="detail-grid"></div>
     </section>
 
     <section>
@@ -426,11 +447,35 @@
           <td>${escapeHtml(item.reportCount)}</td>
           <td>${escapeHtml(item.createdByUserId || "-")}</td>
           <td class="actions">
+            <button data-action="detail" data-id="${escapeHtml(item.id)}">详情</button>
             <button data-action="approve" data-id="${escapeHtml(item.id)}">通过</button>
             <button class="danger" data-action="reject" data-id="${escapeHtml(item.id)}">拒绝</button>
             <button data-action="clear" data-id="${escapeHtml(item.id)}">清报错</button>
           </td>
         </tr>
+      `).join("");
+    }
+
+    function renderFoodItemDetail(item) {
+      const fields = [
+        ["ID", item.id],
+        ["名称", item.name],
+        ["类型", item.itemType],
+        ["分类", `${item.category || ""}${item.subcategory ? " / " + item.subcategory : ""}`],
+        ["品牌", item.brand || "-"],
+        ["条码", item.barcode || "-"],
+        ["来源", item.source],
+        ["审核状态", item.auditStatus],
+        ["报错数", item.reportCount],
+        ["创建者", item.createdByUserId || "-"],
+        ["创建时间", item.createdAt || "-"],
+        ["更新时间", item.updatedAt || "-"],
+      ];
+      document.querySelector("#foodItemDetail").innerHTML = fields.map(([label, value]) => `
+        <div class="detail-field">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value)}</strong>
+        </div>
       `).join("");
     }
 
@@ -494,6 +539,11 @@
       await requestJson(`/api/admin/food-items/${id}/${endpoint}`, { method: "POST" });
       await Promise.all([loadStats(), loadFoodItems()]);
       setMessage(`条目 ${id} 已处理。`);
+    }
+
+    async function loadFoodItemDetail(id) {
+      renderFoodItemDetail(await requestJson(`/api/admin/food-items/${id}`));
+      setMessage(`已加载条目 ${id} 的详情。`);
     }
 
     async function loadWords() {
@@ -618,7 +668,11 @@
     document.querySelector("#foodItems").addEventListener("click", (event) => {
       const button = event.target.closest("button[data-action]");
       if (!button) return;
-      mutateFoodItem(button.dataset.id, button.dataset.action).catch((error) => setMessage(error.message, true));
+      if (button.dataset.action === "detail") {
+        loadFoodItemDetail(button.dataset.id).catch((error) => setMessage(error.message, true));
+      } else {
+        mutateFoodItem(button.dataset.id, button.dataset.action).catch((error) => setMessage(error.message, true));
+      }
     });
 
     document.querySelector("#reviewWords").addEventListener("click", (event) => {
