@@ -2,12 +2,16 @@ package com.snk.server.api.controller;
 
 import com.snk.server.api.dto.AdminFoodItemResponse;
 import com.snk.server.api.dto.AdminFoodItemReportResponse;
+import com.snk.server.api.dto.MergeFoodItemRequest;
+import com.snk.server.api.dto.MergeFoodItemResponse;
 import com.snk.server.domain.food.FoodFeedbackService;
 import com.snk.server.domain.food.FoodModerationService;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -85,5 +89,14 @@ public class AdminFoodItemController {
 	@ResponseStatus(HttpStatus.OK)
 	public AdminFoodItemResponse clearReportCount(@PathVariable("foodItemId") Long foodItemId) {
 		return AdminFoodItemResponse.from(foodModerationService.clearReportCount(foodItemId));
+	}
+
+	@PostMapping("/{foodItemId}/merge")
+	@ResponseStatus(HttpStatus.OK)
+	public MergeFoodItemResponse mergeFoodItem(
+		@PathVariable("foodItemId") Long foodItemId,
+		@Valid @RequestBody MergeFoodItemRequest request
+	) {
+		return MergeFoodItemResponse.from(foodModerationService.mergeFoodItem(foodItemId, request.targetFoodItemId()));
 	}
 }

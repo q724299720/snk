@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.springframework.http.MediaType;
 import com.snk.server.domain.food.FoodModerationService;
 import com.snk.server.domain.food.FoodModerationService.FoodModerationItem;
 import com.snk.server.domain.food.FoodFeedbackService;
@@ -143,6 +144,24 @@ class AdminFoodItemControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.name").value("Cleared Item"))
 			.andExpect(jsonPath("$.reportCount").value(0));
+	}
+
+	@Test
+	void shouldMergeFoodItem() throws Exception {
+		when(foodModerationService.mergeFoodItem(6L, 7L))
+			.thenReturn(new FoodModerationService.FoodItemMergeResult(
+				moderationItem(6L, "Duplicate Item", 0, "rejected"),
+				moderationItem(7L, "Target Item", 0, "approved"),
+				3
+			));
+
+		mockMvc.perform(post("/api/admin/food-items/6/merge")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"targetFoodItemId\":7}"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.duplicateItem.auditStatus").value("rejected"))
+			.andExpect(jsonPath("$.targetItem.id").value(7))
+			.andExpect(jsonPath("$.migratedRecordCount").value(3));
 	}
 
 	private FoodModerationItem moderationItem(Long id, String name, int reportCount, String auditStatus) {

@@ -2,6 +2,7 @@ package com.snk.server.domain.food;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
+import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import org.springframework.data.domain.Sort;
@@ -14,9 +15,11 @@ import org.springframework.web.server.ResponseStatusException;
 public class FoodModerationService {
 
 	private final FoodItemRepository foodItemRepository;
+	private final FoodRecordRepository foodRecordRepository;
 
-	public FoodModerationService(FoodItemRepository foodItemRepository) {
+	public FoodModerationService(FoodItemRepository foodItemRepository, FoodRecordRepository foodRecordRepository) {
 		this.foodItemRepository = foodItemRepository;
+		this.foodRecordRepository = foodRecordRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -81,6 +84,27 @@ public class FoodModerationService {
 		return toModerationItem(foodItemRepository.save(entity));
 	}
 
+	@Transactional
+	public FoodItemMergeResult mergeFoodItem(Long duplicateFoodItemId, Long targetFoodItemId) {
+		if (duplicateFoodItemId.equals(targetFoodItemId)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duplicate and target food items must be different.");
+		}
+		FoodItemEntity duplicate = foodItemRepository.findById(duplicateFoodItemId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Duplicate food item not found."));
+		FoodItemEntity target = foodItemRepository.findById(targetFoodItemId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Target food item not found."));
+
+		int migratedRecordCount = foodRecordRepository.reassignFoodItem(duplicate, target);
+		duplicate.setAuditStatus("rejected");
+		duplicate.setReportCount(0);
+		FoodItemEntity savedDuplicate = foodItemRepository.save(duplicate);
+		return new FoodItemMergeResult(
+			toModerationItem(savedDuplicate),
+			toModerationItem(target),
+			migratedRecordCount
+		);
+	}
+
 	private FoodModerationItem toModerationItem(FoodItemEntity entity) {
 		Long createdByUserId = entity.getCreatedByUser() == null ? null : entity.getCreatedByUser().getId();
 		return new FoodModerationItem(
@@ -136,6 +160,13 @@ public class FoodModerationService {
 		Long createdByUserId,
 		OffsetDateTime createdAt,
 		OffsetDateTime updatedAt
+	) {
+	}
+
+	public record FoodItemMergeResult(
+		FoodModerationItem duplicateItem,
+		FoodModerationItem targetItem,
+		int migratedRecordCount
 	) {
 	}
 }

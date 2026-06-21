@@ -2,10 +2,12 @@ package com.snk.server.domain.food;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
+import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,9 @@ class FoodModerationServiceTests {
 
 	@Mock
 	private FoodItemRepository foodItemRepository;
+
+	@Mock
+	private FoodRecordRepository foodRecordRepository;
 
 	@InjectMocks
 	private FoodModerationService foodModerationService;
@@ -82,6 +87,25 @@ class FoodModerationServiceTests {
 
 		assertThat(item.reportCount()).isZero();
 		assertThat(entity.getReportCount()).isZero();
+	}
+
+	@Test
+	void shouldMergeFoodItemRecordsAndRejectDuplicateItem() {
+		FoodItemEntity duplicate = foodItem(13L, "Duplicate Noodles", 4);
+		FoodItemEntity target = foodItem(14L, "Canonical Noodles", 0);
+		target.setAuditStatus("approved");
+		when(foodItemRepository.findById(13L)).thenReturn(java.util.Optional.of(duplicate));
+		when(foodItemRepository.findById(14L)).thenReturn(java.util.Optional.of(target));
+		when(foodRecordRepository.reassignFoodItem(duplicate, target)).thenReturn(3);
+		when(foodItemRepository.save(any(FoodItemEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		FoodModerationService.FoodItemMergeResult result = foodModerationService.mergeFoodItem(13L, 14L);
+
+		assertThat(result.migratedRecordCount()).isEqualTo(3);
+		assertThat(result.duplicateItem().auditStatus()).isEqualTo("rejected");
+		assertThat(result.duplicateItem().reportCount()).isZero();
+		assertThat(result.targetItem().id()).isEqualTo(14L);
+		verify(foodRecordRepository).reassignFoodItem(duplicate, target);
 	}
 
 	@Test

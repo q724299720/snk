@@ -263,7 +263,7 @@
 - 缩略图与原图都属于长期可追溯资源，删除策略需谨慎
 - 记录逻辑删除时，已上传图片和缩略图不立即物理删除，后续由统一清理策略回收
 - 后台应支持 `FoodItem` 合并，将历史 `FoodRecord` 迁移到保留条目
-- 被合并条目应进入废弃 / merged 状态，不再被普通搜索命中
+- MVP 阶段被合并条目先进入 `rejected` 状态，不再被普通搜索命中；后续如需要独立追踪合并来源，再通过迁移脚本新增 `merged` 状态和目标条目字段
 
 ## 变更记录维护规则
 
@@ -315,3 +315,4 @@
 | 2026-06-14 | Codex | 为 `FoodRecord.like_count` 补充字段说明 | Phase 5 已落地记录点赞聚合计数，需要同步数据模型与后端响应 |
 | 2026-06-21 | Codex | 收口 `FoodRecord.source_type` 当前客户端取值 | 当前 Android MVP 已去掉图片识别任务入口，`image_search` 仅作为历史兼容值保留 |
 | 2026-06-21 | Codex | 增加 `FoodItemReport` 报错明细模型 | Phase 4 需要后台可追踪用户报错记录，不能只保留聚合 `report_count` |
+| 2026-06-21 | Codex | 明确 MVP 条目合并状态策略 | 当前数据库约束仅支持 `pending / approved / rejected`，首版合并用 `rejected` 阻止重复条目继续搜索 |

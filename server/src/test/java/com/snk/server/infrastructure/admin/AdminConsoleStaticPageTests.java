@@ -32,6 +32,9 @@ class AdminConsoleStaticPageTests {
 		assertThat(html).contains("await Promise.all([loadStats(), loadFoodItems(), loadFoodItemDetail(id)])");
 		assertThat(html).contains("function renderFoodItemDetail");
 		assertThat(html).contains("function renderFoodItemReports");
+		assertThat(html).contains("id=\"mergeTargetFoodItemId\"");
+		assertThat(html).contains("async function mergeFoodItem");
+		assertThat(html).contains("/api/admin/food-items/${id}/merge");
 		assertThat(html).contains("/api/admin/food-items/${id}");
 		assertThat(html).contains("/api/admin/food-items/${id}/reports");
 	}

@@ -296,6 +296,7 @@
         <button id="loadFoodItems" class="primary">查询条目</button>
         <button id="loadPending">待审核</button>
         <button id="loadReported">报错条目</button>
+        <input id="mergeTargetFoodItemId" type="number" min="1" placeholder="合并目标条目 ID">
       </div>
       <div class="table-wrap">
         <table>
@@ -494,6 +495,7 @@
             <button data-action="approve" data-id="${escapeHtml(item.id)}">通过</button>
             <button class="danger" data-action="reject" data-id="${escapeHtml(item.id)}">拒绝</button>
             <button data-action="clear" data-id="${escapeHtml(item.id)}">清报错</button>
+            <button data-action="merge" data-id="${escapeHtml(item.id)}">合并</button>
           </td>
         </tr>
       `).join("");
@@ -661,6 +663,20 @@
       setMessage(`条目 ${id} 已处理。`);
     }
 
+    async function mergeFoodItem(id) {
+      const targetFoodItemId = Number(document.querySelector("#mergeTargetFoodItemId").value);
+      if (!targetFoodItemId) {
+        setMessage("请先填写合并目标条目 ID。", true);
+        return;
+      }
+      const result = await requestJson(`/api/admin/food-items/${id}/merge`, {
+        method: "POST",
+        body: JSON.stringify({ targetFoodItemId }),
+      });
+      await Promise.all([loadStats(), loadFoodItems(), loadFoodItemDetail(id)]);
+      setMessage(`条目 ${id} 已合并到 ${targetFoodItemId}，迁移记录 ${result.migratedRecordCount} 条。`);
+    }
+
     async function loadFoodItemDetail(id) {
       const [detail, reports] = await Promise.all([
         requestJson(`/api/admin/food-items/${id}`),
@@ -817,6 +833,8 @@
       if (!button) return;
       if (button.dataset.action === "detail") {
         loadFoodItemDetail(button.dataset.id).catch((error) => setMessage(error.message, true));
+      } else if (button.dataset.action === "merge") {
+        mergeFoodItem(button.dataset.id).catch((error) => setMessage(error.message, true));
       } else {
         mutateFoodItem(button.dataset.id, button.dataset.action).catch((error) => setMessage(error.message, true));
       }
