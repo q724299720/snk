@@ -82,6 +82,36 @@ class FoodSearchControllerTests {
 	}
 
 	@Test
+	void shouldReturnCreatorPendingFoodWhenUserIdIsProvided() throws Exception {
+		when(foodSearchService.search(eq("mango cake"), eq(2L)))
+			.thenReturn(
+				new FoodSearchResult(
+					List.of(
+						new FoodSearchItem(
+							9L,
+							"Mango Cake",
+							"packaged_product",
+							"snack",
+							"cake",
+							"SNK Bakery",
+							null,
+							null,
+							null,
+							"pending"
+						)
+					),
+					"strong"
+				)
+			);
+
+		mockMvc.perform(get("/api/foods/search").param("q", "mango cake").param("userId", "2"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.qualitySignal").value("strong"))
+			.andExpect(jsonPath("$.items[0].name").value("Mango Cake"))
+			.andExpect(jsonPath("$.items[0].auditStatus").value("pending"));
+	}
+
+	@Test
 	void shouldRejectBlankQuery() throws Exception {
 		mockMvc.perform(get("/api/foods/search").param("q", " "))
 			.andExpect(status().isBadRequest());

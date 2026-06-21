@@ -33,12 +33,17 @@ public class FoodSearchController {
 	}
 
 	@GetMapping("/search")
-	public FoodSearchResponse search(@RequestParam("q") String query) {
+	public FoodSearchResponse search(
+		@RequestParam("q") String query,
+		@RequestParam(value = "userId", required = false) Long userId
+	) {
 		String normalizedQuery = query == null ? "" : query.trim();
 		if (normalizedQuery.isBlank()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "query must not be blank");
 		}
-		FoodSearchResult result = foodSearchService.search(normalizedQuery);
+		FoodSearchResult result = userId == null
+			? foodSearchService.search(normalizedQuery)
+			: foodSearchService.search(normalizedQuery, userId);
 		List<FoodSearchItemResponse> items = result.items().stream()
 			.map(FoodSearchItemResponse::from)
 			.toList();

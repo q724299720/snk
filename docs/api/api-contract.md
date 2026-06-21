@@ -22,14 +22,16 @@
 
 ### 食物搜索
 
-- `GET /api/foods/search?q=`
+- `GET /api/foods/search?q=&userId=`
 - `GET /api/foods/{foodItemId}/related`
 - `POST /api/foods/manual`
 - `GET /api/foods/{id}`
 
 文本搜索当前约束：
 
-- `GET /api/foods/search?q=` 当前返回已审核通过的基础食物条目
+- `GET /api/foods/search?q=` 默认返回已审核通过的基础食物条目
+- `userId` 为可选参数；传入当前游客 / 用户 id 时，搜索结果可额外包含该用户自己创建且仍为 `pending` 的条目
+- 未传 `userId` 或 `userId` 非法时，不返回任何 `pending` 条目
 - 空白 `q` 直接返回 `400`
 - 当前响应包含 `items` 与 `qualitySignal`
 - `items[*]` 当前最小字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`、`averageRating`、`auditStatus`
@@ -271,3 +273,4 @@
 | 2026-06-16 | Codex | 补充图片识别任务可选 `hintQuery` 入参与服务端优先召回规则 | 让 OCR 已提取到的文本提示继续参与图片识别兜底链路，减少上下文丢失 |
 | 2026-06-21 | Codex | 补充轻量后台入口与 Admin Token 访问约束 | Phase 4 已新增 `/admin/index.html` 静态后台，并通过可选 token 保护后台 API |
 | 2026-06-21 | Codex | 补充后台食物条目报错明细接口 | Phase 4 需要后台可追踪用户报错原因，报错治理不能只依赖聚合计数 |
+| 2026-06-21 | Codex | 补充搜索接口的创建者 pending 可见性参数 | Phase 4 要求待审核条目仅创建者可见，普通全局搜索仍只暴露已审核条目 |

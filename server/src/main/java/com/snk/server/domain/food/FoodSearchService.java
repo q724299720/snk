@@ -30,6 +30,17 @@ public class FoodSearchService {
 		return new FoodSearchResult(items, resolveQualitySignal(query, items));
 	}
 
+	public FoodSearchResult search(String rawQuery, Long userId) {
+		if (userId == null || userId <= 0L) {
+			return search(rawQuery);
+		}
+		String query = rawQuery == null ? "" : rawQuery.trim();
+		List<FoodSearchItem> items = foodItemRepository.searchVisibleToUser(query, userId).stream()
+			.map(this::toItem)
+			.toList();
+		return new FoodSearchResult(items, resolveQualitySignal(query, items));
+	}
+
 	public Optional<FoodSearchItem> lookupByBarcode(String rawBarcode) {
 		String barcode = rawBarcode == null ? "" : rawBarcode.trim();
 		if (barcode.isBlank()) {

@@ -51,6 +51,20 @@ class FoodSearchServiceTests {
 	}
 
 	@Test
+	void shouldReturnOwnPendingFoodWhenSearchingWithCreatorUserId() {
+		when(foodItemRepository.searchVisibleToUser(eq("mango cake"), eq(2L)))
+			.thenReturn(List.of(searchProjection(9L, "Mango Cake", "SNK Bakery", null, "pending", null)));
+
+		FoodSearchResult result = foodSearchService.search("mango cake", 2L);
+
+		assertThat(result.qualitySignal()).isEqualTo("strong");
+		assertThat(result.items()).hasSize(1);
+		assertThat(result.items().getFirst().id()).isEqualTo(9L);
+		assertThat(result.items().getFirst().auditStatus()).isEqualTo("pending");
+		assertThat(result.items().getFirst().averageRating()).isNull();
+	}
+
+	@Test
 	void shouldReturnApprovedFoodWhenBarcodeMatches() {
 		when(foodItemRepository.findByAuditStatusAndBarcode("approved", "6900000000011"))
 			.thenReturn(Optional.of(foodItem("Lays Cucumber Chips", "Lays", "6900000000011", "approved")));
@@ -179,7 +193,7 @@ class FoodSearchServiceTests {
 
 			@Override
 			public BigDecimal getAverageRating() {
-				return new BigDecimal(averageRating);
+				return averageRating == null ? null : new BigDecimal(averageRating);
 			}
 		};
 	}

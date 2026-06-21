@@ -9,14 +9,14 @@ import retrofit2.HttpException
 class FoodSearchRepository(
     private val api: FoodSearchApi,
 ) {
-    suspend fun search(query: String): FoodSearchResult {
+    suspend fun search(query: String, userId: Long? = null): FoodSearchResult {
         val normalizedQuery = query.trim()
         if (normalizedQuery.isBlank()) {
             return FoodSearchResult.Failure("请输入要搜索的食物名称。")
         }
 
         return try {
-            val response = api.searchFoods(normalizedQuery)
+            val response = api.searchFoods(normalizedQuery, userId)
             FoodSearchResult.Success(
                 items = response.items.map(FoodSearchItemResponse::toModel),
                 qualitySignal = response.qualitySignal,
@@ -102,7 +102,7 @@ class FoodSearchRepository(
         }
     }
 
-    suspend fun searchByRecognizedText(recognizedText: String): FoodOcrSearchResult {
+    suspend fun searchByRecognizedText(recognizedText: String, userId: Long? = null): FoodOcrSearchResult {
         val attemptedQueries = OcrSearchQueryBuilder.build(recognizedText)
         if (attemptedQueries.isEmpty()) {
             return FoodOcrSearchResult.Failure(
@@ -113,7 +113,7 @@ class FoodSearchRepository(
         }
 
         attemptedQueries.forEach { query ->
-            when (val result = search(query)) {
+            when (val result = search(query, userId)) {
                 is FoodSearchResult.Success -> {
                     if (result.items.isNotEmpty()) {
                         return FoodOcrSearchResult.Success(

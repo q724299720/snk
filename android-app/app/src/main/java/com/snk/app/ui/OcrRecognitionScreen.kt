@@ -49,6 +49,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 
 @Composable
 fun OcrRecognitionScreen(
+    sessionState: SessionUiState,
     onFillSearchQuery: (String, List<String>) -> Unit,
     onOpenManualCreate: (String) -> Unit,
     onBack: () -> Unit,
@@ -56,6 +57,7 @@ fun OcrRecognitionScreen(
     val context = LocalContext.current
     val application = context.applicationContext as SnkApplication
     val coroutineScope = rememberCoroutineScope()
+    val sessionUserId = sessionState.userIdOrNull()
     val attemptedQueries = remember { mutableStateListOf<String>() }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
@@ -186,7 +188,7 @@ fun OcrRecognitionScreen(
                 return
             }
 
-            when (val result = application.container.foodSearchRepository.searchByRecognizedText(normalizedText)) {
+            when (val result = application.container.foodSearchRepository.searchByRecognizedText(normalizedText, sessionUserId)) {
                 is com.snk.app.data.food.FoodOcrSearchResult.Success -> {
                     recognizedText = result.recognizedText
                     attemptedQueries.addAll(result.attemptedQueries)

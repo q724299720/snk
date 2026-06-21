@@ -15,6 +15,7 @@ interface FoodSearchApi {
     @GET("/api/foods/search")
     suspend fun searchFoods(
         @Query("q") query: String,
+        @Query("userId") userId: Long? = null,
     ): FoodSearchResponse
 
     @GET("/api/foods/{foodItemId}/related")

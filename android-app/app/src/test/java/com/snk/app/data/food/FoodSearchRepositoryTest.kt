@@ -85,6 +85,41 @@ class FoodSearchRepositoryTest {
     }
 
     @Test
+    fun `search sends user id when available so backend can include own pending items`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody(
+                    """
+                    {
+                      "qualitySignal": "strong",
+                      "items": [
+                        {
+                          "id": 9,
+                          "name": "Mango Cake",
+                          "itemType": "packaged_product",
+                          "category": "snack",
+                          "subcategory": "cake",
+                          "brand": "SNK Bakery",
+                          "barcode": null,
+                          "coverImageUrl": null,
+                          "auditStatus": "pending"
+                        }
+                      ]
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.search("Mango Cake", userId = 2L)
+
+        assertTrue(result is FoodSearchResult.Success)
+        val success = result as FoodSearchResult.Success
+        assertEquals("pending", success.items.first().auditStatus)
+        assertEquals("/api/foods/search?q=Mango%20Cake&userId=2", server.takeRequest().path)
+    }
+
+    @Test
     fun `createManualFoodItem returns pending item when backend succeeds`() = runTest {
         server.enqueue(
             MockResponse()

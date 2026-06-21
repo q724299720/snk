@@ -105,7 +105,7 @@ fun SearchScreen(
         }
     }
 
-    LaunchedEffect(query) {
+    LaunchedEffect(query, sessionUserId) {
         val normalizedQuery = query.trim()
         if (normalizedQuery.isBlank()) {
             isSearching = false
@@ -114,7 +114,7 @@ fun SearchScreen(
         }
         delay(300)
         isSearching = true
-        val result = application.container.foodSearchRepository.search(normalizedQuery)
+        val result = application.container.foodSearchRepository.search(normalizedQuery, sessionUserId)
         searchState = result
         isSearching = false
         if (result is FoodSearchResult.Success) {
@@ -480,13 +480,6 @@ private fun RecentRecordCard(
             }
         }
     }
-}
-
-private fun SessionUiState.userIdOrNull(): Long? = when (this) {
-    is SessionUiState.Remote -> session.userId
-    is SessionUiState.Cached -> session.userId
-    SessionUiState.Loading -> null
-    is SessionUiState.Failure -> null
 }
 
 /** 首页最近记录默认展示条数，对齐 PRD「首页最近记录默认展示最近 5 条」。 */

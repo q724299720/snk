@@ -199,6 +199,7 @@ fun SnkApp() {
                 }
                 composable("ocr_recognition") {
                     OcrRecognitionScreen(
+                        sessionState = sessionState,
                         onFillSearchQuery = { query, suggestions ->
                             searchQuerySeed = query
                             searchSuggestedQueries = suggestions

@@ -57,6 +57,58 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 	)
 	List<FoodSearchProjection> searchApproved(@Param("query") String query);
 
+	@Query(
+		value = """
+			SELECT
+			  fi.id AS id,
+			  fi.name AS name,
+			  fi.item_type AS itemType,
+			  fi.category AS category,
+			  fi.subcategory AS subcategory,
+			  fi.brand AS brand,
+			  fi.barcode AS barcode,
+			  fi.cover_image_url AS coverImageUrl,
+			  fi.audit_status AS auditStatus,
+			  round(avg(fr.rating)::numeric, 1) AS averageRating
+			FROM food_items fi
+			LEFT JOIN food_records fr
+			  ON fr.food_item_id = fi.id
+			 AND fr.deleted_at IS NULL
+			WHERE (
+			    fi.audit_status = 'approved'
+			    OR (fi.audit_status = 'pending' AND fi.created_by_user_id = :userId)
+			  )
+			  AND (
+			    lower(fi.name) LIKE lower(concat('%', :query, '%'))
+			    OR lower(coalesce(fi.alias, '')) LIKE lower(concat('%', :query, '%'))
+			    OR lower(coalesce(fi.search_keywords, '')) LIKE lower(concat('%', :query, '%'))
+			  )
+			GROUP BY
+			  fi.id,
+			  fi.name,
+			  fi.item_type,
+			  fi.category,
+			  fi.subcategory,
+			  fi.brand,
+			  fi.barcode,
+			  fi.cover_image_url,
+			  fi.audit_status
+			ORDER BY
+			  CASE
+			    WHEN lower(fi.name) = lower(:query) THEN 0
+			    WHEN lower(fi.name) LIKE lower(concat(:query, '%')) THEN 1
+			    ELSE 2
+			  END,
+			  CASE WHEN fi.audit_status = 'pending' THEN 0 ELSE 1 END,
+			  similarity(fi.name, :query) DESC,
+			  coalesce(avg(fr.rating), 0) DESC,
+			  fi.id DESC
+			LIMIT 10
+			""",
+		nativeQuery = true
+	)
+	List<FoodSearchProjection> searchVisibleToUser(@Param("query") String query, @Param("userId") Long userId);
+
 	Optional<FoodItemEntity> findByAuditStatusAndBarcode(String auditStatus, String barcode);
 
 	Optional<FoodItemEntity> findFirstByItemTypeAndBarcode(String itemType, String barcode);

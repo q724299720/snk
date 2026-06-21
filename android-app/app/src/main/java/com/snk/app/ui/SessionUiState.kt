@@ -8,3 +8,10 @@ sealed interface SessionUiState {
     data class Cached(val session: AnonymousSession, val reason: String) : SessionUiState
     data class Failure(val reason: String) : SessionUiState
 }
+
+fun SessionUiState.userIdOrNull(): Long? = when (this) {
+    is SessionUiState.Remote -> session.userId
+    is SessionUiState.Cached -> session.userId
+    SessionUiState.Loading -> null
+    is SessionUiState.Failure -> null
+}
