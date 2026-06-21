@@ -142,6 +142,7 @@
 - `POST /api/admin/food-items/{foodItemId}/merge` 当前请求字段为 `targetFoodItemId`
 - 合并响应字段包含：`duplicateItem`、`targetItem`、`migratedRecordCount`
 - MVP 阶段不新增 `merged` 审核状态，合并后的重复条目使用 `rejected` 阻止继续进入全局搜索
+- 合并目标条目必须为 `approved`，避免历史记录被迁移到仍不可全局搜索的 `pending / rejected` 条目
 
 后台统计报表当前约定：
 
@@ -293,3 +294,4 @@
 | 2026-06-21 | Codex | 补充后台统计的待处理识别任务字段 | 后台页需要直接看到 pending 历史识别任务数量，便于定位总数来源 |
 | 2026-06-21 | Codex | 补充后台自动审核手动触发接口 | Phase 4 需要后台页面可立即触发一次超时待审核条目的保守自动审核扫描 |
 | 2026-06-21 | Codex | 补充后台条目合并接口 | Phase 4 报错 / 纠错治理需要支持将重复条目的历史记录迁移到保留条目 |
+| 2026-06-21 | Codex | 补充条目合并目标状态约束 | 合并会迁移历史记录，目标必须是已审核通过条目，避免记录归属到不可全局搜索条目 |

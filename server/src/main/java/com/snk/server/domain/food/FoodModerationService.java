@@ -93,6 +93,9 @@ public class FoodModerationService {
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Duplicate food item not found."));
 		FoodItemEntity target = foodItemRepository.findById(targetFoodItemId)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Target food item not found."));
+		if (!"approved".equals(target.getAuditStatus())) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Target food item must be approved before merge.");
+		}
 
 		int migratedRecordCount = foodRecordRepository.reassignFoodItem(duplicate, target);
 		duplicate.setAuditStatus("rejected");

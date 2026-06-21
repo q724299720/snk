@@ -1,7 +1,9 @@
 package com.snk.server.domain.food;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class FoodModerationServiceTests {
@@ -106,6 +109,21 @@ class FoodModerationServiceTests {
 		assertThat(result.duplicateItem().reportCount()).isZero();
 		assertThat(result.targetItem().id()).isEqualTo(14L);
 		verify(foodRecordRepository).reassignFoodItem(duplicate, target);
+	}
+
+	@Test
+	void shouldRejectMergeWhenTargetFoodItemIsNotApproved() {
+		FoodItemEntity duplicate = foodItem(15L, "Duplicate Chips", 1);
+		FoodItemEntity target = foodItem(16L, "Pending Chips", 0);
+		target.setAuditStatus("pending");
+		when(foodItemRepository.findById(15L)).thenReturn(java.util.Optional.of(duplicate));
+		when(foodItemRepository.findById(16L)).thenReturn(java.util.Optional.of(target));
+
+		assertThatThrownBy(() -> foodModerationService.mergeFoodItem(15L, 16L))
+			.isInstanceOf(ResponseStatusException.class)
+			.hasMessageContaining("Target food item must be approved");
+
+		verify(foodRecordRepository, never()).reassignFoodItem(any(FoodItemEntity.class), any(FoodItemEntity.class));
 	}
 
 	@Test
