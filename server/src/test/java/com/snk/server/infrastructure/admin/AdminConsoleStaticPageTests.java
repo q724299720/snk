@@ -42,6 +42,8 @@ class AdminConsoleStaticPageTests {
 		assertThat(html).contains("let mergeTargetPreviewItem = null");
 		assertThat(html).contains("mergeTargetPreviewItem.auditStatus !== \"approved\"");
 		assertThat(html).contains("mergeTargetPreviewItem.id !== targetFoodItemId");
+		assertThat(html).contains("targetFoodItemId === Number(id)");
+		assertThat(html).contains("不能将条目合并到自己");
 		assertThat(html).contains("/api/admin/food-items/${id}/merge");
 		assertThat(html).contains("/api/admin/food-items/${id}");
 		assertThat(html).contains("/api/admin/food-items/${id}/reports");

@@ -694,6 +694,10 @@
         setMessage("请先填写合并目标条目 ID。", true);
         return;
       }
+      if (targetFoodItemId === Number(id)) {
+        setMessage("不能将条目合并到自己。", true);
+        return;
+      }
       if (!mergeTargetPreviewItem || mergeTargetPreviewItem.id !== targetFoodItemId) {
         setMessage("请先预览当前合并目标条目。", true);
         return;
