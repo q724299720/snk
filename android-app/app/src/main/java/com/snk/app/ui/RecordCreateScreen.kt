@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -63,7 +64,7 @@ fun RecordCreateScreen(
     val application = LocalContext.current.applicationContext as SnkApplication
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    var rating by remember { mutableIntStateOf(4) }
+    var rating by remember { mutableIntStateOf(DEFAULT_RECORD_RATING) }
     var comment by remember { mutableStateOf("") }
     var submitState by remember { mutableStateOf<FoodRecordSubmissionResult?>(null) }
     var likeCount by remember { mutableIntStateOf(0) }
@@ -105,6 +106,28 @@ fun RecordCreateScreen(
             }
             isUploadingImage = false
         }
+    }
+    LaunchedEffect(selectedFood.id) {
+        val reset = RecordCreateTransientState(
+            rating = rating,
+            comment = comment,
+            submitState = submitState,
+            likeCount = likeCount,
+            interactionMessage = interactionMessage,
+            isPublic = isPublic,
+            imageUploadMessage = imageUploadMessage,
+            isUploadingImage = isUploadingImage,
+        ).resetForFoodSwitch()
+        rating = reset.rating
+        comment = reset.comment
+        submitState = reset.submitState
+        likeCount = reset.likeCount
+        interactionMessage = reset.interactionMessage
+        isPublic = reset.isPublic
+        imageUploadMessage = reset.imageUploadMessage
+        isUploadingImage = reset.isUploadingImage
+        selectedImageUri = null
+        uploadedRecordImage = null
     }
     val relatedFoodState by produceState<FoodSearchResult?>(initialValue = null, key1 = selectedFood.id) {
         value = application.container.foodSearchRepository.recommendRelatedFoods(selectedFood.id)
@@ -528,6 +551,21 @@ fun RecordCreateScreen(
         }
     }
 }
+
+internal const val DEFAULT_RECORD_RATING = 4
+
+internal data class RecordCreateTransientState(
+    val rating: Int = DEFAULT_RECORD_RATING,
+    val comment: String = "",
+    val submitState: FoodRecordSubmissionResult? = null,
+    val likeCount: Int = 0,
+    val interactionMessage: String? = null,
+    val isPublic: Boolean = false,
+    val imageUploadMessage: String? = null,
+    val isUploadingImage: Boolean = false,
+)
+
+internal fun RecordCreateTransientState.resetForFoodSwitch(): RecordCreateTransientState = RecordCreateTransientState()
 
 internal fun buildRecordShareText(
     foodName: String,
