@@ -29,6 +29,7 @@ class AdminConsoleStaticPageTests {
 		assertThat(html).contains("data-action=\"detail\"");
 		assertThat(html).contains("async function loadFoodItemDetail");
 		assertThat(html).contains("async function loadFoodItemReports");
+		assertThat(html).contains("await Promise.all([loadStats(), loadFoodItems(), loadFoodItemDetail(id)])");
 		assertThat(html).contains("function renderFoodItemDetail");
 		assertThat(html).contains("function renderFoodItemReports");
 		assertThat(html).contains("/api/admin/food-items/${id}");

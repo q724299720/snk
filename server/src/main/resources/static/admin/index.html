@@ -647,7 +647,7 @@
     async function mutateFoodItem(id, action) {
       const endpoint = action === "clear" ? "clear-reports" : action;
       await requestJson(`/api/admin/food-items/${id}/${endpoint}`, { method: "POST" });
-      await Promise.all([loadStats(), loadFoodItems()]);
+      await Promise.all([loadStats(), loadFoodItems(), loadFoodItemDetail(id)]);
       setMessage(`条目 ${id} 已处理。`);
     }
 
