@@ -33,7 +33,10 @@ class AdminConsoleStaticPageTests {
 		assertThat(html).contains("function renderFoodItemDetail");
 		assertThat(html).contains("function renderFoodItemReports");
 		assertThat(html).contains("id=\"mergeTargetFoodItemId\"");
+		assertThat(html).contains("id=\"previewMergeTarget\"");
+		assertThat(html).contains("id=\"mergeTargetPreview\"");
 		assertThat(html).contains("async function mergeFoodItem");
+		assertThat(html).contains("async function previewMergeTarget");
 		assertThat(html).contains("/api/admin/food-items/${id}/merge");
 		assertThat(html).contains("/api/admin/food-items/${id}");
 		assertThat(html).contains("/api/admin/food-items/${id}/reports");

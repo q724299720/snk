@@ -297,6 +297,7 @@
         <button id="loadPending">待审核</button>
         <button id="loadReported">报错条目</button>
         <input id="mergeTargetFoodItemId" type="number" min="1" placeholder="合并目标条目 ID">
+        <button id="previewMergeTarget">预览合并目标</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -316,6 +317,7 @@
         </table>
       </div>
       <div id="foodItemDetail" class="detail-grid"></div>
+      <div id="mergeTargetPreview" class="detail-grid"></div>
       <div id="foodItemReports" class="table-wrap"></div>
     </section>
 
@@ -524,6 +526,21 @@
       `).join("");
     }
 
+    function renderMergeTargetPreview(item) {
+      const fields = [
+        ["合并目标 ID", item.id],
+        ["合并目标名称", item.name],
+        ["审核状态", item.auditStatus],
+        ["报错数", item.reportCount],
+      ];
+      document.querySelector("#mergeTargetPreview").innerHTML = fields.map(([label, value]) => `
+        <div class="detail-field">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value)}</strong>
+        </div>
+      `).join("");
+    }
+
     function renderFoodItemReports(reports) {
       if (!reports.length) {
         document.querySelector("#foodItemReports").innerHTML = '<p class="muted">暂无报错记录。</p>';
@@ -677,6 +694,17 @@
       setMessage(`条目 ${id} 已合并到 ${targetFoodItemId}，迁移记录 ${result.migratedRecordCount} 条。`);
     }
 
+    async function previewMergeTarget() {
+      const targetFoodItemId = Number(document.querySelector("#mergeTargetFoodItemId").value);
+      if (!targetFoodItemId) {
+        setMessage("请先填写合并目标条目 ID。", true);
+        return;
+      }
+      const item = await requestJson(`/api/admin/food-items/${targetFoodItemId}`);
+      renderMergeTargetPreview(item);
+      setMessage(`已加载合并目标 ${targetFoodItemId}：${item.name}（${item.auditStatus}）。`);
+    }
+
     async function loadFoodItemDetail(id) {
       const [detail, reports] = await Promise.all([
         requestJson(`/api/admin/food-items/${id}`),
@@ -819,6 +847,7 @@
     document.querySelector("#loadFoodItems").addEventListener("click", () => loadFoodItems().catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadPending").addEventListener("click", () => loadFoodItems("pending").catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadReported").addEventListener("click", () => loadFoodItems("reported").catch((error) => setMessage(error.message, true)));
+    document.querySelector("#previewMergeTarget").addEventListener("click", () => previewMergeTarget().catch((error) => setMessage(error.message, true)));
     document.querySelector("#createWord").addEventListener("click", () => createWord().catch((error) => setMessage(error.message, true)));
     document.querySelector("#saveWord").addEventListener("click", () => updateWord().catch((error) => setMessage(error.message, true)));
     document.querySelector("#cancelWordEdit").addEventListener("click", () => {
