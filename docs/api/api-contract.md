@@ -76,6 +76,7 @@
 
 - `POST /api/records`
 - `GET /api/records?userId=&limit=`
+- `GET /api/records/public?limit=`
 - `GET /api/records/{id}`
 - `PUT /api/records/{id}`
 - `DELETE /api/records/{id}`
@@ -89,6 +90,14 @@ Record image contract:
 - `POST /api/records` success response returns the same `images` array.
 - `GET /api/records?userId=&limit=` returns each record with `images`; mobile recent-record cards must prefer `images[0].thumbnailUrl`, then `images[0].imageUrl`, then `foodCoverImageUrl`.
 - Offline draft image retry is not expanded in this increment; if a record is submitted while offline, existing draft retry remains text-record only until a later draft-media migration.
+
+Public record feed contract:
+
+- `GET /api/records/public?limit=` returns only records where `isPublic = true` and `deletedAt IS NULL`.
+- `limit` is optional, defaults to `10`, must be positive, and is capped by the service layer.
+- The response shape matches `GET /api/records?userId=&limit=`, including `images`.
+- Mobile public-feed cards must prefer `images[0].thumbnailUrl`, then `images[0].imageUrl`, then `foodCoverImageUrl`.
+- `POST /api/records` keeps `isPublic` opt-in. Clients must not default new records to public without explicit user action.
 
 记录创建当前约束：
 
@@ -339,8 +348,10 @@ Record image contract:
 | 2026-06-21 | Codex | 扩展审核词典新增 / 编辑 `wordType` 枚举校验约束 | 后台新增或编辑审核词条时应拒绝未知类型，避免写入不可治理词条 |
 | 2026-06-21 | Codex | 补充记录创建 `sourceType` 写入校验约束 | 记录创建接口应拒绝非当前入口来源类型，避免旧链路或未知来源继续写入新记录 |
 | 2026-06-21 | Codex | 补充记录列表与点赞 ID 正数校验约束 | 记录列表和点赞入口应拒绝非正数 `userId`、`limit` 与 `recordId`，避免无效请求进入服务层 |
+| 2026-06-21 | Codex | 补充公开记录流接口约束 | Phase 5 需要最小公开分享列表，只暴露用户主动公开且未删除的记录 |
 # Audit Trail Addendum
 
 | Date | Author | Scope | Reason |
 | --- | --- | --- | --- |
 | 2026-06-21 | Codex | Record image request/response contract | Support uploaded record photos being attached to records and shown in recent-record cards |
+| 2026-06-21 | Codex | Public record feed request/response contract | Define `GET /api/records/public` and keep record publication explicit opt-in |

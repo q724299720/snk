@@ -163,6 +163,47 @@ class FoodRecordServiceTests {
 			.isEqualTo("https://snk.qiuxinmin.cn/uploads/records/chips.jpg");
 	}
 
+	@Test
+	void shouldListPublicRecordsWithImages() throws Exception {
+		UserEntity user = new UserEntity();
+		setUserId(user, 101L);
+
+		FoodItemEntity foodItem = new FoodItemEntity();
+		setFoodItemId(foodItem, 201L);
+		foodItem.setName("Kangshifu Beef Noodles");
+		foodItem.setItemType("packaged_product");
+		foodItem.setCategory("instant_food");
+		foodItem.setSubcategory("noodles");
+		foodItem.setBrand("Kangshifu");
+		foodItem.setCoverImageUrl("https://snk.qiuxinmin.cn/images/noodle.png");
+
+		FoodRecordEntity record = createRecordEntity(user, foodItem);
+		record.setPublic(true);
+		record.setRating((short) 4);
+		record.setComment("share this");
+		record.setLikeCount(7);
+
+		when(foodRecordRepository.findByIsPublicTrueAndDeletedAtIsNullOrderByRecordTimeDesc(any()))
+			.thenReturn(List.of(record));
+		FoodRecordImageEntity image = new FoodRecordImageEntity();
+		image.setRecord(record);
+		image.setImageUrl("https://snk.qiuxinmin.cn/uploads/records/noodle.jpg");
+		image.setThumbnailUrl("https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg");
+		when(foodRecordImageRepository.findByRecord_IdInOrderByCreatedAtAsc(List.of(1L)))
+			.thenReturn(List.of(image));
+
+		List<FoodRecordHistoryItem> result = foodRecordService.listPublicRecords(10);
+
+		assertThat(result).hasSize(1);
+		assertThat(result.getFirst().isPublic()).isTrue();
+		assertThat(result.getFirst().foodName()).isEqualTo("Kangshifu Beef Noodles");
+		assertThat(result.getFirst().likeCount()).isEqualTo(7);
+		assertThat(result.getFirst().images()).hasSize(1);
+		assertThat(result.getFirst().images().getFirst().thumbnailUrl())
+			.isEqualTo("https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg");
+		verify(foodRecordRepository).findByIsPublicTrueAndDeletedAtIsNullOrderByRecordTimeDesc(any());
+	}
+
 	private FoodRecordEntity createRecordEntity(UserEntity user, FoodItemEntity foodItem) throws Exception {
 		FoodRecordEntity record = new FoodRecordEntity();
 		setRecordId(record, 1L);

@@ -214,12 +214,15 @@
 - 当前仓库已落地基于同品牌 / 同分类的相似食物推荐接口与记录页推荐卡片
 - 当前仓库已落地记录分享按钮与系统分享摘要，便于社区传播和内容外发
 - 当前仓库已落地记录点赞计数接口与创建成功页的点赞按钮，作为互动能力的最小闭环
+- 当前仓库已落地公开记录流：记录创建时公开状态默认关闭，用户主动开启后才进入首页公开分享区
 
 ### 增量测试
 
 - 推荐结果与用户历史记录相关
 - 相似食物推荐接口必须拒绝为 `0` 或负数的 `foodItemId`，避免无效请求进入推荐服务
 - 社区内容权限和审核生效
+- 公开记录流只返回 `is_public = true` 且未删除的记录，私有记录不得进入公开分享区
+- 弱网草稿补传需保留用户创建记录时选择的公开状态
 - 点赞按钮能在手机端直接更新记录点赞数
 - 高并发下搜索与识别链路仍稳定
 - 记录页可展示推荐结果，并支持切换到推荐条目继续记一笔
@@ -311,14 +314,22 @@
 | 2026-06-21 | Codex | 补充后台食物条目列表 `auditStatus` 枚举校验 | 后台食物条目列表按审核状态过滤时应在入参阶段拒绝未知状态，避免后台误判为空结果 |
 | 2026-06-21 | Codex | 补充审核词典列表 `wordType` 枚举校验 | 后台审核词典列表按类型过滤时应在入参阶段拒绝未知类型，避免后台误判为空结果 |
 | 2026-06-21 | Codex | 扩展审核词典新增 / 编辑 `wordType` 枚举校验 | 后台新增或编辑审核词条时应在入参阶段拒绝未知类型，避免写入不可治理词条 |
+| 2026-06-21 | Codex | 回填公开记录流与主动公开开关 | Phase 5 社区分享能力需要最小公开列表和权限边界，记录默认仍保持私有 |
 # Audit Trail Addendum
 
 | Date | Author | Scope | Reason |
 | --- | --- | --- | --- |
 | 2026-06-21 | Codex | Phase 2 record image upload/display increment | Mobile records can attach uploaded images and recent-record cards can display record photos |
+| 2026-06-21 | Codex | Phase 5 public record feed increment | Add opt-in publication, public feed, and draft preservation of public visibility |
 
 ## Phase 2 Addendum: Record Images
 
 - Record creation supports optional uploaded images by first calling `POST /api/upload/image`, then sending `images: [{ imageUrl, thumbnailUrl }]` to `POST /api/records`.
 - Recent-record cards must prefer the record image thumbnail, then the record original image, then the food item cover image.
 - This increment keeps offline draft media out of scope; text-only draft retry remains unchanged until a later Room migration.
+
+## Phase 5 Addendum: Public Record Feed
+
+- Record creation keeps `isPublic = false` by default and exposes a mobile switch for explicit user opt-in.
+- `GET /api/records/public` powers the homepage public feed and must only return public, non-deleted records.
+- Offline draft retry preserves the selected public/private state, but draft image retry remains out of scope until the later draft-media migration.

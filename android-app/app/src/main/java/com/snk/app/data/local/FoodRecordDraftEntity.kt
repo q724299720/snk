@@ -22,6 +22,8 @@ data class FoodRecordDraftEntity(
     val comment: String,
     @ColumnInfo(name = "source_type")
     val sourceType: String,
+    @ColumnInfo(name = "is_public", defaultValue = "0")
+    val isPublic: Boolean = false,
     @ColumnInfo(name = "sync_status")
     val syncStatus: String,
     @ColumnInfo(name = "retry_count")

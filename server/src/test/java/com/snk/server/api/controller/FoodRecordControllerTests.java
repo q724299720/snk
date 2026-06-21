@@ -87,6 +87,46 @@ class FoodRecordControllerTests {
 	}
 
 	@Test
+	void shouldListPublicRecords() throws Exception {
+		when(foodRecordService.listPublicRecords(10)).thenReturn(
+			List.of(
+				new FoodRecordHistoryItem(
+					2L,
+					101L,
+					201L,
+					"Kangshifu Beef Noodles",
+					"packaged_product",
+					"instant_food",
+					"noodles",
+					"Kangshifu",
+					"https://snk.qiuxinmin.cn/images/noodle.png",
+					"text_search",
+					true,
+					(short) 4,
+					"share this",
+					7,
+					OffsetDateTime.parse("2026-06-13T23:40:00Z"),
+					OffsetDateTime.parse("2026-06-13T23:40:00Z"),
+					List.of(
+						new FoodRecordImageValue(
+							"https://snk.qiuxinmin.cn/uploads/records/noodle.jpg",
+							"https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg"
+						)
+					)
+				)
+			)
+		);
+
+		mockMvc.perform(get("/api/records/public"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].id").value(2))
+			.andExpect(jsonPath("$[0].isPublic").value(true))
+			.andExpect(jsonPath("$[0].foodName").value("Kangshifu Beef Noodles"))
+			.andExpect(jsonPath("$[0].images[0].thumbnailUrl")
+				.value("https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg"));
+	}
+
+	@Test
 	void shouldRejectRecentRecordsWhenUserIdIsNotPositive() throws Exception {
 		mockMvc.perform(get("/api/records").param("userId", "0"))
 			.andExpect(status().isBadRequest());

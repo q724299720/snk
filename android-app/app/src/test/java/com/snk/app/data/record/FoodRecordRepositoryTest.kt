@@ -100,6 +100,45 @@ class FoodRecordRepositoryTest {
     }
 
     @Test
+    fun `createRecord can send public visibility when user chooses to share`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(201)
+                .setBody(
+                    """
+                    {
+                      "id": 57,
+                      "userId": 100,
+                      "foodItemId": 200,
+                      "sourceType": "text_search",
+                      "isPublic": true,
+                      "rating": 4,
+                      "comment": "share this",
+                      "likeCount": 0,
+                      "recordTime": "2026-06-13T23:40:00Z",
+                      "createdAt": "2026-06-13T23:40:00Z"
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.createRecord(
+            userId = 100,
+            foodItemId = 200,
+            rating = 4,
+            comment = "share this",
+            sourceType = "text_search",
+            isPublic = true,
+            images = emptyList(),
+        )
+
+        assertTrue(result is FoodRecordCreateResult.Success)
+        val requestBody = server.takeRequest().body.readUtf8()
+        assertTrue(requestBody.contains("\"isPublic\":true"))
+    }
+
+    @Test
     fun `uploadRecordImage returns uploaded image urls`() = runTest {
         server.enqueue(
             MockResponse()
@@ -157,6 +196,58 @@ class FoodRecordRepositoryTest {
 
         assertTrue(result is FoodRecordLikeResult.Success)
         assertEquals(4, (result as FoodRecordLikeResult.Success).likeCount)
+    }
+
+    @Test
+    fun `listPublicRecords returns shared records with images`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(200)
+                .setBody(
+                    """
+                    [
+                      {
+                        "id": 56,
+                        "userId": 101,
+                        "foodItemId": 201,
+                        "foodName": "Kangshifu Beef Noodles",
+                        "foodItemType": "packaged_product",
+                        "foodCategory": "instant_food",
+                        "foodSubcategory": "noodles",
+                        "foodBrand": "Kangshifu",
+                        "foodCoverImageUrl": "https://snk.qiuxinmin.cn/images/noodle.png",
+                        "sourceType": "text_search",
+                        "isPublic": true,
+                        "rating": 4,
+                        "comment": "share this",
+                        "likeCount": 7,
+                        "recordTime": "2026-06-13T23:40:00Z",
+                        "createdAt": "2026-06-13T23:40:00Z",
+                        "images": [
+                          {
+                            "imageUrl": "https://snk.qiuxinmin.cn/uploads/records/noodle.jpg",
+                            "thumbnailUrl": "https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg"
+                          }
+                        ]
+                      }
+                    ]
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.listPublicRecords(limit = 5)
+
+        assertTrue(result is FoodRecordHistoryResult.Success)
+        val items = (result as FoodRecordHistoryResult.Success).items
+        assertEquals(1, items.size)
+        assertEquals("Kangshifu Beef Noodles", items.first().foodName)
+        assertTrue(items.first().isPublic)
+        assertEquals(
+            "https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg",
+            items.first().images.first().thumbnailUrl,
+        )
+        assertEquals("/api/records/public?limit=5", server.takeRequest().path)
     }
 
     @Test

@@ -58,10 +58,12 @@ class FoodRecordSubmissionCoordinatorTest {
             selectedFood = testFood(),
             rating = 4,
             comment = "save draft",
+            isPublic = true,
         )
 
         assertTrue(result is FoodRecordSubmissionResult.SavedToDraft)
         assertEquals(1L, draftSaver.savedDrafts.single().id)
+        assertTrue(draftSaver.savedDrafts.single().isPublic)
         assertEquals(listOf(1L), syncTrigger.scheduledDraftIds)
     }
 
@@ -88,6 +90,7 @@ private class FakeRemoteWriter(
         rating: Int,
         comment: String,
         sourceType: String,
+        isPublic: Boolean,
         images: List<FoodRecordImageAttachment>,
     ): FoodRecordCreateResult = result
 }
@@ -108,6 +111,7 @@ private class FakeDraftSaver : DraftRecordSaver {
             rating = request.rating,
             comment = request.comment,
             sourceType = request.sourceType,
+            isPublic = request.isPublic,
             syncStatus = DraftSyncStatus.DRAFT,
             retryCount = 0,
             failureReason = null,

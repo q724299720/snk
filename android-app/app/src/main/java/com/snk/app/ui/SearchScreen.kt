@@ -76,6 +76,11 @@ fun SearchScreen(
             application.container.foodRecordRepository.listRecentRecords(sessionUserId, HOME_RECENT_RECORD_LIMIT)
         }
     }
+    val publicRecordState by produceState<FoodRecordHistoryResult?>(
+        initialValue = null,
+    ) {
+        value = application.container.foodRecordRepository.listPublicRecords(HOME_PUBLIC_RECORD_LIMIT)
+    }
     val drafts by application.container.draftRecordRepository
         .observeDrafts()
         .collectAsState(initial = emptyList())
@@ -327,6 +332,52 @@ fun SearchScreen(
         }
         item {
             Text(
+                text = "公开分享",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2B1E18),
+            )
+        }
+        when (val publicHistory = publicRecordState) {
+            null -> item {
+                Text(
+                    text = "正在加载公开记录...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF5B4A42),
+                )
+            }
+
+            is FoodRecordHistoryResult.Failure -> item {
+                Text(
+                    text = publicHistory.message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF8A2E1C),
+                )
+            }
+
+            is FoodRecordHistoryResult.Success -> {
+                if (publicHistory.items.isEmpty()) {
+                    item {
+                        Text(
+                            text = "暂无公开记录。保存记录时打开公开开关后会出现在这里。",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF5B4A42),
+                        )
+                    }
+                } else {
+                    items(publicHistory.items, key = { "public-${it.id}" }) { record ->
+                        RecentRecordCard(
+                            record = record,
+                            onReuseFood = {
+                                onCreateRecord(record.toFoodSearchItem())
+                            },
+                        )
+                    }
+                }
+            }
+        }
+        item {
+            Text(
                 text = "最近记录",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
@@ -487,6 +538,7 @@ private fun RecentRecordCard(
 
 /** 首页最近记录默认展示条数，对齐 PRD「首页最近记录默认展示最近 5 条」。 */
 private const val HOME_RECENT_RECORD_LIMIT = 5
+private const val HOME_PUBLIC_RECORD_LIMIT = 5
 
 private fun formatRecordTime(recordTime: String): String {
     return recordTime.replace("T", " ").removeSuffix("Z").take(16)

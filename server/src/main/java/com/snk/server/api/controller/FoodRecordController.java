@@ -45,6 +45,15 @@ public class FoodRecordController {
 			.toList();
 	}
 
+	@GetMapping("/public")
+	public List<FoodRecordHistoryResponse> listPublicRecords(
+		@RequestParam(value = "limit", defaultValue = "10") @Positive int limit
+	) {
+		return foodRecordService.listPublicRecords(limit).stream()
+			.map(FoodRecordHistoryResponse::from)
+			.toList();
+	}
+
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public FoodRecordResponse createRecord(@Valid @RequestBody CreateFoodRecordRequest request) {

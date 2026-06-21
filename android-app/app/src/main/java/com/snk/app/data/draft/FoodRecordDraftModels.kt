@@ -12,6 +12,7 @@ data class FoodRecordDraft(
     val rating: Int,
     val comment: String,
     val sourceType: String,
+    val isPublic: Boolean,
     val syncStatus: DraftSyncStatus,
     val retryCount: Int,
     val failureReason: DraftFailureReason?,
@@ -41,6 +42,7 @@ data class FoodRecordDraftCreateRequest(
     val rating: Int,
     val comment: String,
     val sourceType: String,
+    val isPublic: Boolean,
 )
 
 data class FoodRecordDraftPayload(
@@ -50,6 +52,7 @@ data class FoodRecordDraftPayload(
     val rating: Int,
     val comment: String,
     val sourceType: String,
+    val isPublic: Boolean,
     val retryCount: Int,
 )
 

@@ -26,6 +26,7 @@ class DraftRecordRepository(
                 rating = request.rating,
                 comment = request.comment.trim(),
                 sourceType = request.sourceType,
+                isPublic = request.isPublic,
                 syncStatus = DraftSyncStatus.DRAFT.name,
                 retryCount = 0,
                 failureReason = DraftFailureReason.NETWORK.name,
@@ -127,6 +128,7 @@ class DraftRecordRepository(
         rating = rating,
         comment = comment,
         sourceType = sourceType,
+        isPublic = isPublic,
         syncStatus = DraftSyncStatus.valueOf(syncStatus),
         retryCount = retryCount,
         failureReason = failureReason?.let(DraftFailureReason::valueOf),
@@ -144,6 +146,7 @@ class DraftRecordRepository(
         rating = rating,
         comment = comment,
         sourceType = sourceType,
+        isPublic = isPublic,
         retryCount = retryCount,
     )
 }

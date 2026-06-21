@@ -18,6 +18,11 @@ interface FoodRecordApi {
         @Query("limit") limit: Int = 10,
     ): List<FoodRecordHistoryResponse>
 
+    @GET("/api/records/public")
+    suspend fun listPublicRecords(
+        @Query("limit") limit: Int = 10,
+    ): List<FoodRecordHistoryResponse>
+
     @POST("/api/records")
     suspend fun createRecord(
         @Body request: CreateFoodRecordRequest,

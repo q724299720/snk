@@ -27,12 +27,23 @@ class FoodRecordRepository(
         }
     }
 
+    suspend fun listPublicRecords(limit: Int = 10): FoodRecordHistoryResult {
+        return try {
+            FoodRecordHistoryResult.Success(
+                api.listPublicRecords(limit).map(FoodRecordHistoryResponse::toModel),
+            )
+        } catch (exception: Exception) {
+            FoodRecordHistoryResult.Failure(exception.asHistoryMessage())
+        }
+    }
+
     override suspend fun createRecord(
         userId: Long,
         foodItemId: Long,
         rating: Int,
         comment: String,
         sourceType: String,
+        isPublic: Boolean,
         images: List<FoodRecordImageAttachment>,
     ): FoodRecordCreateResult {
         if (rating !in 1..5) {
@@ -48,7 +59,7 @@ class FoodRecordRepository(
                     userId = userId,
                     foodItemId = foodItemId,
                     sourceType = sourceType,
-                    isPublic = false,
+                    isPublic = isPublic,
                     rating = rating,
                     comment = comment.trim().ifBlank { null },
                     images = images.map {

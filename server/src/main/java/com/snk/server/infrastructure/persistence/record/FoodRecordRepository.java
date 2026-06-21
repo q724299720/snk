@@ -11,6 +11,8 @@ public interface FoodRecordRepository extends JpaRepository<FoodRecordEntity, Lo
 
 	List<FoodRecordEntity> findByUser_IdAndDeletedAtIsNullOrderByRecordTimeDesc(Long userId, Pageable pageable);
 
+	List<FoodRecordEntity> findByIsPublicTrueAndDeletedAtIsNullOrderByRecordTimeDesc(Pageable pageable);
+
 	@Modifying
 	@Query("UPDATE FoodRecordEntity record SET record.foodItem = :targetFoodItem WHERE record.foodItem = :sourceFoodItem")
 	int reassignFoodItem(FoodItemEntity sourceFoodItem, FoodItemEntity targetFoodItem);

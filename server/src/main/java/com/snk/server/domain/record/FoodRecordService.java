@@ -87,6 +87,22 @@ public class FoodRecordService {
 			.toList();
 	}
 
+	@Transactional(readOnly = true)
+	public List<FoodRecordHistoryItem> listPublicRecords(int limit) {
+		int normalizedLimit = Math.min(Math.max(limit, 1), 20);
+		List<FoodRecordEntity> records = foodRecordRepository.findByIsPublicTrueAndDeletedAtIsNullOrderByRecordTimeDesc(
+			PageRequest.of(0, normalizedLimit)
+		);
+		Map<Long, List<FoodRecordImageValue>> imagesByRecordId = imagesByRecordId(
+			records.stream()
+				.map(FoodRecordEntity::getId)
+				.toList()
+		);
+		return records.stream()
+			.map(entity -> toHistoryItem(entity, imagesByRecordId.getOrDefault(entity.getId(), List.of())))
+			.toList();
+	}
+
 	private FoodRecordResult toResult(FoodRecordEntity entity) {
 		return toResult(entity, imagesForRecord(entity.getId()));
 	}

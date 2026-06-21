@@ -50,7 +50,9 @@ class AppContainer(context: Context) {
         context,
         SnkDatabase::class.java,
         "snk-local.db",
-    ).build()
+    )
+        .addMigrations(SnkDatabase.MIGRATION_1_2)
+        .build()
     private val draftSyncScheduler = DraftSyncScheduler(context)
 
     val anonymousSessionRepository = AnonymousSessionRepository(

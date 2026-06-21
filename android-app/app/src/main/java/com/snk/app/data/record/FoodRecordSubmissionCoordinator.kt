@@ -17,6 +17,7 @@ class FoodRecordSubmissionCoordinator(
         rating: Int,
         comment: String,
         sourceType: String = "text_search",
+        isPublic: Boolean = false,
         images: List<FoodRecordImageAttachment> = emptyList(),
     ): FoodRecordSubmissionResult {
         return when (
@@ -26,6 +27,7 @@ class FoodRecordSubmissionCoordinator(
                 rating = rating,
                 comment = comment,
                 sourceType = sourceType,
+                isPublic = isPublic,
                 images = images,
             )
         ) {
@@ -51,6 +53,7 @@ class FoodRecordSubmissionCoordinator(
                             rating = rating,
                             comment = comment,
                             sourceType = sourceType,
+                            isPublic = isPublic,
                         ),
                     )
                     draftSyncTrigger.scheduleDraftSync(draft.id)

@@ -32,6 +32,7 @@ class DraftSyncWorker(
                 rating = draft.rating,
                 comment = draft.comment,
                 sourceType = draft.sourceType,
+                isPublic = draft.isPublic,
                 images = emptyList(),
             )
         ) {

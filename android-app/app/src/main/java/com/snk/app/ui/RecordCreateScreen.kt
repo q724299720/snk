@@ -21,6 +21,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -69,6 +70,7 @@ fun RecordCreateScreen(
     var interactionMessage by remember { mutableStateOf<String?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
     var isLiking by remember { mutableStateOf(false) }
+    var isPublic by remember { mutableStateOf(false) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var uploadedRecordImage by remember { mutableStateOf<FoodRecordImageAttachment?>(null) }
     var imageUploadMessage by remember { mutableStateOf<String?>(null) }
@@ -242,6 +244,40 @@ fun RecordCreateScreen(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF6EA)),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = "Share to public feed",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = "Off by default. Turn on only when you want other users to see this record.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF5B4A42),
+                    )
+                }
+                Switch(
+                    checked = isPublic,
+                    onCheckedChange = { isPublic = it },
+                    enabled = !isSubmitting,
+                )
+            }
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F1E7)),
         ) {
             Column(
@@ -343,6 +379,7 @@ fun RecordCreateScreen(
                         rating = rating,
                         comment = comment,
                         sourceType = sourceType,
+                        isPublic = isPublic,
                         images = uploadedRecordImage?.let { listOf(it) }.orEmpty(),
                     )
                     submitState = result
