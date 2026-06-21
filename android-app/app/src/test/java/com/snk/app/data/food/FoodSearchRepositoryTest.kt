@@ -255,6 +255,45 @@ class FoodSearchRepositoryTest {
     }
 
     @Test
+    fun `searchByRecognizedText skips overlong query and keeps trying shorter candidates`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody(
+                    """
+                    {
+                      "qualitySignal": "strong",
+                      "items": [
+                        {
+                          "id": 18,
+                          "name": "牛肉面",
+                          "itemType": "packaged_product",
+                          "category": "instant_food",
+                          "subcategory": "noodles",
+                          "brand": "康师傅",
+                          "barcode": null,
+                          "coverImageUrl": null,
+                          "auditStatus": "approved"
+                        }
+                      ]
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val recognizedText = "康师傅红烧牛肉面".repeat(17) + "\n牛肉面"
+
+        val result = repository.searchByRecognizedText(recognizedText)
+
+        assertTrue(result is FoodOcrSearchResult.Success)
+        val success = result as FoodOcrSearchResult.Success
+        assertEquals("牛肉面", success.matchedQuery)
+        assertEquals("牛肉面", success.result.items.first().name)
+        assertEquals(1, server.requestCount)
+        assertEquals("/api/foods/search?q=%E7%89%9B%E8%82%89%E9%9D%A2", server.takeRequest().path)
+    }
+
+    @Test
     fun `searchByRecognizedText returns no match when all queries miss`() = runTest {
         repeat(4) {
             server.enqueue(

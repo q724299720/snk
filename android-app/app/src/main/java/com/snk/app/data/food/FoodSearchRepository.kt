@@ -116,6 +116,9 @@ class FoodSearchRepository(
         }
 
         attemptedQueries.forEach { query ->
+            if (query.length > MAX_SEARCH_QUERY_LENGTH) {
+                return@forEach
+            }
             when (val result = search(query, userId)) {
                 is FoodSearchResult.Success -> {
                     if (result.items.isNotEmpty()) {
