@@ -515,6 +515,7 @@ private fun RecentRecordCard(
     var comments by remember(record.id) { mutableStateOf<List<FoodRecordComment>>(emptyList()) }
     var commentMessage by remember(record.id) { mutableStateOf<String?>(null) }
     var commentInput by remember(record.id) { mutableStateOf("") }
+    val commentValidation = validatePublicRecordCommentForUi(commentInput)
     var likeState by remember(record.id, record.likeCount) {
         mutableStateOf(RecordLikeUiState(likeCount = record.likeCount))
     }
@@ -694,6 +695,10 @@ private fun RecentRecordCard(
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("写一句评论") },
                         singleLine = true,
+                        isError = commentValidation.hasError,
+                        supportingText = {
+                            Text(commentValidation.message ?: "${commentInput.trim().length}/$MAX_PUBLIC_RECORD_COMMENT_LENGTH")
+                        },
                         shape = RoundedCornerShape(16.dp),
                     )
                     Row(
@@ -732,7 +737,7 @@ private fun RecentRecordCard(
                                     }
                                 }
                             },
-                            enabled = commentInput.isNotBlank(),
+                            enabled = commentInput.isNotBlank() && !commentValidation.hasError,
                             shape = RoundedCornerShape(14.dp),
                         ) {
                             Text("发布")
@@ -747,6 +752,24 @@ private fun RecentRecordCard(
 /** 首页最近记录默认展示条数，对齐 PRD「首页最近记录默认展示最近 5 条」。 */
 private const val HOME_RECENT_RECORD_LIMIT = 5
 private const val HOME_PUBLIC_RECORD_LIMIT = 5
+internal const val MAX_PUBLIC_RECORD_COMMENT_LENGTH = 500
+
+internal data class PublicRecordCommentUiValidation(
+    val hasError: Boolean,
+    val message: String? = null,
+)
+
+internal fun validatePublicRecordCommentForUi(content: String): PublicRecordCommentUiValidation {
+    val length = content.trim().length
+    return if (length > MAX_PUBLIC_RECORD_COMMENT_LENGTH) {
+        PublicRecordCommentUiValidation(
+            hasError = true,
+            message = "评论最长支持 500 个字符，当前 $length 个。",
+        )
+    } else {
+        PublicRecordCommentUiValidation(hasError = false)
+    }
+}
 
 private fun formatRecordTime(recordTime: String): String {
     return recordTime.replace("T", " ").removeSuffix("Z").take(16)

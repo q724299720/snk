@@ -3,6 +3,8 @@ package com.snk.app.ui
 import com.snk.app.data.record.FoodRecordLikeFailureReason
 import com.snk.app.data.record.FoodRecordLikeResult
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SearchScreenTest {
@@ -30,5 +32,21 @@ class SearchScreenTest {
 
         assertEquals(7, updated.likeCount)
         assertEquals("无法连接服务端，记录暂时没有提交成功。", updated.message)
+    }
+
+    @Test
+    fun `public record comment validation allows five hundred characters`() {
+        val validation = validatePublicRecordCommentForUi("a".repeat(500))
+
+        assertFalse(validation.hasError)
+        assertEquals(null, validation.message)
+    }
+
+    @Test
+    fun `public record comment validation rejects more than five hundred characters`() {
+        val validation = validatePublicRecordCommentForUi("a".repeat(501))
+
+        assertTrue(validation.hasError)
+        assertEquals("评论最长支持 500 个字符，当前 501 个。", validation.message)
     }
 }

@@ -338,6 +338,21 @@ class FoodRecordRepositoryTest {
     }
 
     @Test
+    fun `createRecordComment rejects overlong comment before backend request`() = runTest {
+        val result = repository.createRecordComment(
+            recordId = 56,
+            userId = 100,
+            content = "a".repeat(501),
+        )
+
+        assertEquals(
+            FoodRecordCommentCreateResult.Failure("评论最长支持 500 个字符，请缩短后再发送。"),
+            result,
+        )
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
     fun `createRecord returns network failure when backend is unreachable`() = runTest {
         server.shutdown()
 

@@ -133,6 +133,9 @@ class FoodRecordRepository(
         if (normalizedContent.isBlank()) {
             return FoodRecordCommentCreateResult.Failure("评论不能为空。")
         }
+        if (normalizedContent.length > MAX_RECORD_COMMENT_LENGTH) {
+            return FoodRecordCommentCreateResult.Failure("评论最长支持 500 个字符，请缩短后再发送。")
+        }
 
         return try {
             FoodRecordCommentCreateResult.Success(
