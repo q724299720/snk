@@ -1,6 +1,7 @@
 package com.snk.server.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -57,6 +58,14 @@ class AdminRecognitionTaskControllerTests {
 			.andExpect(jsonPath("$[0].id").value(18))
 			.andExpect(jsonPath("$[0].status").value("completed"))
 			.andExpect(jsonPath("$[0].selectedFoodItemId").value(11));
+	}
+
+	@Test
+	void shouldRejectRecognitionTaskListWhenLimitIsNotPositive() throws Exception {
+		mockMvc.perform(get("/api/admin/recognition-tasks").param("limit", "0"))
+			.andExpect(status().isBadRequest());
+
+		verify(recognitionTaskService, never()).listTasks(any(), any(), anyInt());
 	}
 
 	@Test

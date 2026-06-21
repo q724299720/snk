@@ -1,7 +1,9 @@
 package com.snk.server.api.controller;
 
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,6 +65,14 @@ class AdminFoodItemControllerTests {
 	}
 
 	@Test
+	void shouldRejectFoodItemListWhenLimitIsNotPositive() throws Exception {
+		mockMvc.perform(get("/api/admin/food-items").param("limit", "0"))
+			.andExpect(status().isBadRequest());
+
+		verify(foodModerationService, never()).listFoodItems(isNull(), isNull(), anyInt());
+	}
+
+	@Test
 	void shouldReturnFoodItemDetail() throws Exception {
 		when(foodModerationService.getFoodItem(8L))
 			.thenReturn(moderationItem(8L, "Detail Item", 1, "pending"));
@@ -95,6 +105,14 @@ class AdminFoodItemControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].name").value("Reported Item"))
 			.andExpect(jsonPath("$[0].reportCount").value(3));
+	}
+
+	@Test
+	void shouldRejectReportedItemsWhenMinReportCountIsNotPositive() throws Exception {
+		mockMvc.perform(get("/api/admin/food-items/reported").param("minReportCount", "0"))
+			.andExpect(status().isBadRequest());
+
+		verify(foodModerationService, never()).listReportedItems(anyInt());
 	}
 
 	@Test

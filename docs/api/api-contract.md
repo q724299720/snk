@@ -134,6 +134,7 @@
 后台食物条目管理当前约定：
 
 - 列表支持按 `auditStatus`、`q` 和 `limit` 过滤，默认按创建时间倒序
+- `limit` 必须为正整数，`0` 或负数直接返回 `400`；服务端最多返回 `100` 条
 - 返回字段与后台条目治理一致，详情接口复用同一响应模型
 - 详情接口返回单条完整管理视图，便于后台核查与处理
 - `clear-reports` 用于将已处理条目的 `reportCount` 清零，作为报错处理闭环的结束动作
@@ -165,6 +166,7 @@
 
 - `pending` 列表返回当前待审核食物条目，按创建时间倒序
 - `reported` 列表返回报错次数达到阈值的食物条目，默认阈值为 `1`
+- `reported` 的 `minReportCount` 必须为正整数，`0` 或负数直接返回 `400`
 - 后台返回字段至少包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`source`、`auditStatus`、`reportCount`、`createdByUserId`、`createdAt`、`updatedAt`
 - `approve` 会将条目标记为 `approved`，并允许继续进入全局搜索
 - `reject` 会将条目标记为 `rejected`，并阻止进入全局搜索
@@ -199,6 +201,7 @@
 历史识别任务监控当前约定：
 
 - 列表支持按 `status` 和 `userId` 过滤，`limit` 默认 `20`
+- `limit` 必须为正整数，`0` 或负数直接返回 `400`
 - 列表按创建时间倒序返回，最多返回 `100` 条
 - 返回字段至少包含：`id`、`userId`、`inputImageUrl`、`status`、`topCandidates`、`selectedFoodItemId`、`confidence`、`createdAt`、`finishedAt`、`statusReason`
 - `GET /api/admin/recognition-tasks/{taskId}` 要求 `taskId` 为正整数，`0` 或负数直接返回 `400`
@@ -307,3 +310,4 @@
 | 2026-06-21 | Codex | 补充审核词典 `wordId` 正数校验约束 | 后台词典操作接口应在控制器层拒绝 `0` 或负数 ID，避免无效请求进入服务层 |
 | 2026-06-21 | Codex | 补充后台食物条目 `foodItemId` 正数校验约束 | 后台食物条目操作接口应在控制器层拒绝 `0` 或负数 ID，避免无效请求进入服务层 |
 | 2026-06-21 | Codex | 补充历史识别任务 `taskId` 正数校验约束 | 后台历史识别任务详情接口应在控制器层拒绝 `0` 或负数 ID，避免无效请求进入服务层 |
+| 2026-06-21 | Codex | 补充后台列表参数正数校验约束 | 后台食物条目、报错条目和历史识别任务列表应拒绝非正数分页 / 阈值参数，避免无效请求进入服务层 |

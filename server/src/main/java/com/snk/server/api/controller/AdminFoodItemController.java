@@ -37,7 +37,7 @@ public class AdminFoodItemController {
 	public List<AdminFoodItemResponse> listFoodItems(
 		@RequestParam(value = "auditStatus", required = false) String auditStatus,
 		@RequestParam(value = "q", required = false) String query,
-		@RequestParam(value = "limit", defaultValue = "20") int limit
+		@RequestParam(value = "limit", defaultValue = "20") @Positive int limit
 	) {
 		return foodModerationService.listFoodItems(auditStatus, query, limit)
 			.stream()
@@ -68,7 +68,7 @@ public class AdminFoodItemController {
 
 	@GetMapping("/reported")
 	public List<AdminFoodItemResponse> listReportedItems(
-		@RequestParam(value = "minReportCount", defaultValue = "1") int minReportCount
+		@RequestParam(value = "minReportCount", defaultValue = "1") @Positive int minReportCount
 	) {
 		return foodModerationService.listReportedItems(minReportCount)
 			.stream()

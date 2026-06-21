@@ -26,7 +26,7 @@ public class AdminRecognitionTaskController {
 	public List<RecognitionTaskResponse> listTasks(
 		@RequestParam(value = "status", required = false) String status,
 		@RequestParam(value = "userId", required = false) Long userId,
-		@RequestParam(value = "limit", defaultValue = "20") int limit
+		@RequestParam(value = "limit", defaultValue = "20") @Positive int limit
 	) {
 		return recognitionTaskService.listTasks(status, userId, limit)
 			.stream()
