@@ -37,6 +37,16 @@ class AdminConsoleStaticPageTests {
 	}
 
 	@Test
+	void adminConsoleExposesManualAutoAuditFlow() throws Exception {
+		String html = readAdminConsoleHtml();
+
+		assertThat(html).contains("id=\"runAutoAudit\"");
+		assertThat(html).contains("async function runAutoAudit");
+		assertThat(html).contains("/api/admin/moderation/auto-audit/run");
+		assertThat(html).contains("rejectedFoodItemIds");
+	}
+
+	@Test
 	void adminConsoleExposesRecognitionTaskMonitorFlow() throws Exception {
 		String html = readAdminConsoleHtml();
 

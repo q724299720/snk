@@ -276,6 +276,9 @@
 
     <section>
       <h2>治理概览</h2>
+      <div class="toolbar">
+        <button id="runAutoAudit" class="primary">执行自动审核</button>
+      </div>
       <div id="stats" class="stats-grid"></div>
     </section>
 
@@ -625,6 +628,13 @@
       renderStats(await requestJson("/api/admin/stats"));
     }
 
+    async function runAutoAudit() {
+      const summary = await requestJson("/api/admin/moderation/auto-audit/run", { method: "POST" });
+      await Promise.all([loadStats(), loadFoodItems("pending")]);
+      const rejectedIds = (summary.rejectedFoodItemIds || []).join(", ") || "无";
+      setMessage(`自动审核完成：扫描 ${summary.scannedCount} 条，拒绝 ${summary.rejectedCount} 条，保留待审 ${summary.keptPendingCount} 条。拒绝 ID：${rejectedIds}`);
+    }
+
     async function loadFoodItems(mode = "query") {
       let url = "/api/admin/food-items";
       if (mode === "pending") {
@@ -789,6 +799,7 @@
       setMessage("Token 已保存到当前浏览器会话。");
     });
     document.querySelector("#reloadAll").addEventListener("click", reloadAll);
+    document.querySelector("#runAutoAudit").addEventListener("click", () => runAutoAudit().catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadFoodItems").addEventListener("click", () => loadFoodItems().catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadPending").addEventListener("click", () => loadFoodItems("pending").catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadReported").addEventListener("click", () => loadFoodItems("reported").catch((error) => setMessage(error.message, true)));

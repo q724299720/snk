@@ -128,6 +128,7 @@
 - `POST /api/admin/food-items/{foodItemId}/clear-reports`
 - `POST /api/foods/{foodItemId}/report`
 - `GET /api/admin/stats`
+- `POST /api/admin/moderation/auto-audit/run`
 
 后台食物条目管理当前约定：
 
@@ -144,6 +145,14 @@
 - 识别任务统计字段仅兼容历史服务端预留能力，当前 Android MVP 不再创建图片识别任务
 - `totalRecognitionTasks` 统计所有历史识别任务状态，至少包含 `pending / processing / completed / failed`
 - 统计口径只做后台管理概览，不承诺分页或趋势图
+
+后台自动审核当前约定：
+
+- `POST /api/admin/moderation/auto-audit/run` 用于后台人工立即触发一次自动审核扫描
+- 自动审核仍只处理超过 `SNK_MODERATION_PENDING_AGE_HOURS` 的 `pending` 条目，默认阈值为 24 小时
+- 当前响应字段包含：`scannedCount`、`rejectedCount`、`keptPendingCount`、`cutoffAt`、`rejectedFoodItemIds`
+- 自动审核只执行保守拒绝，不自动大范围通过条目
+- 接口受同一后台 Admin Token 机制保护
 
 后台条目治理当前约定：
 
@@ -277,3 +286,4 @@
 | 2026-06-21 | Codex | 补充搜索接口的创建者 pending 可见性参数 | Phase 4 要求待审核条目仅创建者可见，普通全局搜索仍只暴露已审核条目 |
 | 2026-06-21 | Codex | 修正后台识别任务总数统计口径 | 历史识别任务监控仍保留，统计总数需要包含 pending 任务以避免后台概览低估遗留任务 |
 | 2026-06-21 | Codex | 补充后台统计的待处理识别任务字段 | 后台页需要直接看到 pending 历史识别任务数量，便于定位总数来源 |
+| 2026-06-21 | Codex | 补充后台自动审核手动触发接口 | Phase 4 需要后台页面可立即触发一次超时待审核条目的保守自动审核扫描 |
