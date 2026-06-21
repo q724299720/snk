@@ -310,6 +310,8 @@
         <input id="operatorName" value="Admin Console" placeholder="operatorName">
         <textarea id="wordRemark" placeholder="备注"></textarea>
         <button id="createWord" class="primary">新增词条</button>
+        <button id="saveWord" class="primary" disabled>保存编辑</button>
+        <button id="cancelWordEdit" disabled>取消编辑</button>
         <button id="loadWords">刷新词典</button>
       </div>
       <div class="table-wrap">
@@ -353,6 +355,8 @@
     const tokenInput = document.querySelector("#adminToken");
     const message = document.querySelector("#message");
     const savedToken = sessionStorage.getItem("snkAdminToken") || "";
+    let reviewWordCache = [];
+    let editingWordId = null;
     tokenInput.value = savedToken;
 
     function setMessage(text, isError = false) {
@@ -361,7 +365,7 @@
     }
 
     function escapeHtml(value) {
-      return String(value ?? "")
+      return String(value == null ? "" : value)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
@@ -402,7 +406,7 @@
       ];
       document.querySelector("#stats").innerHTML = fields.map(([key, label]) => `
         <div class="metric">
-          <strong>${escapeHtml(stats[key] ?? 0)}</strong>
+          <strong>${escapeHtml(stats[key] == null ? 0 : stats[key])}</strong>
           <span>${label}</span>
         </div>
       `).join("");
@@ -431,6 +435,7 @@
     }
 
     function renderWords(words) {
+      reviewWordCache = words;
       document.querySelector("#reviewWords").innerHTML = words.map((word) => `
         <tr>
           <td>${escapeHtml(word.id)}</td>
@@ -440,6 +445,7 @@
           <td>${escapeHtml(word.source)}</td>
           <td>${escapeHtml(word.remark || "")}</td>
           <td class="actions">
+            <button data-word-action="edit" data-id="${escapeHtml(word.id)}">编辑</button>
             <button data-word-action="enable" data-id="${escapeHtml(word.id)}">启用</button>
             <button data-word-action="disable" data-id="${escapeHtml(word.id)}">停用</button>
             <button data-word-action="logs" data-id="${escapeHtml(word.id)}">日志</button>
@@ -514,6 +520,58 @@
       setMessage("词条已新增。");
     }
 
+    function setWordEditMode(word) {
+      editingWordId = word ? word.id : null;
+      document.querySelector("#saveWord").disabled = !editingWordId;
+      document.querySelector("#cancelWordEdit").disabled = !editingWordId;
+      document.querySelector("#createWord").disabled = !!editingWordId;
+    }
+
+    function startEditWord(id) {
+      const word = reviewWordCache.find((item) => String(item.id) === String(id));
+      if (!word) {
+        setMessage(`未找到词条 ${id}，请刷新后重试。`, true);
+        return;
+      }
+      document.querySelector("#wordText").value = word.word || "";
+      document.querySelector("#wordType").value = word.wordType || "valid_food_word";
+      document.querySelector("#wordSource").value = word.source || "admin";
+      document.querySelector("#wordEnabled").value = word.enabled ? "true" : "false";
+      document.querySelector("#wordRemark").value = word.remark || "";
+      setWordEditMode(word);
+      setMessage(`正在编辑词条 ${id}。`);
+    }
+
+    function clearWordForm() {
+      document.querySelector("#wordText").value = "";
+      document.querySelector("#wordSource").value = "admin";
+      document.querySelector("#wordEnabled").value = "true";
+      document.querySelector("#wordRemark").value = "";
+      setWordEditMode(null);
+    }
+
+    async function updateWord(id = editingWordId) {
+      if (!id) {
+        setMessage("请先选择要编辑的词条。", true);
+        return;
+      }
+      const payload = {
+        word: document.querySelector("#wordText").value.trim(),
+        wordType: document.querySelector("#wordType").value,
+        source: document.querySelector("#wordSource").value.trim() || "admin",
+        remark: document.querySelector("#wordRemark").value.trim() || null,
+        operatorId: document.querySelector("#operatorId").value.trim() || "admin-console",
+        operatorName: document.querySelector("#operatorName").value.trim() || "Admin Console",
+      };
+      await requestJson(`/api/admin/review-config-words/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+      clearWordForm();
+      await Promise.all([loadStats(), loadWords()]);
+      setMessage(`词条 ${id} 已保存。`);
+    }
+
     async function mutateWord(id, action) {
       const payload = {
         operatorId: document.querySelector("#operatorId").value.trim() || "admin-console",
@@ -550,6 +608,11 @@
     document.querySelector("#loadPending").addEventListener("click", () => loadFoodItems("pending").catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadReported").addEventListener("click", () => loadFoodItems("reported").catch((error) => setMessage(error.message, true)));
     document.querySelector("#createWord").addEventListener("click", () => createWord().catch((error) => setMessage(error.message, true)));
+    document.querySelector("#saveWord").addEventListener("click", () => updateWord().catch((error) => setMessage(error.message, true)));
+    document.querySelector("#cancelWordEdit").addEventListener("click", () => {
+      clearWordForm();
+      setMessage("已取消编辑。");
+    });
     document.querySelector("#loadWords").addEventListener("click", () => loadWords().catch((error) => setMessage(error.message, true)));
 
     document.querySelector("#foodItems").addEventListener("click", (event) => {
@@ -564,6 +627,8 @@
       const action = button.dataset.wordAction;
       if (action === "logs") {
         loadAuditLogs(button.dataset.id).catch((error) => setMessage(error.message, true));
+      } else if (action === "edit") {
+        startEditWord(button.dataset.id);
       } else {
         mutateWord(button.dataset.id, action).catch((error) => setMessage(error.message, true));
       }
