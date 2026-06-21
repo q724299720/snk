@@ -43,7 +43,6 @@ import com.snk.app.BuildConfig
 import com.snk.app.SnkApplication
 import com.snk.app.data.draft.DraftSyncStatus
 import com.snk.app.data.draft.FoodRecordDraft
-import com.snk.app.data.food.FoodReportResult
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodSearchResult
 import com.snk.app.data.record.FoodRecordComment
@@ -94,8 +93,9 @@ fun SearchScreen(
     var query by remember { mutableStateOf("") }
     var searchState by remember { mutableStateOf<FoodSearchResult?>(null) }
     var isSearching by remember { mutableStateOf(false) }
-    var reportMessage by remember { mutableStateOf<String?>(null) }
+    var reportState by remember { mutableStateOf(FoodReportUiState()) }
     var ocrSuggestedQueries by remember { mutableStateOf<List<String>>(emptyList()) }
+    val hasReportableSearchItems = (searchState as? FoodSearchResult.Success)?.items?.isNotEmpty() == true
 
     LaunchedEffect(Unit) {
         recentQueries = application.container.recentSearchStore.getRecentQueries()
@@ -290,17 +290,27 @@ fun SearchScreen(
                 onReportItem = { item ->
                     val userId = sessionUserId
                     if (userId == null) {
-                        reportMessage = "游客身份尚未初始化，暂时无法提交纠错。"
+                        reportState = reportState.copy(
+                            isSubmitting = false,
+                            message = "游客身份尚未初始化，暂时无法提交纠错。",
+                        )
                     } else {
-                        coroutineScope.launch {
-                            reportMessage = when (
-                                val result = application.container.foodSearchRepository.reportFoodItem(
-                                    userId = userId,
-                                    foodItemId = item.id,
-                                )
-                            ) {
-                                is FoodReportResult.Success -> "已提交纠错信号，当前 reportCount = ${result.reportCount}"
-                                is FoodReportResult.Failure -> result.message
+                        when (val validation = reportState.reasonOrError()) {
+                            is ReasonValidationResult.Invalid -> {
+                                reportState = validation.state
+                            }
+
+                            is ReasonValidationResult.Valid -> {
+                                coroutineScope.launch {
+                                    reportState = reportState.submitting()
+                                    reportState = reportState.afterReportResult(
+                                        application.container.foodSearchRepository.reportFoodItem(
+                                            userId = userId,
+                                            foodItemId = item.id,
+                                            reason = validation.reason,
+                                        ),
+                                    )
+                                }
                             }
                         }
                     }
@@ -312,6 +322,44 @@ fun SearchScreen(
                     null
                 },
             )
+        }
+        if (hasReportableSearchItems) {
+            item {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFCF1E6)),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Text(
+                            text = "纠错原因",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        OutlinedTextField(
+                            value = reportState.reason,
+                            onValueChange = {
+                                reportState = reportState.copy(reason = it, message = null)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("例如：图片和名称不匹配、分类错误、品牌错误") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                        )
+                        Text(
+                            text = when {
+                                reportState.isSubmitting -> "正在提交纠错..."
+                                !reportState.message.isNullOrBlank() -> reportState.message.orEmpty()
+                                else -> "填写原因后，点击上方具体条目的“报错 / 纠错”提交。"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF8A5A44),
+                        )
+                    }
+                }
+            }
         }
         if (pendingDrafts.isNotEmpty()) {
             item {
@@ -446,15 +494,6 @@ fun SearchScreen(
                         )
                     }
                 }
-            }
-        }
-        if (reportMessage != null) {
-            item {
-                Text(
-                    text = reportMessage.orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF8A5A44),
-                )
             }
         }
     }
