@@ -80,4 +80,44 @@ class RecordCreateScreenTest {
         assertTrue(source.contains(".imePadding()"))
         assertTrue(source.contains(".navigationBarsPadding()"))
     }
+
+    @Test
+    fun `record image validation blocks save until selected image uploads`() {
+        val uploading = validateRecordImageForSave(
+            hasSelectedImage = true,
+            hasUploadedImage = false,
+            isUploadingImage = true,
+        )
+        val failedOrMissingUpload = validateRecordImageForSave(
+            hasSelectedImage = true,
+            hasUploadedImage = false,
+            isUploadingImage = false,
+        )
+        val uploaded = validateRecordImageForSave(
+            hasSelectedImage = true,
+            hasUploadedImage = true,
+            isUploadingImage = false,
+        )
+
+        assertFalse(uploading.canSave)
+        assertEquals("图片正在上传，上传完成后再保存。", uploading.message)
+        assertFalse(failedOrMissingUpload.canSave)
+        assertEquals("图片上传未完成或失败，请重新选择图片，或移除图片后保存。", failedOrMissingUpload.message)
+        assertTrue(uploaded.canSave)
+        assertNull(uploaded.message)
+    }
+
+    @Test
+    fun `record submit feedback makes save result visible`() {
+        val submitted = FoodRecordSubmissionResult.Submitted(
+            recordId = 88L,
+            recordTime = "2026-06-21T12:00:00Z",
+            likeCount = 0,
+        )
+        val failure = FoodRecordSubmissionResult.Failure("保存失败")
+
+        assertEquals("记录已保存，图片已保存。", buildRecordSubmitFeedback(submitted, hasUploadedImage = true))
+        assertEquals("记录已保存。", buildRecordSubmitFeedback(submitted, hasUploadedImage = false))
+        assertEquals("保存失败", buildRecordSubmitFeedback(failure, hasUploadedImage = false))
+    }
 }

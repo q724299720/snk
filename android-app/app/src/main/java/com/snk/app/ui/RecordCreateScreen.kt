@@ -82,13 +82,22 @@ fun RecordCreateScreen(
     var imageUploadMessage by remember { mutableStateOf<String?>(null) }
     var isUploadingImage by remember { mutableStateOf(false) }
     val commentValidation = validateRecordCommentForUi(comment)
+    val imageSaveValidation = validateRecordImageForSave(
+        hasSelectedImage = selectedImageUri != null,
+        hasUploadedImage = uploadedRecordImage != null,
+        isUploadingImage = isUploadingImage,
+    )
+    val submitFeedbackMessage = buildRecordSubmitFeedback(
+        result = submitState,
+        hasUploadedImage = uploadedRecordImage != null,
+    )
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) {
             return@rememberLauncherForActivityResult
         }
         selectedImageUri = uri
         uploadedRecordImage = null
-        imageUploadMessage = "Uploading image..."
+        imageUploadMessage = "图片上传中..."
         coroutineScope.launch {
             isUploadingImage = true
             imageUploadMessage = try {
@@ -102,13 +111,13 @@ fun RecordCreateScreen(
                 ) {
                     is RecordImageUploadResult.Success -> {
                         uploadedRecordImage = result.image
-                        "Image uploaded. It will be saved with this record."
+                        "图片已上传，保存记录时会一起保存。"
                     }
 
                     is RecordImageUploadResult.Failure -> result.message
                 }
             } catch (exception: Exception) {
-                "Image read failed. Please choose another image."
+                "图片读取失败，请重新选择。"
             }
             isUploadingImage = false
         }
@@ -137,6 +146,11 @@ fun RecordCreateScreen(
     }
     val relatedFoodState by produceState<FoodSearchResult?>(initialValue = null, key1 = selectedFood.id) {
         value = application.container.foodSearchRepository.recommendRelatedFoods(selectedFood.id)
+    }
+    LaunchedEffect(submitState) {
+        if (submitState != null) {
+            scrollState.animateScrollTo(scrollState.maxValue)
+        }
     }
 
     Column(
@@ -321,12 +335,12 @@ fun RecordCreateScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text = "Record photo",
+                    text = "记录图片",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "Optional. The uploaded photo will appear in Recent Records.",
+                    text = "可选。图片上传成功后会随记录保存，并显示在最近记录里。",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF5B4A42),
                 )
@@ -364,7 +378,7 @@ fun RecordCreateScreen(
                         shape = RoundedCornerShape(16.dp),
                         enabled = !isSubmitting && !isUploadingImage,
                     ) {
-                        Text(if (isUploadingImage) "Uploading..." else "Choose photo")
+                        Text(if (isUploadingImage) "上传中..." else "选择图片")
                     }
                     if (selectedImageUri != null) {
                         Button(
@@ -376,7 +390,7 @@ fun RecordCreateScreen(
                             shape = RoundedCornerShape(16.dp),
                             enabled = !isSubmitting && !isUploadingImage,
                         ) {
-                            Text("Remove")
+                            Text("移除")
                         }
                     }
                 }
@@ -385,6 +399,13 @@ fun RecordCreateScreen(
                         text = message,
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (uploadedRecordImage != null) Color(0xFF3D6B35) else Color(0xFF8A5A44),
+                    )
+                }
+                imageSaveValidation.message?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF8A2E1C),
                     )
                 }
             }
@@ -399,6 +420,17 @@ fun RecordCreateScreen(
             style = MaterialTheme.typography.bodyMedium,
             color = Color(0xFF5B4A42),
         )
+        submitFeedbackMessage?.let { message ->
+            Text(
+                text = message,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = when (submitState) {
+                    is FoodRecordSubmissionResult.Failure -> Color(0xFF8A2E1C)
+                    else -> Color(0xFF3D6B35)
+                },
+            )
+        }
         Button(
             onClick = {
                 val userId = when (sessionState) {
@@ -428,6 +460,7 @@ fun RecordCreateScreen(
             },
             enabled = !isSubmitting &&
                 !isUploadingImage &&
+                imageSaveValidation.canSave &&
                 !commentValidation.hasError &&
                 sessionState !is SessionUiState.Loading &&
                 sessionState !is SessionUiState.Failure,
@@ -577,6 +610,11 @@ internal data class RecordCommentUiValidation(
     val message: String?,
 )
 
+internal data class RecordImageSaveValidation(
+    val canSave: Boolean,
+    val message: String?,
+)
+
 internal fun validateRecordCommentForUi(comment: String): RecordCommentUiValidation {
     val length = comment.trim().length
     return if (length > MAX_RECORD_COMMENT_LENGTH) {
@@ -589,6 +627,45 @@ internal fun validateRecordCommentForUi(comment: String): RecordCommentUiValidat
             hasError = false,
             message = null,
         )
+    }
+}
+
+internal fun validateRecordImageForSave(
+    hasSelectedImage: Boolean,
+    hasUploadedImage: Boolean,
+    isUploadingImage: Boolean,
+): RecordImageSaveValidation {
+    return when {
+        isUploadingImage -> RecordImageSaveValidation(
+            canSave = false,
+            message = "图片正在上传，上传完成后再保存。",
+        )
+
+        hasSelectedImage && !hasUploadedImage -> RecordImageSaveValidation(
+            canSave = false,
+            message = "图片上传未完成或失败，请重新选择图片，或移除图片后保存。",
+        )
+
+        else -> RecordImageSaveValidation(canSave = true, message = null)
+    }
+}
+
+internal fun buildRecordSubmitFeedback(
+    result: FoodRecordSubmissionResult?,
+    hasUploadedImage: Boolean,
+): String? {
+    return when (result) {
+        null -> null
+        is FoodRecordSubmissionResult.Submitted -> {
+            if (hasUploadedImage) {
+                "记录已保存，图片已保存。"
+            } else {
+                "记录已保存。"
+            }
+        }
+
+        is FoodRecordSubmissionResult.SavedToDraft -> "已转存草稿，网络恢复后会自动补传。"
+        is FoodRecordSubmissionResult.Failure -> result.message
     }
 }
 
