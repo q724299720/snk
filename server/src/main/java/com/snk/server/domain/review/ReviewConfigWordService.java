@@ -54,6 +54,9 @@ public class ReviewConfigWordService {
 
 	@Transactional(readOnly = true)
 	public List<ReviewConfigWordAuditLogItem> listAuditLogs(Long reviewConfigWordId) {
+		if (!reviewConfigWordRepository.existsById(reviewConfigWordId)) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Review config word not found.");
+		}
 		return reviewConfigWordAuditLogRepository.findByReviewConfigWordIdOrderByCreatedAtDesc(reviewConfigWordId)
 			.stream()
 			.map(this::toAuditLogItem)

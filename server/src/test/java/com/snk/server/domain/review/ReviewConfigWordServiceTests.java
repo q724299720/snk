@@ -3,6 +3,7 @@ package com.snk.server.domain.review;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -113,6 +114,7 @@ class ReviewConfigWordServiceTests {
 		log.setOperatorId("admin");
 		log.setOperatorName("Admin");
 		log.setCreatedAt(OffsetDateTime.parse("2026-06-14T12:00:00Z"));
+		when(reviewConfigWordRepository.existsById(21L)).thenReturn(true);
 		when(reviewConfigWordAuditLogRepository.findByReviewConfigWordIdOrderByCreatedAtDesc(21L))
 			.thenReturn(List.of(log));
 
@@ -121,6 +123,17 @@ class ReviewConfigWordServiceTests {
 		assertThat(items).hasSize(1);
 		assertThat(items.getFirst().actionType()).isEqualTo("create");
 		assertThat(items.getFirst().afterValue()).containsEntry("word", "apple");
+	}
+
+	@Test
+	void shouldRejectAuditLogListForUnknownWord() {
+		when(reviewConfigWordRepository.existsById(99L)).thenReturn(false);
+
+		assertThatThrownBy(() -> reviewConfigWordService.listAuditLogs(99L))
+			.isInstanceOf(ResponseStatusException.class)
+			.hasMessageContaining("404 NOT_FOUND");
+
+		verify(reviewConfigWordAuditLogRepository, never()).findByReviewConfigWordIdOrderByCreatedAtDesc(99L);
 	}
 
 	private ReviewConfigWordEntity saveWord(ReviewConfigWordEntity entity, Long id) {
