@@ -329,6 +329,25 @@ class FoodRecordControllerTests {
 	}
 
 	@Test
+	void shouldRejectOverlongRecordComment() throws Exception {
+		mockMvc.perform(
+			post("/api/records")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "userId": 100,
+					  "foodItemId": 200,
+					  "sourceType": "text_search",
+					  "isPublic": false,
+					  "rating": 5,
+					  "comment": "%s"
+					}
+					""".formatted("a".repeat(501)))
+		)
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
 	void shouldRejectUnsupportedSourceType() throws Exception {
 		when(foodRecordService.createRecord(any())).thenReturn(
 			new FoodRecordResult(

@@ -139,6 +139,31 @@ class FoodRecordRepositoryTest {
     }
 
     @Test
+    fun `createRecord rejects overlong comment before calling backend`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(201)
+                .setBody("""{"id":55,"userId":100,"foodItemId":200,"sourceType":"text_search","isPublic":false,"rating":5,"likeCount":0,"recordTime":"2026-06-13T23:40:00Z","createdAt":"2026-06-13T23:40:00Z"}"""),
+        )
+
+        val result = repository.createRecord(
+            userId = 100,
+            foodItemId = 200,
+            rating = 5,
+            comment = "a".repeat(501),
+            sourceType = "text_search",
+            images = emptyList(),
+        )
+
+        assertTrue(result is FoodRecordCreateResult.Failure)
+        val failure = result as FoodRecordCreateResult.Failure
+        assertSame(FoodRecordCreateFailureReason.UNKNOWN, failure.reason)
+        assertEquals("备注最长支持 500 个字符，请缩短后再保存。", failure.message)
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
     fun `uploadRecordImage returns uploaded image urls`() = runTest {
         server.enqueue(
             MockResponse()

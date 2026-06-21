@@ -52,6 +52,13 @@ class FoodRecordRepository(
                 message = "评分必须在 1 到 5 之间。",
             )
         }
+        val normalizedComment = comment.trim()
+        if (normalizedComment.length > MAX_RECORD_COMMENT_LENGTH) {
+            return FoodRecordCreateResult.Failure(
+                reason = FoodRecordCreateFailureReason.UNKNOWN,
+                message = "备注最长支持 500 个字符，请缩短后再保存。",
+            )
+        }
 
         return try {
             val response = api.createRecord(
@@ -61,7 +68,7 @@ class FoodRecordRepository(
                     sourceType = sourceType,
                     isPublic = isPublic,
                     rating = rating,
-                    comment = comment.trim().ifBlank { null },
+                    comment = normalizedComment.ifBlank { null },
                     images = images.map {
                         FoodRecordImageRequest(
                             imageUrl = it.imageUrl,
@@ -167,6 +174,8 @@ class FoodRecordRepository(
         }
     }
 }
+
+private const val MAX_RECORD_COMMENT_LENGTH = 500
 
 data class FoodRecordImageAttachment(
     val imageUrl: String,

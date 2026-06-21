@@ -107,6 +107,7 @@ Public record feed contract:
 
 - `POST /api/records` 当前最小请求字段包含：`userId`、`foodItemId`、`sourceType`、`isPublic`、`rating`
 - `comment`、`recordTime` 当前为可选字段
+- `comment` 最长 `500` 字符；Android 客户端应在本地拦截超长备注，服务端也必须返回 `400`
 - 当前 `rating` 允许范围为 `1-5`
 - 当前客户端只应发送：`text_search / manual`
 - 服务端创建记录时仅接受 `text_search / manual`，其他 `sourceType` 直接返回 `400`
@@ -367,6 +368,7 @@ Public record feed contract:
 | 2026-06-21 | Codex | 补充公开记录评论接口约束 | Phase 5 评论能力需要固定公开记录评论的读取、提交、字段和权限边界 |
 | 2026-06-21 | Codex | 补充名称搜索查询变体兜底约束 | Phase 5 搜索优化需要让带空格词组在原始搜索未命中时继续尝试紧凑查询 |
 | 2026-06-21 | Codex | 补充搜索查询长度上限约束 | Phase 5 搜索优化需要限制超长模糊查询进入数据库，降低高并发下的资源放大风险 |
+| 2026-06-21 | Codex | 补充记录备注长度上限 | Phase 5 稳定性优化需要限制记录创建备注体积，避免超长文本放大客户端请求、服务端校验和后续分享成本 |
 # Audit Trail Addendum
 
 | Date | Author | Scope | Reason |
