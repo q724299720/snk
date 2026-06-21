@@ -8,8 +8,10 @@ import com.snk.server.domain.food.FoodSearchResult;
 import com.snk.server.domain.food.FoodSearchService;
 import com.snk.server.domain.food.ManualFoodItemService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import java.util.List;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/foods")
+@Validated
 public class FoodSearchController {
 
 	private final FoodSearchService foodSearchService;
@@ -62,7 +65,7 @@ public class FoodSearchController {
 	}
 
 	@GetMapping("/{foodItemId}/related")
-	public FoodSearchResponse related(@PathVariable("foodItemId") Long foodItemId) {
+	public FoodSearchResponse related(@PathVariable("foodItemId") @Positive Long foodItemId) {
 		FoodSearchResult result = foodSearchService.recommendRelatedFoods(foodItemId, 5);
 		List<FoodSearchItemResponse> items = result.items().stream()
 			.map(FoodSearchItemResponse::from)
