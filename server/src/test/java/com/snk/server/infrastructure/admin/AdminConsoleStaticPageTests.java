@@ -38,6 +38,8 @@ class AdminConsoleStaticPageTests {
 		assertThat(html).contains("async function mergeFoodItem");
 		assertThat(html).contains("async function previewMergeTarget");
 		assertThat(html).contains("function clearMergeTargetPreview");
+		assertThat(html).contains("clearMergeTargetPreview(false);");
+		assertThat(html).contains("#mergeTargetFoodItemId").contains("addEventListener(\"input\"");
 		assertThat(html).contains("clearMergeTargetPreview();");
 		assertThat(html).contains("let mergeTargetPreviewItem = null");
 		assertThat(html).contains("mergeTargetPreviewItem.auditStatus !== \"approved\"");

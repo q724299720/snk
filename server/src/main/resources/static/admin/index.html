@@ -543,9 +543,11 @@
       `).join("");
     }
 
-    function clearMergeTargetPreview() {
+    function clearMergeTargetPreview(clearInput = true) {
       mergeTargetPreviewItem = null;
-      document.querySelector("#mergeTargetFoodItemId").value = "";
+      if (clearInput) {
+        document.querySelector("#mergeTargetFoodItemId").value = "";
+      }
       document.querySelector("#mergeTargetPreview").innerHTML = "";
     }
 
@@ -869,6 +871,9 @@
     document.querySelector("#loadPending").addEventListener("click", () => loadFoodItems("pending").catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadReported").addEventListener("click", () => loadFoodItems("reported").catch((error) => setMessage(error.message, true)));
     document.querySelector("#previewMergeTarget").addEventListener("click", () => previewMergeTarget().catch((error) => setMessage(error.message, true)));
+    document.querySelector("#mergeTargetFoodItemId").addEventListener("input", () => {
+      clearMergeTargetPreview(false);
+    });
     document.querySelector("#createWord").addEventListener("click", () => createWord().catch((error) => setMessage(error.message, true)));
     document.querySelector("#saveWord").addEventListener("click", () => updateWord().catch((error) => setMessage(error.message, true)));
     document.querySelector("#cancelWordEdit").addEventListener("click", () => {
