@@ -9,6 +9,7 @@ import com.snk.server.domain.food.FoodModerationService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
+import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,11 +20,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/admin/food-items")
 @Validated
 public class AdminFoodItemController {
+
+	private static final Set<String> ALLOWED_AUDIT_STATUSES = Set.of("pending", "approved", "rejected");
 
 	private final FoodModerationService foodModerationService;
 	private final FoodFeedbackService foodFeedbackService;
@@ -39,7 +43,7 @@ public class AdminFoodItemController {
 		@RequestParam(value = "q", required = false) String query,
 		@RequestParam(value = "limit", defaultValue = "20") @Positive int limit
 	) {
-		return foodModerationService.listFoodItems(auditStatus, query, limit)
+		return foodModerationService.listFoodItems(validateAuditStatus(auditStatus), query, limit)
 			.stream()
 			.map(AdminFoodItemResponse::from)
 			.toList();
@@ -101,5 +105,19 @@ public class AdminFoodItemController {
 		@Valid @RequestBody MergeFoodItemRequest request
 	) {
 		return MergeFoodItemResponse.from(foodModerationService.mergeFoodItem(foodItemId, request.targetFoodItemId()));
+	}
+
+	private String validateAuditStatus(String auditStatus) {
+		if (auditStatus == null) {
+			return null;
+		}
+		String normalizedAuditStatus = auditStatus.trim();
+		if (normalizedAuditStatus.isBlank()) {
+			return null;
+		}
+		if (!ALLOWED_AUDIT_STATUSES.contains(normalizedAuditStatus)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid food item audit status.");
+		}
+		return normalizedAuditStatus;
 	}
 }

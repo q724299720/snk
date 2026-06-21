@@ -73,6 +73,14 @@ class AdminFoodItemControllerTests {
 	}
 
 	@Test
+	void shouldRejectFoodItemListWhenAuditStatusIsInvalid() throws Exception {
+		mockMvc.perform(get("/api/admin/food-items").param("auditStatus", "unknown"))
+			.andExpect(status().isBadRequest());
+
+		verify(foodModerationService, never()).listFoodItems(eq("unknown"), isNull(), anyInt());
+	}
+
+	@Test
 	void shouldReturnFoodItemDetail() throws Exception {
 		when(foodModerationService.getFoodItem(8L))
 			.thenReturn(moderationItem(8L, "Detail Item", 1, "pending"));
