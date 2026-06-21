@@ -23,7 +23,6 @@
 ### 食物搜索
 
 - `GET /api/foods/search?q=`
-- `GET /api/foods/barcode/{code}`
 - `GET /api/foods/{foodItemId}/related`
 - `POST /api/foods/manual`
 - `GET /api/foods/{id}`
@@ -33,15 +32,8 @@
 - `GET /api/foods/search?q=` 当前返回已审核通过的基础食物条目
 - 空白 `q` 直接返回 `400`
 - 当前响应包含 `items` 与 `qualitySignal`
-- `items[*]` 当前最小字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`、`auditStatus`
+- `items[*]` 当前最小字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`、`averageRating`、`auditStatus`
 - `qualitySignal` 当前最小取值：`strong / weak`
-
-条码查询当前约束：
-
-- `GET /api/foods/barcode/{code}` 当前返回单个精确命中条目
-- 空白条码直接返回 `400`
-- 未命中时返回 `404`
-- 当前响应体字段与 `items[*]` 一致，包含 `auditStatus`
 
 相似推荐当前约束：
 
@@ -60,15 +52,12 @@
 - 当前新建条目固定写入：`source = user_generated`、`auditStatus = pending`
 - 当前响应体字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`、`auditStatus`
 - 当前客户端在创建成功后直接进入“记录创建”页，不要求用户重新搜索
-- 当前客户端在扫码未命中时，会携带原始 `barcode` 进入手动创建页，便于后端沉淀包装食品条目
+- MVP 当前不提供扫码入口，`barcode` 仅作为包装食品的可选资料字段保留
 
 ### 图片与识别
 
 - `POST /api/upload/image`
-- `POST /api/recognition/barcode`
 - `POST /api/recognition/ocr`
-- `POST /api/recognition/tasks`
-- `GET /api/recognition/tasks/{id}`
 
 图片上传约束：
 
@@ -94,7 +83,8 @@
 - `POST /api/records` 当前最小请求字段包含：`userId`、`foodItemId`、`sourceType`、`isPublic`、`rating`
 - `comment`、`recordTime` 当前为可选字段
 - 当前 `rating` 允许范围为 `1-5`
-- 当前 `sourceType` 已落地：`text_search / image_search / manual`
+- 当前客户端只应发送：`text_search / manual`
+- 历史服务端约束中仍保留 `image_search`，仅用于兼容旧数据，不作为当前 MVP 入口
 - 当前成功响应返回：`id`、`userId`、`foodItemId`、`sourceType`、`isPublic`、`rating`、`comment`、`likeCount`、`recordTime`、`createdAt`
 
 记录点赞当前约定：
@@ -115,7 +105,6 @@
 - 用户记录审核
 - 用户报错 / 纠错处理
 - 标签体系管理
-- 识别任务监控
 - 统计报表
 - `GET /api/admin/food-items/pending`
 - `GET /api/admin/food-items?auditStatus=&q=&limit=`
@@ -138,6 +127,7 @@
 
 - `GET /api/admin/stats` 用于返回后台治理的汇总概览
 - 当前最小响应字段包含：`totalFoodItems`、`pendingFoodItems`、`approvedFoodItems`、`rejectedFoodItems`、`reportedFoodItems`、`totalRecognitionTasks`、`processingRecognitionTasks`、`completedRecognitionTasks`、`failedRecognitionTasks`、`enabledReviewWords`、`disabledReviewWords`
+- 识别任务统计字段仅兼容历史服务端预留能力，当前 Android MVP 不再创建图片识别任务
 - 统计口径只做后台管理概览，不承诺分页或趋势图
 
 后台条目治理当前约定：
@@ -165,18 +155,18 @@
 - 审计日志返回 `beforeValue` 与 `afterValue` 的结构化 JSON 快照
 - 词典后台修改后立即生效，后续审核任务直接读取最新提交数据
 
-识别任务监控接口：
+历史识别任务监控接口：
 
 - `GET /api/admin/recognition-tasks?status=&userId=&limit=`
 - `GET /api/admin/recognition-tasks/{taskId}`
 
-识别任务监控当前约定：
+历史识别任务监控当前约定：
 
 - 列表支持按 `status` 和 `userId` 过滤，`limit` 默认 `20`
 - 列表按创建时间倒序返回，最多返回 `100` 条
 - 返回字段至少包含：`id`、`userId`、`inputImageUrl`、`status`、`topCandidates`、`selectedFoodItemId`、`confidence`、`createdAt`、`finishedAt`、`statusReason`
-- 监控接口与客户端 `POST /api/recognition/tasks`、`GET /api/recognition/tasks/{id}` 共用同一任务模型
-- 后台可直接观察 `processing / completed / failed` 任务状态分布
+- 当前 Android MVP 不再调用图片识别任务创建接口
+- 该接口仅用于查看历史预留任务数据，后续若服务端正式下线图片识别任务，应同步移除此段
 
 用户报错接口当前约定：
 
@@ -190,7 +180,7 @@
 ### 本地优先原则
 
 - 本地 ML Kit OCR 成功时，客户端优先直接调用 `GET /api/foods/search?q=` 做文本召回
-- 有条形码时，优先调用条形码链路，不进入 OCR 链路
+- 当前客户端没有条码识别入口，不进入条码查询链路
 
 ### 服务端 OCR 兜底原则
 
@@ -209,22 +199,12 @@
 - 当前若服务端 OCR provider 未配置，返回 `503`
 - 当前后端已预留 provider 抽象，MVP 首版默认支持 `disabled / stub` 两种模式，后续再接真实云 OCR
 
-### 图像识别兜底原则
+### 非 MVP 识别边界
 
-`POST /api/recognition/tasks` 主要用于以下场景：
-
-- 无条形码
-- 本地 OCR 与服务端 OCR 都未召回有效候选
-- 需要给自然食物图片返回候选食物列表
-- 客户端先调用 `POST /api/upload/image` 上传原图，再用返回的 `resourceUrl` 创建识别任务
-- `POST /api/recognition/tasks` 当前最小请求字段为 `userId`、`inputImageUrl`
-- `hintQuery` 当前为可选字段，用于把本地 OCR 或服务端 OCR 已提取出的文本提示继续透传给图片识别任务，提升兜底链路召回率
-- `POST /api/recognition/tasks` 与 `GET /api/recognition/tasks/{id}` 当前最小响应字段包含：`id`、`status`、`topCandidates`、`selectedFoodItemId`、`confidence`、`createdAt`、`finishedAt`、`statusReason`
-- 当前 `status` 至少支持 `processing / completed / failed`
-- 当任务仍处于 `processing` 时，客户端可以继续轮询 `GET /api/recognition/tasks/{id}`
-- MVP 当前允许服务端在创建任务时同步完成 provider 调用与候选回填，因此首个 `POST` 响应即可直接返回 `completed` 或 `failed`
-- Android 端当前已接入 “本地 OCR -> 服务端 OCR -> 图片识别任务 -> 手动创建” 自动回退链路
-- 当前服务端会优先使用 `hintQuery` 做一次文本召回，再继续消费图片识别 provider 返回的候选查询词
+- 当前 Android MVP 不做条码识别
+- 当前 Android MVP 不做以图搜图或图片识别任务
+- 当前 Android MVP 的图片入口只用于 OCR 文本提取，提取结果统一回填主搜索框
+- 服务端历史预留的条码查询和图片识别任务接口不再作为 App 端当前主链路接口
 
 ## 候选质量信号
 
@@ -258,6 +238,7 @@
 | 2026-06-13 | Codex | 回填记录创建接口的最小请求字段与成功响应约束 | 当前 Phase 2 已开始落地搜索命中后的远程记录创建闭环 |
 | 2026-06-13 | Codex | 补充图片上传 `resourceUrl` 的相对 / 绝对地址约束 | 真机联调与宝塔反向代理部署需要稳定的外部可访问资源地址策略 |
 | 2026-06-14 | Codex | 补充当前生产域名 | 已确认图片资源与 App 真机访问统一使用 `https://snk.qiuxinmin.cn` |
+| 2026-06-21 | Codex | 收口 App 端识别接口边界 | 当前 Android MVP 已去掉条码与图片识别任务入口，识别链路固定为名称搜索、OCR 文本辅助与手动创建 |
 | 2026-06-14 | Codex | 补充手动创建待审核条目接口与 `auditStatus` 响应字段 | Phase 3 已落地搜索失败后的手动创建条目闭环，接口文档需与实现对齐 |
 | 2026-06-14 | Codex | 补充手动创建条目的可选 `barcode` 入参与扫码未命中的前端流转 | Phase 3 需覆盖包装食品扫码未命中的 UGC 沉淀场景 |
 | 2026-06-14 | Codex | 补充服务端 OCR 接口的 multipart 入参、响应字段与 provider 降级语义 | Phase 3 已落地本地 OCR 失败后的服务端 OCR 回退链路 |

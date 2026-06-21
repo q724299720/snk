@@ -93,7 +93,7 @@
 - `id`
 - `user_id`
 - `food_item_id`
-- `source_type`：`text_search / image_search / manual`
+- `source_type`：当前客户端使用 `text_search / manual`；历史约束中保留 `image_search` 仅用于兼容旧数据
 - `sync_status`：`draft / syncing / synced / failed`
 - `is_public`
 - `rating`
@@ -294,3 +294,4 @@
 | 2026-06-13 | Codex | 为 `users` 补充匿名安装标识与最近访问时间字段 | 当前 Phase 1 已开始落地匿名用户初始化接口，需要让数据库模型与实现对齐 |
 | 2026-06-14 | Codex | 为 `FoodItem` 补充 `created_by_user_id` 字段说明 | Phase 3 已落地手动创建待审核条目，需要记录创建者归属与可见性依赖字段 |
 | 2026-06-14 | Codex | 为 `FoodRecord.like_count` 补充字段说明 | Phase 5 已落地记录点赞聚合计数，需要同步数据模型与后端响应 |
+| 2026-06-21 | Codex | 收口 `FoodRecord.source_type` 当前客户端取值 | 当前 Android MVP 已去掉图片识别任务入口，`image_search` 仅作为历史兼容值保留 |

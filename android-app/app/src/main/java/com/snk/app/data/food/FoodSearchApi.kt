@@ -17,11 +17,6 @@ interface FoodSearchApi {
         @Query("q") query: String,
     ): FoodSearchResponse
 
-    @GET("/api/foods/barcode/{code}")
-    suspend fun lookupFoodByBarcode(
-        @Path("code") barcode: String,
-    ): FoodSearchItemResponse
-
     @GET("/api/foods/{foodItemId}/related")
     suspend fun getRelatedFoods(
         @Path("foodItemId") foodItemId: Long,
@@ -45,22 +40,6 @@ interface FoodSearchApi {
         @Part file: MultipartBody.Part,
         @Part("clientRecognizedText") clientRecognizedText: String? = null,
     ): OcrRecognitionResponse
-
-    @Multipart
-    @POST("/api/upload/image")
-    suspend fun uploadImage(
-        @Part file: MultipartBody.Part,
-    ): UploadImageResponse
-
-    @POST("/api/recognition/tasks")
-    suspend fun createRecognitionTask(
-        @Body request: CreateRecognitionTaskRequest,
-    ): RecognitionTaskResponse
-
-    @GET("/api/recognition/tasks/{taskId}")
-    suspend fun getRecognitionTask(
-        @Path("taskId") taskId: Long,
-    ): RecognitionTaskResponse
 }
 
 @Serializable
@@ -128,32 +107,6 @@ data class OcrRecognitionResponse(
 )
 
 @Serializable
-data class UploadImageResponse(
-    @SerialName("objectKey")
-    val objectKey: String,
-    @SerialName("resourceUrl")
-    val resourceUrl: String,
-    @SerialName("thumbnailObjectKey")
-    val thumbnailObjectKey: String? = null,
-    @SerialName("thumbnailUrl")
-    val thumbnailUrl: String? = null,
-    @SerialName("contentType")
-    val contentType: String,
-    @SerialName("size")
-    val size: Long,
-)
-
-@Serializable
-data class CreateRecognitionTaskRequest(
-    @SerialName("userId")
-    val userId: Long,
-    @SerialName("inputImageUrl")
-    val inputImageUrl: String,
-    @SerialName("hintQuery")
-    val hintQuery: String? = null,
-)
-
-@Serializable
 data class CreateFoodReportRequest(
     @SerialName("userId")
     val userId: Long,
@@ -169,28 +122,4 @@ data class FoodReportResponse(
     val reportCount: Int,
     @SerialName("auditStatus")
     val auditStatus: String,
-)
-
-@Serializable
-data class RecognitionTaskResponse(
-    @SerialName("id")
-    val id: Long,
-    @SerialName("userId")
-    val userId: Long,
-    @SerialName("inputImageUrl")
-    val inputImageUrl: String,
-    @SerialName("status")
-    val status: String,
-    @SerialName("topCandidates")
-    val topCandidates: List<FoodSearchItemResponse> = emptyList(),
-    @SerialName("selectedFoodItemId")
-    val selectedFoodItemId: Long? = null,
-    @SerialName("confidence")
-    val confidence: String? = null,
-    @SerialName("createdAt")
-    val createdAt: String? = null,
-    @SerialName("finishedAt")
-    val finishedAt: String? = null,
-    @SerialName("statusReason")
-    val statusReason: String? = null,
 )

@@ -85,50 +85,6 @@ class FoodSearchRepositoryTest {
     }
 
     @Test
-    fun `lookupByBarcode returns item when backend succeeds`() = runTest {
-        server.enqueue(
-            MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody(
-                    """
-                    {
-                      "id": 1,
-                      "name": "Lays Cucumber Chips",
-                      "itemType": "packaged_product",
-                      "category": "snack",
-                      "subcategory": "chips",
-                      "brand": "Lays",
-                      "barcode": "6900000000011",
-                      "coverImageUrl": null,
-                      "auditStatus": "approved"
-                    }
-                    """.trimIndent(),
-                ),
-        )
-
-        val result = repository.lookupByBarcode("6900000000011")
-
-        assertTrue(result is FoodBarcodeLookupResult.Success)
-        assertEquals("Lays Cucumber Chips", (result as FoodBarcodeLookupResult.Success).item.name)
-    }
-
-    @Test
-    fun `lookupByBarcode returns not found when backend misses`() = runTest {
-        server.enqueue(MockResponse().setResponseCode(404))
-
-        val result = repository.lookupByBarcode("0000000000000")
-
-        assertTrue(result is FoodBarcodeLookupResult.NotFound)
-    }
-
-    @Test
-    fun `lookupByBarcode returns failure for blank input`() = runTest {
-        val result = repository.lookupByBarcode(" ")
-
-        assertTrue(result is FoodBarcodeLookupResult.Failure)
-    }
-
-    @Test
     fun `createManualFoodItem returns pending item when backend succeeds`() = runTest {
         server.enqueue(
             MockResponse()
@@ -309,83 +265,6 @@ class FoodSearchRepositoryTest {
         assertTrue(body.contains("name=\"clientRecognizedText\""))
         assertTrue(body.contains("Lays Cucumber Chips"))
         assertTrue(body.contains("filename=\"chips.png\""))
-    }
-
-    @Test
-    fun `searchByImageRecognition uploads image and returns candidates when backend succeeds`() = runTest {
-        server.enqueue(
-            MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setResponseCode(201)
-                .setBody(
-                    """
-                    {
-                      "objectKey": "images/demo.png",
-                      "resourceUrl": "https://snk.qiuxinmin.cn/uploads/images/demo.png",
-                      "thumbnailObjectKey": "images/demo_thumb.png",
-                      "thumbnailUrl": "https://snk.qiuxinmin.cn/uploads/images/demo_thumb.png",
-                      "contentType": "image/png",
-                      "size": 11
-                    }
-                    """.trimIndent(),
-                ),
-        )
-        server.enqueue(
-            MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setResponseCode(201)
-                .setBody(
-                    """
-                    {
-                      "id": 18,
-                      "userId": 2,
-                      "inputImageUrl": "https://snk.qiuxinmin.cn/uploads/images/demo.png",
-                      "status": "completed",
-                      "topCandidates": [
-                        {
-                          "id": 1,
-                          "name": "Lays Cucumber Chips",
-                          "itemType": "packaged_product",
-                          "category": "snack",
-                          "subcategory": "chips",
-                          "brand": "Lays",
-                          "barcode": "6900000000011",
-                          "coverImageUrl": null,
-                          "auditStatus": "approved"
-                        }
-                      ],
-                      "selectedFoodItemId": 1,
-                      "confidence": "0.8500",
-                      "createdAt": "2026-06-14T12:00:00Z",
-                      "finishedAt": "2026-06-14T12:00:01Z",
-                      "statusReason": null
-                    }
-                    """.trimIndent(),
-                ),
-        )
-
-        val result = repository.searchByImageRecognition(
-            userId = 2L,
-            imageBytes = "png-content".toByteArray(),
-            fileName = "chips.png",
-            contentType = "image/png",
-            hintQuery = "乐事 薯片 黄瓜味",
-        )
-
-        assertTrue(result is FoodImageRecognitionResult.Success)
-        val success = result as FoodImageRecognitionResult.Success
-        assertEquals("0.8500", success.confidence)
-        assertEquals("Lays Cucumber Chips", success.result.items.first().name)
-        assertEquals("https://snk.qiuxinmin.cn/uploads/images/demo_thumb.png", success.previewImageUrl)
-
-        val uploadRequest = server.takeRequest()
-        assertEquals("/api/upload/image", uploadRequest.path)
-        val createTaskRequest = server.takeRequest()
-        assertEquals("/api/recognition/tasks", createTaskRequest.path)
-        val body = Buffer().write(createTaskRequest.body.readByteArray()).readUtf8()
-        assertTrue(body.contains("\"userId\":2"))
-        assertTrue(body.contains("\"inputImageUrl\":\"https://snk.qiuxinmin.cn/uploads/images/demo.png\""))
-        assertTrue(body.contains("\"hintQuery\":\"乐事 薯片 黄瓜味\""))
     }
 
     @Test

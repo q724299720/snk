@@ -40,7 +40,7 @@
 
 ## 手动创建 pending 条目最小字段
 
-当搜索、扫码、OCR、图像识别都失败时，用户手动创建 `pending FoodItem` 的最小必填字段为：
+当名称搜索或 OCR 文本回填后仍未命中时，用户手动创建 `pending FoodItem` 的最小必填字段为：
 
 - `name`
 - `item_type`
@@ -188,3 +188,4 @@ name,item_type,category,subcategory,brand,barcode,alias,search_keywords,tags,sou
 | 2026-06-13 | Codex | 明确自动拒绝阈值不进入热更新词典配置 | 已确认 MVP 阶段只允许在线维护词典，不在线调整阈值 |
 | 2026-06-13 | Codex | 为种子数据补充 `item_type` 字段并登记仓库启动样本路径 | 对齐既有 `FoodItem` 建模，支撑 Phase 0 样本整理与后续导入脚本开发 |
 | 2026-06-13 | Codex | 补充导入脚本骨架与条码输入模板路径 | Phase 0 已进入导入脚本方案阶段，需要将仓库内脚本产物纳入种子数据规范 |
+| 2026-06-21 | Codex | 收口手动创建触发条件描述 | 当前 Android MVP 已去掉扫码与图片识别任务入口，手动创建兜底来自名称搜索或 OCR 文本未命中 |

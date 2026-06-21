@@ -6,7 +6,7 @@
 
 ## 顶层架构
 
-建议采用“安卓客户端 + 远程 API 服务 + PostgreSQL + 对象存储 + 图像识别服务 + 管理后台”的结构。
+建议采用“安卓客户端 + 远程 API 服务 + PostgreSQL + 对象存储 + OCR 辅助能力 + 管理后台”的结构。
 
 ```text
 [Android App]
@@ -16,7 +16,7 @@
 [Backend API Gateway / App Server]
    |------ [PostgreSQL]
    |------ [Object Storage]
-   |------ [Image Recognition Service]
+   |------ [OCR Provider Adapter]
    |
    v
 [Admin Web Console]
@@ -26,7 +26,7 @@
 
 - 使用 `All-in-PostgreSQL`
 - 文本搜索先用 `pg_trgm`
-- 向量检索先用 `pgvector`
+- 向量检索不进入当前 MVP 主线，后续确认需要以图搜图时再评估
 - 不在 MVP 首发阶段引入 Elasticsearch / OpenSearch / 独立向量数据库
 - MQ 与缓存能力作为后续扩容选项，不作为首发依赖
 
@@ -36,10 +36,8 @@
 
 - UI 展示与交互
 - 相机 / 相册接入
-- 条形码扫描
 - 本地 OCR 和基础图片校验
-- 图片预处理
-- 优先使用本地识别结果发起搜索
+- OCR 文本回填搜索框
 - 用户登录态管理
 - 搜索、展示、记录提交
 - 记录分享与系统分享面板唤起
@@ -54,7 +52,6 @@
 - 记录、评分、标签等业务数据
 - 图片存储与访问控制
 - 缩略图生成与图片派生资源管理
-- 图像识别与相似图检索
 - 服务端 OCR provider 抽象与配置化切换
 - 审核、统计、推荐、运营配置
 
@@ -71,7 +68,7 @@
 - 异步：Kotlin Coroutines + Flow
 - 相机：CameraX
 - 后台任务：WorkManager
-- 本地视觉能力：ML Kit（条形码扫描 / OCR）
+- 本地视觉能力：ML Kit OCR
 - 文件上传：OkHttp Multipart
 
 ## 服务端技术选型
@@ -121,7 +118,7 @@ android-app/
 - `core/model`：DTO / VO / Domain Model
 - `core/designsystem`：主题、颜色、间距、组件规范
 - `feature/search`：文本搜索与结果页
-- `feature/recognition`：拍照、扫码、OCR、候选确认
+- `feature/recognition`：拍照 / 相册取图、OCR 文本提取、搜索框回填
 - `feature/record`：记录创建、评分、草稿、历史记录
 - `sync`：WorkManager 任务、离线补传、上传重试
 
@@ -194,7 +191,7 @@ server/
 - `api`：对 App 暴露接口
 - `domain`：核心业务规则
 - `infrastructure`：数据库、对象存储、搜索实现
-- `recognition`：图像识别与检索能力封装
+- `recognition`：OCR provider 适配与历史识别任务兼容能力
 - `admin`：后台接口与运营能力
 
 MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 `pgvector` 查询实现。
@@ -293,9 +290,8 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 - 已落地 `POST /api/recognition/ocr` 服务端 OCR 兜底接口
 - 已在服务端引入 `ServerOcrProvider` 抽象与 `snk.recognition.ocr.*` 配置项，当前默认 `disabled`，开发期可切到 `stub`
 - 已在安卓端 OCR 页面接通“本地 OCR -> 服务端 OCR -> 手动创建”回退链路
-- 已落地 `RecognitionTaskService`、`RecognitionTaskRepository` 与 `POST /api/recognition/tasks` / `GET /api/recognition/tasks/{id}` 图片识别任务接口
-- 已在服务端引入 `ImageRecognitionTaskProvider` 抽象与 `snk.recognition.image.*` 配置项，当前默认 `disabled`，开发期可切到 `stub`
-- 已在安卓端 OCR 页面接通“上传图片 -> 创建识别任务 -> 候选确认 -> 手动创建”回退链路，并复用统一候选确认页
+- 服务端历史预留 `RecognitionTaskService`、`RecognitionTaskRepository` 与图片识别任务接口，仅作为兼容能力保留
+- Android 端当前已去掉条码扫描、图片识别任务和候选确认页，OCR 结果统一回填主搜索框
 - 已补充后台治理基础能力的最小落地：`GET /api/admin/food-items/pending`、`GET /api/admin/food-items/reported`、`POST /api/admin/food-items/{foodItemId}/approve`、`POST /api/admin/food-items/{foodItemId}/reject`
 - 已补充后台食物条目管理能力的最小落地：`GET /api/admin/food-items`、`GET /api/admin/food-items/{foodItemId}`
 - 已补充后台报错处理能力的最小落地：`POST /api/admin/food-items/{foodItemId}/clear-reports`
@@ -338,6 +334,7 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 2026-06-13 | Codex | 明确自动拒绝阈值继续留在代码配置 | 已确认 MVP 阶段需限制后台热更新范围，避免审核规则过度可变 |
 | 2026-06-13 | Codex | 回填服务端构建工具与 Phase 1 首个落地产物 | 当前仓库已初始化 `server/` 工程并落地 Flyway 迁移目录与审核词典基础迁移 |
 | 2026-06-13 | Codex | 回填 Phase 1 第二个落地产物 | 当前仓库已新增核心业务表迁移与 PostgreSQL 容器集成测试 |
+| 2026-06-21 | Codex | 收口 Android 端识别架构说明 | 当前 App 已去掉条码扫描、图片识别任务与候选确认页，保留名称搜索、OCR 文本辅助和手动创建主链路 |
 | 2026-06-13 | Codex | 补充 Docker 不可用时的集成测试降级说明 | 当前环境无法启动 Docker Engine，需要让测试策略与真实环境约束保持一致 |
 | 2026-06-13 | Codex | 回填 Phase 1 第三个落地产物 | 当前仓库已开始落地游客模式的最小服务端身份闭环 |
 | 2026-06-13 | Codex | 回填 Phase 1 第四个落地产物 | 当前仓库已开始落地上传接口与开发环境对象存储适配 |

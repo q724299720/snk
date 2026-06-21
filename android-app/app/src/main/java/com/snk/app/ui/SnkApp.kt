@@ -19,7 +19,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -33,9 +32,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.snk.app.SnkApplication
 import com.snk.app.data.auth.AnonymousSessionResult
-import com.snk.app.data.food.FoodReportResult
 import com.snk.app.data.food.FoodSearchItem
-import kotlinx.coroutines.launch
 
 private sealed class SnkDestination(
     val route: String,
@@ -53,13 +50,6 @@ private val destinations = listOf(
     SnkDestination.Profile,
 )
 
-private fun SessionUiState.userIdOrNull(): Long? = when (this) {
-    is SessionUiState.Remote -> session.userId
-    is SessionUiState.Cached -> session.userId
-    SessionUiState.Loading -> null
-    is SessionUiState.Failure -> null
-}
-
 @Composable
 fun SnkApp() {
     val application = LocalContext.current.applicationContext as SnkApplication
@@ -70,9 +60,6 @@ fun SnkApp() {
     var manualCreateSeedBarcode by remember { mutableStateOf("") }
     var searchQuerySeed by remember { mutableStateOf<String?>(null) }
     var searchSuggestedQueries by remember { mutableStateOf<List<String>>(emptyList()) }
-    var candidateConfirmationState by remember { mutableStateOf<CandidateConfirmationState?>(null) }
-    var candidateReportMessage by remember { mutableStateOf<String?>(null) }
-    val coroutineScope = rememberCoroutineScope()
     val sessionState by produceState<SessionUiState>(
         initialValue = SessionUiState.Loading,
         key1 = retryToken,
@@ -87,8 +74,6 @@ fun SnkApp() {
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute != "record_create" &&
-        currentRoute != "candidate_confirm" &&
-        currentRoute != "barcode_scan" &&
         currentRoute != "ocr_recognition" &&
         currentRoute != "manual_food_create"
 
@@ -101,12 +86,6 @@ fun SnkApp() {
     fun openManualCreate(seedName: String) {
         manualCreateSeedName = seedName
         manualCreateSeedBarcode = ""
-        navController.navigate("manual_food_create")
-    }
-
-    fun openManualCreateFromBarcode(barcode: String) {
-        manualCreateSeedName = ""
-        manualCreateSeedBarcode = barcode
         navController.navigate("manual_food_create")
     }
 
@@ -206,7 +185,7 @@ fun SnkApp() {
                             submissionCoordinator = application.container.foodRecordSubmissionCoordinator,
                             onSwitchRecommendedFood = { item ->
                                 selectedFood = item
-                                selectedSourceType = "related_recommendation"
+                                selectedSourceType = "text_search"
                             },
                             onBackToSearch = {
                                 navController.popBackStack()
@@ -217,87 +196,6 @@ fun SnkApp() {
                             },
                         )
                     }
-                }
-                composable("candidate_confirm") {
-                    val state = candidateConfirmationState
-                    if (state == null) {
-                        SearchScreen(
-                            sessionState = sessionState,
-                            onCreateRecord = { item ->
-                                openRecordCreate(item, "text_search")
-                            },
-                            onOpenManualCreate = ::openManualCreate,
-                            onOpenOcrRecognition = {
-                                navController.navigate("ocr_recognition")
-                            },
-                            externalQuerySeed = searchQuerySeed,
-                            externalSuggestedQueries = searchSuggestedQueries,
-                            onExternalQueryConsumed = {
-                                searchQuerySeed = null
-                                searchSuggestedQueries = emptyList()
-                            },
-                        )
-                    } else {
-                        CandidateConfirmationScreen(
-                            state = state,
-                            onSelectCandidate = { item ->
-                                selectedFood = item
-                                selectedSourceType = state.sourceType
-                                navController.navigate("record_create") {
-                                    popUpTo("candidate_confirm") {
-                                        inclusive = true
-                                    }
-                                }
-                            },
-                            onReportCandidate = { item ->
-                                val userId = sessionState.userIdOrNull()
-                                if (userId == null) {
-                                    candidateReportMessage = "游客身份尚未初始化，暂时无法提交纠错。"
-                                } else {
-                                    coroutineScope.launch {
-                                        candidateReportMessage = when (
-                                            val result = application.container.foodSearchRepository.reportFoodItem(
-                                                userId = userId,
-                                                foodItemId = item.id,
-                                            )
-                                        ) {
-                                            is FoodReportResult.Success -> "已提交纠错信号，当前 reportCount = ${result.reportCount}"
-                                            is FoodReportResult.Failure -> result.message
-                                        }
-                                    }
-                                }
-                            },
-                            onOpenManualCreate = ::openManualCreate,
-                            onBack = {
-                                navController.popBackStack()
-                            },
-                            reportMessage = candidateReportMessage,
-                        )
-                    }
-                }
-                composable("barcode_scan") {
-                    BarcodeScanScreen(
-                        onFoodMatched = { item ->
-                            candidateConfirmationState = CandidateConfirmationState(
-                                sourceLabel = "条码命中确认",
-                                title = "已根据条形码精确命中条目",
-                                description = "条码命中优先级最高，确认名称和分类无误后再继续记录。",
-                                items = listOf(item),
-                                qualitySignal = "strong",
-                                sourceType = "image_search",
-                                matchedQuery = item.barcode,
-                            )
-                            navController.navigate("candidate_confirm") {
-                                popUpTo("barcode_scan") {
-                                    inclusive = true
-                                }
-                            }
-                        },
-                        onOpenManualCreate = ::openManualCreateFromBarcode,
-                        onBack = {
-                            navController.popBackStack()
-                        },
-                    )
                 }
                 composable("ocr_recognition") {
                     OcrRecognitionScreen(

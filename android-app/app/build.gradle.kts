@@ -77,7 +77,6 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.10.2")
     implementation("com.google.android.material:material:1.13.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
-    implementation("com.google.mlkit:barcode-scanning:17.3.0")
     implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")

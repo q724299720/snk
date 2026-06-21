@@ -1,7 +1,6 @@
 package com.snk.app.data.food
 
 import java.io.IOException
-import kotlinx.coroutines.delay
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -24,22 +23,6 @@ class FoodSearchRepository(
             )
         } catch (exception: Exception) {
             FoodSearchResult.Failure(exception.asUserFacingMessage())
-        }
-    }
-
-    suspend fun lookupByBarcode(barcode: String): FoodBarcodeLookupResult {
-        val normalizedBarcode = barcode.trim()
-        if (normalizedBarcode.isBlank()) {
-            return FoodBarcodeLookupResult.Failure("请输入有效条码。")
-        }
-
-        return try {
-            FoodBarcodeLookupResult.Success(api.lookupFoodByBarcode(normalizedBarcode).toModel())
-        } catch (exception: Exception) {
-            when {
-                exception is HttpException && exception.code() == 404 -> FoodBarcodeLookupResult.NotFound(normalizedBarcode)
-                else -> FoodBarcodeLookupResult.Failure(exception.asBarcodeLookupMessage())
-            }
         }
     }
 
@@ -203,45 +186,6 @@ class FoodSearchRepository(
             )
         }
     }
-
-    suspend fun searchByImageRecognition(
-        userId: Long,
-        imageBytes: ByteArray,
-        fileName: String,
-        contentType: String,
-        hintQuery: String? = null,
-    ): FoodImageRecognitionResult {
-        if (imageBytes.isEmpty()) {
-            return FoodImageRecognitionResult.Failure("没有可上传的图片内容，暂时无法继续图片识别。")
-        }
-
-        return try {
-            val imagePart = MultipartBody.Part.createFormData(
-                "file",
-                fileName,
-                imageBytes.toRequestBody(contentType.toMediaTypeOrNull()),
-            )
-            val uploadResponse = api.uploadImage(imagePart)
-            val previewImageUrl = uploadResponse.thumbnailUrl?.ifBlank { null } ?: uploadResponse.resourceUrl
-            var task = api.createRecognitionTask(
-                CreateRecognitionTaskRequest(
-                    userId = userId,
-                    inputImageUrl = uploadResponse.resourceUrl,
-                    hintQuery = hintQuery?.trim()?.ifBlank { null },
-                ),
-            )
-            repeat(3) {
-                if (!task.status.equals("processing", ignoreCase = true)) {
-                    return@repeat
-                }
-                delay(300)
-                task = api.getRecognitionTask(task.id)
-            }
-            task.toImageRecognitionResult(previewImageUrl)
-        } catch (exception: Exception) {
-            FoodImageRecognitionResult.Failure(exception.asImageRecognitionMessage())
-        }
-    }
 }
 
 data class FoodSearchItem(
@@ -256,14 +200,6 @@ data class FoodSearchItem(
     val averageRating: Double?,
     val auditStatus: String,
 )
-
-sealed interface FoodBarcodeLookupResult {
-    data class Success(val item: FoodSearchItem) : FoodBarcodeLookupResult
-
-    data class NotFound(val barcode: String) : FoodBarcodeLookupResult
-
-    data class Failure(val message: String) : FoodBarcodeLookupResult
-}
 
 sealed interface ManualFoodCreateResult {
     data class Success(val item: FoodSearchItem) : ManualFoodCreateResult
@@ -301,23 +237,6 @@ sealed interface FoodOcrSearchResult {
     ) : FoodOcrSearchResult
 }
 
-sealed interface FoodImageRecognitionResult {
-    data class Success(
-        val imageUrl: String,
-        val previewImageUrl: String,
-        val confidence: String?,
-        val result: FoodSearchResult.Success,
-    ) : FoodImageRecognitionResult
-
-    data class NoMatch(
-        val imageUrl: String,
-        val previewImageUrl: String,
-        val confidence: String?,
-    ) : FoodImageRecognitionResult
-
-    data class Failure(val message: String) : FoodImageRecognitionResult
-}
-
 sealed interface FoodSearchResult {
     data class Success(
         val items: List<FoodSearchItem>,
@@ -346,12 +265,6 @@ private fun FoodSearchItemResponse.toModel(): FoodSearchItem = FoodSearchItem(
     auditStatus = auditStatus,
 )
 
-private fun Exception.asBarcodeLookupMessage(): String = when (this) {
-    is IOException -> "无法连接服务端条码接口。"
-    is HttpException -> "服务端条码查询暂时不可用。"
-    else -> "条码查询失败，请稍后重试。"
-}
-
 private fun Exception.asManualCreateMessage(): String = when (this) {
     is IOException -> "无法连接服务端，暂时不能创建待审核条目。"
     is HttpException -> "服务端拒绝了这次待审核条目创建。"
@@ -372,49 +285,4 @@ private fun Exception.asServerOcrMessage(): String = when (this) {
         "服务端 OCR 暂时不可用，请稍后重试。"
     }
     else -> "服务端 OCR 识别失败，请稍后重试。"
-}
-
-private fun RecognitionTaskResponse.toImageRecognitionResult(previewImageUrl: String): FoodImageRecognitionResult {
-    val mappedItems = topCandidates.map(FoodSearchItemResponse::toModel)
-    return when {
-        status.equals("completed", ignoreCase = true) && mappedItems.isNotEmpty() -> {
-            FoodImageRecognitionResult.Success(
-                imageUrl = inputImageUrl,
-                previewImageUrl = previewImageUrl,
-                confidence = confidence,
-                result = FoodSearchResult.Success(
-                    items = mappedItems,
-                    qualitySignal = if (mappedItems.size == 1) "strong" else "weak",
-                ),
-            )
-        }
-
-        status.equals("completed", ignoreCase = true) -> {
-            FoodImageRecognitionResult.NoMatch(
-                imageUrl = inputImageUrl,
-                previewImageUrl = previewImageUrl,
-                confidence = confidence,
-            )
-        }
-
-        status.equals("failed", ignoreCase = true) -> {
-            FoodImageRecognitionResult.Failure(
-                statusReason?.ifBlank { null } ?: "图片识别任务执行失败，请稍后重试。",
-            )
-        }
-
-        else -> {
-            FoodImageRecognitionResult.Failure("图片识别任务仍在处理中，请稍后重试。")
-        }
-    }
-}
-
-private fun Exception.asImageRecognitionMessage(): String = when (this) {
-    is IOException -> "无法连接服务端图片识别链路，请稍后再试或直接手动创建。"
-    is HttpException -> if (code() == 503) {
-        "服务端图片识别尚未配置，当前先使用手动创建兜底。"
-    } else {
-        "服务端图片识别暂时不可用，请稍后重试。"
-    }
-    else -> "图片识别失败，请稍后重试。"
 }
