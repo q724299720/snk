@@ -389,3 +389,15 @@
 - Food search first uses the original query string.
 - If the original spaced query misses, the server retries with a compacted no-space query.
 - Results are de-duplicated by food item ID before being returned to the App.
+
+## Phase 2 Addendum: Record Detail And Edit
+
+- Homepage recent-record cards expose an `编辑记录` action for the current user's own records.
+- The record edit page allows changing `rating`, `comment`, and `isPublic`.
+- Existing record images are displayed read-only in this increment.
+- Backend detail/update APIs enforce owner-only access and preserve existing record images.
+- Increment tests must cover service/controller owner checks, Android repository PUT requests, edit-page feedback, APK build, ADB launch, and API connectivity.
+
+| Date | Author | Scope | Reason |
+| --- | --- | --- | --- |
+| 2026-06-21 | Codex | Phase 2 record detail/edit increment | Complete the missing recent-record detail and owner edit loop |

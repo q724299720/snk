@@ -3,12 +3,15 @@ package com.snk.server.api.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.snk.server.domain.record.FoodRecordUpdateCommand;
 import com.snk.server.domain.record.FoodRecordResult;
 import com.snk.server.domain.record.FoodRecordService;
 import com.snk.server.domain.record.FoodRecordCommentResult;
@@ -17,6 +20,7 @@ import com.snk.server.domain.record.FoodRecordImageValue;
 import com.snk.server.infrastructure.storage.StorageProperties;
 import java.time.OffsetDateTime;
 import java.util.List;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -44,6 +48,102 @@ class FoodRecordControllerTests {
 		StorageProperties storageProperties() {
 			return new StorageProperties();
 		}
+	}
+
+	@Test
+	void shouldGetOwnRecordDetail() throws Exception {
+		when(foodRecordService.getRecordForUser(1L, 100L)).thenReturn(
+			new FoodRecordResult(
+				1L,
+				100L,
+				200L,
+				"text_search",
+				false,
+				(short) 4,
+				"old comment",
+				0,
+				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+				List.of(
+					new FoodRecordImageValue(
+						"https://snk.qiuxinmin.cn/uploads/records/noodle.jpg",
+						"https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg"
+					)
+				)
+			)
+		);
+
+		mockMvc.perform(get("/api/records/1").param("userId", "100"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.id").value(1))
+			.andExpect(jsonPath("$.userId").value(100))
+			.andExpect(jsonPath("$.rating").value(4))
+			.andExpect(jsonPath("$.comment").value("old comment"))
+			.andExpect(jsonPath("$.images[0].thumbnailUrl")
+				.value("https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg"));
+	}
+
+	@Test
+	void shouldUpdateOwnRecord() throws Exception {
+		when(foodRecordService.updateRecord(any())).thenReturn(
+			new FoodRecordResult(
+				1L,
+				100L,
+				200L,
+				"text_search",
+				true,
+				(short) 5,
+				"better after edit",
+				0,
+				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+				OffsetDateTime.parse("2026-06-13T23:30:00Z"),
+				List.of()
+			)
+		);
+
+		mockMvc.perform(
+			put("/api/records/1")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "userId": 100,
+					  "rating": 5,
+					  "comment": "better after edit",
+					  "isPublic": true
+					}
+					""")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.id").value(1))
+			.andExpect(jsonPath("$.isPublic").value(true))
+			.andExpect(jsonPath("$.rating").value(5))
+			.andExpect(jsonPath("$.comment").value("better after edit"));
+
+		ArgumentCaptor<FoodRecordUpdateCommand> captor = ArgumentCaptor.forClass(FoodRecordUpdateCommand.class);
+		verify(foodRecordService).updateRecord(captor.capture());
+		FoodRecordUpdateCommand command = captor.getValue();
+		org.assertj.core.api.Assertions.assertThat(command.recordId()).isEqualTo(1L);
+		org.assertj.core.api.Assertions.assertThat(command.userId()).isEqualTo(100L);
+		org.assertj.core.api.Assertions.assertThat(command.rating()).isEqualTo((short) 5);
+		org.assertj.core.api.Assertions.assertThat(command.comment()).isEqualTo("better after edit");
+		org.assertj.core.api.Assertions.assertThat(command.isPublic()).isTrue();
+	}
+
+	@Test
+	void shouldRejectUpdateWithOverlongRecordComment() throws Exception {
+		mockMvc.perform(
+			put("/api/records/1")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "userId": 100,
+					  "rating": 5,
+					  "comment": "%s",
+					  "isPublic": false
+					}
+					""".formatted("a".repeat(501)))
+		)
+			.andExpect(status().isBadRequest());
 	}
 
 	@Test

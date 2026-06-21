@@ -75,6 +75,20 @@ public class FoodRecordService {
 		return toResult(foodRecordRepository.save(entity));
 	}
 
+	@Transactional(readOnly = true)
+	public FoodRecordResult getRecordForUser(Long recordId, Long userId) {
+		return toResult(requireOwnedRecord(recordId, userId));
+	}
+
+	@Transactional
+	public FoodRecordResult updateRecord(FoodRecordUpdateCommand command) {
+		FoodRecordEntity entity = requireOwnedRecord(command.recordId(), command.userId());
+		entity.setRating(command.rating());
+		entity.setComment(command.comment());
+		entity.setPublic(command.isPublic());
+		return toResult(foodRecordRepository.save(entity));
+	}
+
 	@Transactional
 	public FoodRecordCommentResult createComment(Long recordId, Long userId, String content) {
 		FoodRecordEntity record = requirePublicRecord(recordId);
@@ -172,6 +186,18 @@ public class FoodRecordService {
 		}
 		if (!record.isPublic()) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Private record comments are not available.");
+		}
+		return record;
+	}
+
+	private FoodRecordEntity requireOwnedRecord(Long recordId, Long userId) {
+		FoodRecordEntity record = foodRecordRepository.findById(recordId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food record not found."));
+		if (record.getDeletedAt() != null) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Food record not found.");
+		}
+		if (!record.getUser().getId().equals(userId)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Food record does not belong to this user.");
 		}
 		return record;
 	}

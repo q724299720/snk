@@ -298,6 +298,111 @@ class FoodRecordServiceTests {
 		assertThat(result.getFirst().content()).isEqualTo("看起来不错");
 	}
 
+	@Test
+	void shouldGetOwnRecordWithImages() throws Exception {
+		UserEntity user = new UserEntity();
+		setUserId(user, 100L);
+
+		FoodItemEntity foodItem = new FoodItemEntity();
+		setFoodItemId(foodItem, 200L);
+
+		FoodRecordEntity record = createRecordEntity(user, foodItem);
+		record.setRating((short) 4);
+		record.setComment("old comment");
+
+		FoodRecordImageEntity image = new FoodRecordImageEntity();
+		image.setRecord(record);
+		image.setImageUrl("https://snk.qiuxinmin.cn/uploads/records/noodle.jpg");
+		image.setThumbnailUrl("https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg");
+
+		when(foodRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+		when(foodRecordImageRepository.findByRecord_IdInOrderByCreatedAtAsc(List.of(1L)))
+			.thenReturn(List.of(image));
+
+		FoodRecordResult result = foodRecordService.getRecordForUser(1L, 100L);
+
+		assertThat(result.id()).isEqualTo(1L);
+		assertThat(result.userId()).isEqualTo(100L);
+		assertThat(result.rating()).isEqualTo((short) 4);
+		assertThat(result.comment()).isEqualTo("old comment");
+		assertThat(result.images()).hasSize(1);
+		assertThat(result.images().getFirst().thumbnailUrl())
+			.isEqualTo("https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg");
+	}
+
+	@Test
+	void shouldUpdateOwnRecordAndKeepImages() throws Exception {
+		UserEntity user = new UserEntity();
+		setUserId(user, 100L);
+
+		FoodItemEntity foodItem = new FoodItemEntity();
+		setFoodItemId(foodItem, 200L);
+
+		FoodRecordEntity record = createRecordEntity(user, foodItem);
+		record.setRating((short) 3);
+		record.setComment("old comment");
+		record.setPublic(false);
+
+		FoodRecordImageEntity image = new FoodRecordImageEntity();
+		image.setRecord(record);
+		image.setImageUrl("https://snk.qiuxinmin.cn/uploads/records/noodle.jpg");
+		image.setThumbnailUrl("https://snk.qiuxinmin.cn/uploads/records/noodle-thumb.jpg");
+
+		when(foodRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+		when(foodRecordRepository.save(record)).thenReturn(record);
+		when(foodRecordImageRepository.findByRecord_IdInOrderByCreatedAtAsc(List.of(1L)))
+			.thenReturn(List.of(image));
+
+		FoodRecordResult result = foodRecordService.updateRecord(
+			new FoodRecordUpdateCommand(
+				1L,
+				100L,
+				(short) 5,
+				"better after edit",
+				true
+			)
+		);
+
+		assertThat(record.getRating()).isEqualTo((short) 5);
+		assertThat(record.getComment()).isEqualTo("better after edit");
+		assertThat(record.isPublic()).isTrue();
+		assertThat(result.rating()).isEqualTo((short) 5);
+		assertThat(result.comment()).isEqualTo("better after edit");
+		assertThat(result.isPublic()).isTrue();
+		assertThat(result.images()).hasSize(1);
+		verify(foodRecordRepository).save(record);
+	}
+
+	@Test
+	void shouldRejectUpdateWhenRecordBelongsToAnotherUser() throws Exception {
+		UserEntity owner = new UserEntity();
+		setUserId(owner, 100L);
+
+		FoodItemEntity foodItem = new FoodItemEntity();
+		setFoodItemId(foodItem, 200L);
+
+		FoodRecordEntity record = createRecordEntity(owner, foodItem);
+
+		when(foodRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+		try {
+			foodRecordService.updateRecord(
+				new FoodRecordUpdateCommand(
+					1L,
+					999L,
+					(short) 5,
+					"not mine",
+					true
+				)
+			);
+		} catch (ResponseStatusException exception) {
+			assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+			return;
+		}
+
+		throw new AssertionError("Expected editing another user's record to be rejected.");
+	}
+
 	private FoodRecordEntity createRecordEntity(UserEntity user, FoodItemEntity foodItem) throws Exception {
 		FoodRecordEntity record = new FoodRecordEntity();
 		setRecordId(record, 1L);

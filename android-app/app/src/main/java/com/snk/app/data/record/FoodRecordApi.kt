@@ -9,6 +9,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.Path
 import retrofit2.http.POST
 import retrofit2.http.Part
+import retrofit2.http.PUT
 import retrofit2.http.Query
 
 interface FoodRecordApi {
@@ -26,6 +27,12 @@ interface FoodRecordApi {
     @POST("/api/records")
     suspend fun createRecord(
         @Body request: CreateFoodRecordRequest,
+    ): FoodRecordResponse
+
+    @PUT("/api/records/{recordId}")
+    suspend fun updateRecord(
+        @Path("recordId") recordId: Long,
+        @Body request: UpdateFoodRecordRequest,
     ): FoodRecordResponse
 
     @POST("/api/records/{recordId}/like")
@@ -76,6 +83,18 @@ data class FoodRecordImageRequest(
     val imageUrl: String,
     @SerialName("thumbnailUrl")
     val thumbnailUrl: String? = null,
+)
+
+@Serializable
+data class UpdateFoodRecordRequest(
+    @SerialName("userId")
+    val userId: Long,
+    @SerialName("rating")
+    val rating: Int,
+    @SerialName("comment")
+    val comment: String? = null,
+    @SerialName("isPublic")
+    val isPublic: Boolean,
 )
 
 @Serializable

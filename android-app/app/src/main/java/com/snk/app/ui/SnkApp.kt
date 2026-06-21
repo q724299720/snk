@@ -33,6 +33,7 @@ import androidx.navigation.compose.rememberNavController
 import com.snk.app.SnkApplication
 import com.snk.app.data.auth.AnonymousSessionResult
 import com.snk.app.data.food.FoodSearchItem
+import com.snk.app.data.record.FoodRecordHistoryItem
 
 private sealed class SnkDestination(
     val route: String,
@@ -55,6 +56,8 @@ fun SnkApp() {
     val application = LocalContext.current.applicationContext as SnkApplication
     var retryToken by remember { mutableIntStateOf(0) }
     var selectedFood: FoodSearchItem? by remember { mutableStateOf(null) }
+    var selectedEditRecord: FoodRecordHistoryItem? by remember { mutableStateOf(null) }
+    var recordRefreshToken by remember { mutableIntStateOf(0) }
     var selectedSourceType by remember { mutableStateOf("text_search") }
     var manualCreateSeedName by remember { mutableStateOf("") }
     var manualCreateSeedBarcode by remember { mutableStateOf("") }
@@ -74,6 +77,7 @@ fun SnkApp() {
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute != "record_create" &&
+        currentRoute != "record_edit" &&
         currentRoute != "ocr_recognition" &&
         currentRoute != "manual_food_create"
 
@@ -137,12 +141,17 @@ fun SnkApp() {
                         onCreateRecord = { item ->
                             openRecordCreate(item, "text_search")
                         },
+                        onEditRecord = { record ->
+                            selectedEditRecord = record
+                            navController.navigate("record_edit")
+                        },
                         onOpenManualCreate = ::openManualCreate,
                         onOpenOcrRecognition = {
                             navController.navigate("ocr_recognition")
                         },
                         externalQuerySeed = searchQuerySeed,
                         externalSuggestedQueries = searchSuggestedQueries,
+                        recentRefreshToken = recordRefreshToken,
                         onExternalQueryConsumed = {
                             searchQuerySeed = null
                             searchSuggestedQueries = emptyList()
@@ -166,12 +175,17 @@ fun SnkApp() {
                             onCreateRecord = { item ->
                                 openRecordCreate(item, "text_search")
                             },
+                            onEditRecord = { record ->
+                                selectedEditRecord = record
+                                navController.navigate("record_edit")
+                            },
                             onOpenManualCreate = ::openManualCreate,
                             onOpenOcrRecognition = {
                                 navController.navigate("ocr_recognition")
                             },
                             externalQuerySeed = searchQuerySeed,
                             externalSuggestedQueries = searchSuggestedQueries,
+                            recentRefreshToken = recordRefreshToken,
                             onExternalQueryConsumed = {
                                 searchQuerySeed = null
                                 searchSuggestedQueries = emptyList()
@@ -193,6 +207,43 @@ fun SnkApp() {
                             onOpenDrafts = {
                                 navController.popBackStack()
                                 navController.navigate(SnkDestination.Drafts.route)
+                            },
+                        )
+                    }
+                }
+                composable("record_edit") {
+                    val record = selectedEditRecord
+                    if (record == null) {
+                        SearchScreen(
+                            sessionState = sessionState,
+                            onCreateRecord = { item ->
+                                openRecordCreate(item, "text_search")
+                            },
+                            onEditRecord = { item ->
+                                selectedEditRecord = item
+                                navController.navigate("record_edit")
+                            },
+                            onOpenManualCreate = ::openManualCreate,
+                            onOpenOcrRecognition = {
+                                navController.navigate("ocr_recognition")
+                            },
+                            externalQuerySeed = searchQuerySeed,
+                            externalSuggestedQueries = searchSuggestedQueries,
+                            recentRefreshToken = recordRefreshToken,
+                            onExternalQueryConsumed = {
+                                searchQuerySeed = null
+                                searchSuggestedQueries = emptyList()
+                            },
+                        )
+                    } else {
+                        RecordEditScreen(
+                            record = record,
+                            onBack = {
+                                navController.popBackStack()
+                            },
+                            onUpdated = { updated ->
+                                selectedEditRecord = updated
+                                recordRefreshToken++
                             },
                         )
                     }

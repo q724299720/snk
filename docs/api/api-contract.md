@@ -377,3 +377,13 @@ Public record feed contract:
 | 2026-06-21 | Codex | Public record feed request/response contract | Define `GET /api/records/public` and keep record publication explicit opt-in |
 | 2026-06-21 | Codex | Public record comments request/response contract | Define latest-comment listing and comment creation for public records only |
 | 2026-06-21 | Codex | Search query fallback contract | Define compacted-query retry for spaced food names |
+| 2026-06-21 | Codex | Record detail and edit API contract | Add owner-only detail/update endpoints for the mobile record edit flow |
+
+## Phase 2 Addendum: Record Detail And Edit
+
+- `GET /api/records/{recordId}?userId=` returns the full record view for the owner, including existing `images`.
+- `PUT /api/records/{recordId}` updates only owner-editable fields: `rating`, `comment`, and `isPublic`.
+- The update request body is `{ userId, rating, comment, isPublic }`.
+- `rating` must stay in `1..5`; `comment` must stay at or below `500` characters.
+- The server must reject editing another user's record with `403` and missing/deleted records with `404`.
+- Record images are read-only in this increment; image add/replace remains a later media-edit task.

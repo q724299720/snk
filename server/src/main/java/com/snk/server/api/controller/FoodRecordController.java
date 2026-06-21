@@ -6,10 +6,12 @@ import com.snk.server.api.dto.FoodRecordCommentResponse;
 import com.snk.server.api.dto.FoodRecordHistoryResponse;
 import com.snk.server.api.dto.FoodRecordImageResponse;
 import com.snk.server.api.dto.FoodRecordResponse;
+import com.snk.server.api.dto.UpdateFoodRecordRequest;
 import com.snk.server.domain.record.FoodRecordCreateCommand;
 import com.snk.server.domain.record.FoodRecordImageValue;
 import com.snk.server.domain.record.FoodRecordResult;
 import com.snk.server.domain.record.FoodRecordService;
+import com.snk.server.domain.record.FoodRecordUpdateCommand;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
@@ -19,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -56,6 +59,14 @@ public class FoodRecordController {
 			.toList();
 	}
 
+	@GetMapping("/{recordId}")
+	public FoodRecordResponse getRecord(
+		@PathVariable @Positive Long recordId,
+		@RequestParam("userId") @Positive Long userId
+	) {
+		return toResponse(foodRecordService.getRecordForUser(recordId, userId));
+	}
+
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public FoodRecordResponse createRecord(@Valid @RequestBody CreateFoodRecordRequest request) {
@@ -74,6 +85,24 @@ public class FoodRecordController {
 			)
 		);
 		return toResponse(result);
+	}
+
+	@PutMapping("/{recordId}")
+	public FoodRecordResponse updateRecord(
+		@PathVariable @Positive Long recordId,
+		@Valid @RequestBody UpdateFoodRecordRequest request
+	) {
+		return toResponse(
+			foodRecordService.updateRecord(
+				new FoodRecordUpdateCommand(
+					recordId,
+					request.userId(),
+					request.rating(),
+					request.comment(),
+					request.isPublic()
+				)
+			)
+		);
 	}
 
 	private String validateSourceType(String sourceType) {

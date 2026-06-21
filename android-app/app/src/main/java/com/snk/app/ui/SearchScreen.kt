@@ -59,10 +59,12 @@ import kotlinx.coroutines.launch
 fun SearchScreen(
     sessionState: SessionUiState,
     onCreateRecord: (FoodSearchItem) -> Unit,
+    onEditRecord: (FoodRecordHistoryItem) -> Unit = {},
     onOpenManualCreate: (String) -> Unit,
     onOpenOcrRecognition: () -> Unit,
     externalQuerySeed: String? = null,
     externalSuggestedQueries: List<String> = emptyList(),
+    recentRefreshToken: Int = 0,
     onExternalQueryConsumed: () -> Unit = {},
 ) {
     val application = LocalContext.current.applicationContext as SnkApplication
@@ -72,6 +74,7 @@ fun SearchScreen(
     val recentRecordState by produceState<FoodRecordHistoryResult?>(
         initialValue = null,
         key1 = sessionUserId,
+        key2 = recentRefreshToken,
     ) {
         value = if (sessionUserId == null) {
             null
@@ -491,6 +494,9 @@ fun SearchScreen(
                             onReuseFood = {
                                 onCreateRecord(record.toFoodSearchItem())
                             },
+                            onEditRecord = {
+                                onEditRecord(record)
+                            },
                         )
                     }
                 }
@@ -503,6 +509,7 @@ fun SearchScreen(
 private fun RecentRecordCard(
     record: FoodRecordHistoryItem,
     onReuseFood: () -> Unit,
+    onEditRecord: (() -> Unit)? = null,
     sessionUserId: Long? = null,
     onLoadComments: (suspend (Long) -> FoodRecordCommentsResult)? = null,
     onSubmitComment: (suspend (Long, String) -> FoodRecordCommentCreateResult)? = null,
@@ -663,6 +670,14 @@ private fun RecentRecordCard(
                 shape = RoundedCornerShape(14.dp),
             ) {
                 Text("再记一笔")
+            }
+            if (onEditRecord != null) {
+                Button(
+                    onClick = onEditRecord,
+                    shape = RoundedCornerShape(14.dp),
+                ) {
+                    Text("编辑记录")
+                }
             }
             if (commentsEnabled) {
                 Column(

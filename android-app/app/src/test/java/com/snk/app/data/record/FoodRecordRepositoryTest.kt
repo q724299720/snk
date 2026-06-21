@@ -139,6 +139,68 @@ class FoodRecordRepositoryTest {
     }
 
     @Test
+    fun `updateRecord sends edited fields and returns updated record`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(200)
+                .setBody(
+                    """
+                    {
+                      "id": 55,
+                      "userId": 100,
+                      "foodItemId": 200,
+                      "sourceType": "text_search",
+                      "isPublic": true,
+                      "rating": 5,
+                      "comment": "better after edit",
+                      "likeCount": 0,
+                      "recordTime": "2026-06-13T23:40:00Z",
+                      "createdAt": "2026-06-13T23:40:00Z"
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.updateRecord(
+            recordId = 55L,
+            userId = 100L,
+            rating = 5,
+            comment = "  better after edit  ",
+            isPublic = true,
+        )
+
+        assertTrue(result is FoodRecordUpdateResult.Success)
+        val success = result as FoodRecordUpdateResult.Success
+        assertEquals(55L, success.recordId)
+        assertEquals(5, success.rating)
+        assertEquals("better after edit", success.comment)
+        assertTrue(success.isPublic)
+        val request = server.takeRequest()
+        assertEquals("/api/records/55", request.path)
+        assertEquals("PUT", request.method)
+        val requestBody = request.body.readUtf8()
+        assertTrue(requestBody.contains("\"userId\":100"))
+        assertTrue(requestBody.contains("\"rating\":5"))
+        assertTrue(requestBody.contains("\"comment\":\"better after edit\""))
+        assertTrue(requestBody.contains("\"isPublic\":true"))
+    }
+
+    @Test
+    fun `updateRecord rejects overlong comment before backend request`() = runTest {
+        val result = repository.updateRecord(
+            recordId = 55L,
+            userId = 100L,
+            rating = 5,
+            comment = "a".repeat(501),
+            isPublic = false,
+        )
+
+        assertTrue(result is FoodRecordUpdateResult.Failure)
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
     fun `createRecord rejects overlong comment before calling backend`() = runTest {
         server.enqueue(
             MockResponse()

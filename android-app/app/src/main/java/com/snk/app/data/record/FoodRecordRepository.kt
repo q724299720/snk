@@ -90,6 +90,45 @@ class FoodRecordRepository(
         }
     }
 
+    suspend fun updateRecord(
+        recordId: Long,
+        userId: Long,
+        rating: Int,
+        comment: String,
+        isPublic: Boolean,
+    ): FoodRecordUpdateResult {
+        if (recordId <= 0L || userId <= 0L) {
+            return FoodRecordUpdateResult.Failure("记录或游客身份无效，暂时无法保存修改。")
+        }
+        if (rating !in 1..5) {
+            return FoodRecordUpdateResult.Failure("评分必须在 1 到 5 之间。")
+        }
+        val normalizedComment = comment.trim()
+        if (normalizedComment.length > MAX_RECORD_COMMENT_LENGTH) {
+            return FoodRecordUpdateResult.Failure("备注最长支持 500 个字符，请缩短后再保存。")
+        }
+
+        return try {
+            val response = api.updateRecord(
+                recordId = recordId,
+                request = UpdateFoodRecordRequest(
+                    userId = userId,
+                    rating = rating,
+                    comment = normalizedComment.ifBlank { null },
+                    isPublic = isPublic,
+                ),
+            )
+            FoodRecordUpdateResult.Success(
+                recordId = response.id,
+                rating = response.rating,
+                comment = response.comment,
+                isPublic = response.isPublic,
+            )
+        } catch (exception: Exception) {
+            FoodRecordUpdateResult.Failure(exception.asUpdateMessage())
+        }
+    }
+
     suspend fun likeRecord(recordId: Long): FoodRecordLikeResult {
         return try {
             val response = api.likeRecord(recordId)
@@ -178,6 +217,12 @@ class FoodRecordRepository(
     }
 }
 
+private fun Exception.asUpdateMessage(): String = when (this) {
+    is IOException -> "无法连接服务端，修改暂时没有保存成功。"
+    is HttpException -> "服务端拒绝了这次记录修改。"
+    else -> "保存修改失败，请稍后重试。"
+}
+
 private const val MAX_RECORD_COMMENT_LENGTH = 500
 
 data class FoodRecordImageAttachment(
@@ -257,6 +302,17 @@ sealed interface FoodRecordCreateResult {
         val reason: FoodRecordCreateFailureReason,
         val message: String,
     ) : FoodRecordCreateResult
+}
+
+sealed interface FoodRecordUpdateResult {
+    data class Success(
+        val recordId: Long,
+        val rating: Int,
+        val comment: String?,
+        val isPublic: Boolean,
+    ) : FoodRecordUpdateResult
+
+    data class Failure(val message: String) : FoodRecordUpdateResult
 }
 
 enum class FoodRecordLikeFailureReason {
