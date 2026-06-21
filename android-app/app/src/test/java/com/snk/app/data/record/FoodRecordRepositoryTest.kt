@@ -251,6 +251,68 @@ class FoodRecordRepositoryTest {
     }
 
     @Test
+    fun `listRecordComments returns comments for a shared record`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(200)
+                .setBody(
+                    """
+                    [
+                      {
+                        "id": 9,
+                        "recordId": 56,
+                        "userId": 100,
+                        "content": "看起来不错",
+                        "createdAt": "2026-06-21T12:00:00Z"
+                      }
+                    ]
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.listRecordComments(recordId = 56, limit = 3)
+
+        assertTrue(result is FoodRecordCommentsResult.Success)
+        val comments = (result as FoodRecordCommentsResult.Success).comments
+        assertEquals(1, comments.size)
+        assertEquals("看起来不错", comments.first().content)
+        assertEquals("/api/records/56/comments?limit=3", server.takeRequest().path)
+    }
+
+    @Test
+    fun `createRecordComment posts current user comment`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(201)
+                .setBody(
+                    """
+                    {
+                      "id": 9,
+                      "recordId": 56,
+                      "userId": 100,
+                      "content": "看起来不错",
+                      "createdAt": "2026-06-21T12:00:00Z"
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = repository.createRecordComment(
+            recordId = 56,
+            userId = 100,
+            content = "  看起来不错  ",
+        )
+
+        assertTrue(result is FoodRecordCommentCreateResult.Success)
+        assertEquals("看起来不错", (result as FoodRecordCommentCreateResult.Success).comment.content)
+        val request = server.takeRequest()
+        assertEquals("/api/records/56/comments", request.path)
+        assertTrue(request.body.readUtf8().contains("\"content\":\"看起来不错\""))
+    }
+
+    @Test
     fun `createRecord returns network failure when backend is unreachable`() = runTest {
         server.shutdown()
 

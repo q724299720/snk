@@ -1,6 +1,8 @@
 package com.snk.server.api.controller;
 
 import com.snk.server.api.dto.CreateFoodRecordRequest;
+import com.snk.server.api.dto.CreateFoodRecordCommentRequest;
+import com.snk.server.api.dto.FoodRecordCommentResponse;
 import com.snk.server.api.dto.FoodRecordHistoryResponse;
 import com.snk.server.api.dto.FoodRecordImageResponse;
 import com.snk.server.api.dto.FoodRecordResponse;
@@ -87,6 +89,27 @@ public class FoodRecordController {
 	public FoodRecordResponse likeRecord(@PathVariable @Positive Long recordId) {
 		FoodRecordResult result = foodRecordService.likeRecord(recordId);
 		return toResponse(result);
+	}
+
+	@GetMapping("/{recordId}/comments")
+	public List<FoodRecordCommentResponse> listComments(
+		@PathVariable @Positive Long recordId,
+		@RequestParam(value = "limit", defaultValue = "10") @Positive int limit
+	) {
+		return foodRecordService.listComments(recordId, limit).stream()
+			.map(FoodRecordCommentResponse::from)
+			.toList();
+	}
+
+	@PostMapping("/{recordId}/comments")
+	@ResponseStatus(HttpStatus.CREATED)
+	public FoodRecordCommentResponse createComment(
+		@PathVariable @Positive Long recordId,
+		@Valid @RequestBody CreateFoodRecordCommentRequest request
+	) {
+		return FoodRecordCommentResponse.from(
+			foodRecordService.createComment(recordId, request.userId(), request.content())
+		);
 	}
 
 	private FoodRecordResponse toResponse(FoodRecordResult result) {

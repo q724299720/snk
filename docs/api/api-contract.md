@@ -81,6 +81,8 @@
 - `PUT /api/records/{id}`
 - `DELETE /api/records/{id}`
 - `POST /api/records/{id}/like`
+- `GET /api/records/{id}/comments`
+- `POST /api/records/{id}/comments`
 
 Record image contract:
 
@@ -116,6 +118,17 @@ Public record feed contract:
 - `{id}` 必须为正整数，`0` 或负数直接返回 `400`
 - 当前实现不做用户级去重，只累计 `likeCount`
 - 当前成功响应返回与记录创建一致的完整记录视图，并包含更新后的 `likeCount`
+
+记录评论当前约定：
+
+- `GET /api/records/{id}/comments?limit=` 用于读取公开记录最新评论
+- `POST /api/records/{id}/comments` 用于提交公开记录评论
+- `{id}` 和 `limit` 必须为正整数，`0` 或负数直接返回 `400`
+- 评论请求字段包含：`userId`、`content`
+- `userId` 必须为正整数；`content` 不能为空，最长 `500` 字符
+- 评论接口仅允许访问 `isPublic = true` 且未删除的记录；私有记录返回 `403`，删除或不存在记录返回 `404`
+- 当前评论响应字段包含：`id`、`recordId`、`userId`、`content`、`createdAt`
+- App 首页公开分享卡片优先展示最近评论，并允许当前游客用户提交评论
 
 ### 标签与分类
 
@@ -349,9 +362,11 @@ Public record feed contract:
 | 2026-06-21 | Codex | 补充记录创建 `sourceType` 写入校验约束 | 记录创建接口应拒绝非当前入口来源类型，避免旧链路或未知来源继续写入新记录 |
 | 2026-06-21 | Codex | 补充记录列表与点赞 ID 正数校验约束 | 记录列表和点赞入口应拒绝非正数 `userId`、`limit` 与 `recordId`，避免无效请求进入服务层 |
 | 2026-06-21 | Codex | 补充公开记录流接口约束 | Phase 5 需要最小公开分享列表，只暴露用户主动公开且未删除的记录 |
+| 2026-06-21 | Codex | 补充公开记录评论接口约束 | Phase 5 评论能力需要固定公开记录评论的读取、提交、字段和权限边界 |
 # Audit Trail Addendum
 
 | Date | Author | Scope | Reason |
 | --- | --- | --- | --- |
 | 2026-06-21 | Codex | Record image request/response contract | Support uploaded record photos being attached to records and shown in recent-record cards |
 | 2026-06-21 | Codex | Public record feed request/response contract | Define `GET /api/records/public` and keep record publication explicit opt-in |
+| 2026-06-21 | Codex | Public record comments request/response contract | Define latest-comment listing and comment creation for public records only |

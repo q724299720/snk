@@ -2,6 +2,8 @@ package com.snk.server.domain.record;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
+import com.snk.server.infrastructure.persistence.record.FoodRecordCommentEntity;
+import com.snk.server.infrastructure.persistence.record.FoodRecordCommentRepository;
 import com.snk.server.infrastructure.persistence.record.FoodRecordEntity;
 import com.snk.server.infrastructure.persistence.record.FoodRecordImageEntity;
 import com.snk.server.infrastructure.persistence.record.FoodRecordImageRepository;
@@ -23,17 +25,20 @@ public class FoodRecordService {
 
 	private final FoodRecordRepository foodRecordRepository;
 	private final FoodRecordImageRepository foodRecordImageRepository;
+	private final FoodRecordCommentRepository foodRecordCommentRepository;
 	private final UserRepository userRepository;
 	private final FoodItemRepository foodItemRepository;
 
 	public FoodRecordService(
 		FoodRecordRepository foodRecordRepository,
 		FoodRecordImageRepository foodRecordImageRepository,
+		FoodRecordCommentRepository foodRecordCommentRepository,
 		UserRepository userRepository,
 		FoodItemRepository foodItemRepository
 	) {
 		this.foodRecordRepository = foodRecordRepository;
 		this.foodRecordImageRepository = foodRecordImageRepository;
+		this.foodRecordCommentRepository = foodRecordCommentRepository;
 		this.userRepository = userRepository;
 		this.foodItemRepository = foodItemRepository;
 	}
@@ -68,6 +73,32 @@ public class FoodRecordService {
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food record not found."));
 		entity.setLikeCount(entity.getLikeCount() + 1);
 		return toResult(foodRecordRepository.save(entity));
+	}
+
+	@Transactional
+	public FoodRecordCommentResult createComment(Long recordId, Long userId, String content) {
+		FoodRecordEntity record = requirePublicRecord(recordId);
+		UserEntity user = userRepository.findById(userId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+
+		FoodRecordCommentEntity entity = new FoodRecordCommentEntity();
+		entity.setRecord(record);
+		entity.setUser(user);
+		entity.setContent(content.trim());
+
+		return toCommentResult(foodRecordCommentRepository.save(entity));
+	}
+
+	@Transactional(readOnly = true)
+	public List<FoodRecordCommentResult> listComments(Long recordId, int limit) {
+		requirePublicRecord(recordId);
+		int normalizedLimit = Math.min(Math.max(limit, 1), 20);
+		return foodRecordCommentRepository.findByRecord_IdOrderByCreatedAtDesc(
+				recordId,
+				PageRequest.of(0, normalizedLimit)
+			).stream()
+			.map(this::toCommentResult)
+			.toList();
 	}
 
 	@Transactional(readOnly = true)
@@ -121,6 +152,28 @@ public class FoodRecordService {
 			entity.getCreatedAt(),
 			images
 		);
+	}
+
+	private FoodRecordCommentResult toCommentResult(FoodRecordCommentEntity entity) {
+		return new FoodRecordCommentResult(
+			entity.getId(),
+			entity.getRecord().getId(),
+			entity.getUser().getId(),
+			entity.getContent(),
+			entity.getCreatedAt()
+		);
+	}
+
+	private FoodRecordEntity requirePublicRecord(Long recordId) {
+		FoodRecordEntity record = foodRecordRepository.findById(recordId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food record not found."));
+		if (record.getDeletedAt() != null) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Food record not found.");
+		}
+		if (!record.isPublic()) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Private record comments are not available.");
+		}
+		return record;
 	}
 
 	private FoodRecordHistoryItem toHistoryItem(FoodRecordEntity entity, List<FoodRecordImageValue> images) {

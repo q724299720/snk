@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.snk.server.domain.record.FoodRecordResult;
 import com.snk.server.domain.record.FoodRecordService;
+import com.snk.server.domain.record.FoodRecordCommentResult;
 import com.snk.server.domain.record.FoodRecordHistoryItem;
 import com.snk.server.domain.record.FoodRecordImageValue;
 import com.snk.server.infrastructure.storage.StorageProperties;
@@ -216,6 +217,72 @@ class FoodRecordControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id").value(1))
 			.andExpect(jsonPath("$.likeCount").value(3));
+	}
+
+	@Test
+	void shouldListRecordComments() throws Exception {
+		when(foodRecordService.listComments(1L, 10)).thenReturn(
+			List.of(
+				new FoodRecordCommentResult(
+					9L,
+					1L,
+					100L,
+					"看起来不错",
+					OffsetDateTime.parse("2026-06-21T12:00:00Z")
+				)
+			)
+		);
+
+		mockMvc.perform(get("/api/records/1/comments"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].id").value(9))
+			.andExpect(jsonPath("$[0].recordId").value(1))
+			.andExpect(jsonPath("$[0].userId").value(100))
+			.andExpect(jsonPath("$[0].content").value("看起来不错"));
+	}
+
+	@Test
+	void shouldCreateRecordComment() throws Exception {
+		when(foodRecordService.createComment(eq(1L), eq(100L), eq("看起来不错"))).thenReturn(
+			new FoodRecordCommentResult(
+				9L,
+				1L,
+				100L,
+				"看起来不错",
+				OffsetDateTime.parse("2026-06-21T12:00:00Z")
+			)
+		);
+
+		mockMvc.perform(
+			post("/api/records/1/comments")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "userId": 100,
+					  "content": "看起来不错"
+					}
+					""")
+		)
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.id").value(9))
+			.andExpect(jsonPath("$.recordId").value(1))
+			.andExpect(jsonPath("$.userId").value(100))
+			.andExpect(jsonPath("$.content").value("看起来不错"));
+	}
+
+	@Test
+	void shouldRejectBlankRecordComment() throws Exception {
+		mockMvc.perform(
+			post("/api/records/1/comments")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "userId": 100,
+					  "content": "   "
+					}
+					""")
+		)
+			.andExpect(status().isBadRequest());
 	}
 
 	@Test

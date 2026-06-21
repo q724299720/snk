@@ -46,6 +46,9 @@ import com.snk.app.data.draft.FoodRecordDraft
 import com.snk.app.data.food.FoodReportResult
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodSearchResult
+import com.snk.app.data.record.FoodRecordComment
+import com.snk.app.data.record.FoodRecordCommentCreateResult
+import com.snk.app.data.record.FoodRecordCommentsResult
 import com.snk.app.data.record.FoodRecordHistoryItem
 import com.snk.app.data.record.FoodRecordHistoryResult
 import com.snk.app.data.record.toFoodSearchItem
@@ -371,6 +374,25 @@ fun SearchScreen(
                             onReuseFood = {
                                 onCreateRecord(record.toFoodSearchItem())
                             },
+                            sessionUserId = sessionUserId,
+                            onLoadComments = { recordId ->
+                                application.container.foodRecordRepository.listRecordComments(
+                                    recordId = recordId,
+                                    limit = 3,
+                                )
+                            },
+                            onSubmitComment = { recordId, content ->
+                                val userId = sessionUserId
+                                if (userId == null) {
+                                    FoodRecordCommentCreateResult.Failure("游客身份尚未初始化，暂时无法评论。")
+                                } else {
+                                    application.container.foodRecordRepository.createRecordComment(
+                                        recordId = recordId,
+                                        userId = userId,
+                                        content = content,
+                                    )
+                                }
+                            },
                         )
                     }
                 }
@@ -438,10 +460,37 @@ fun SearchScreen(
 private fun RecentRecordCard(
     record: FoodRecordHistoryItem,
     onReuseFood: () -> Unit,
+    sessionUserId: Long? = null,
+    onLoadComments: (suspend (Long) -> FoodRecordCommentsResult)? = null,
+    onSubmitComment: (suspend (Long, String) -> FoodRecordCommentCreateResult)? = null,
 ) {
     val displayImageUrl = record.images.firstOrNull()?.thumbnailUrl
         ?: record.images.firstOrNull()?.imageUrl
         ?: record.foodCoverImageUrl
+    val coroutineScope = rememberCoroutineScope()
+    var comments by remember(record.id) { mutableStateOf<List<FoodRecordComment>>(emptyList()) }
+    var commentMessage by remember(record.id) { mutableStateOf<String?>(null) }
+    var commentInput by remember(record.id) { mutableStateOf("") }
+    val commentsEnabled = record.isPublic && onLoadComments != null && onSubmitComment != null
+
+    LaunchedEffect(record.id, commentsEnabled) {
+        if (!commentsEnabled) {
+            return@LaunchedEffect
+        }
+        val loader = onLoadComments ?: return@LaunchedEffect
+        when (val result = loader(record.id)) {
+            is FoodRecordCommentsResult.Success -> {
+                comments = result.comments
+                commentMessage = null
+            }
+
+            is FoodRecordCommentsResult.Failure -> {
+                comments = emptyList()
+                commentMessage = result.message
+            }
+        }
+    }
+
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDF8F2)),
@@ -531,6 +580,83 @@ private fun RecentRecordCard(
                 shape = RoundedCornerShape(14.dp),
             ) {
                 Text("再记一笔")
+            }
+            if (commentsEnabled) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "评论",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF5B4A42),
+                    )
+                    if (comments.isEmpty()) {
+                        Text(
+                            text = commentMessage ?: "暂无评论，来写第一条。",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF8A5A44),
+                        )
+                    } else {
+                        comments.forEach { comment ->
+                            Text(
+                                text = comment.content,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF5B4A42),
+                            )
+                        }
+                    }
+                    OutlinedTextField(
+                        value = commentInput,
+                        onValueChange = { commentInput = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("写一句评论") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = commentMessage.orEmpty(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF8A5A44),
+                        )
+                        Button(
+                            onClick = {
+                                coroutineScope.launch {
+                                    val userId = sessionUserId
+                                    if (userId == null) {
+                                        commentMessage = "游客身份尚未初始化，暂时无法评论。"
+                                        return@launch
+                                    }
+                                    val content = commentInput.trim()
+                                    val submitter = onSubmitComment ?: run {
+                                        commentMessage = "评论入口暂不可用。"
+                                        return@launch
+                                    }
+                                    when (val result = submitter(record.id, content)) {
+                                        is FoodRecordCommentCreateResult.Success -> {
+                                            comments = listOf(result.comment) + comments
+                                            commentInput = ""
+                                            commentMessage = "评论已发布。"
+                                        }
+
+                                        is FoodRecordCommentCreateResult.Failure -> {
+                                            commentMessage = result.message
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = commentInput.isNotBlank(),
+                            shape = RoundedCornerShape(14.dp),
+                        ) {
+                            Text("发布")
+                        }
+                    }
+                }
             }
         }
     }

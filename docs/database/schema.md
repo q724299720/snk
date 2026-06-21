@@ -152,6 +152,23 @@
 - `thumbnail_url`
 - `created_at`
 
+### FoodRecordComment
+
+- 物理表名：`food_record_comments`
+- `id`
+- `record_id`
+- `user_id`
+- `content`
+- `created_at`
+
+字段说明：
+
+- `FoodRecordComment` 用于公开记录流的轻量社区评论
+- `record_id` 指向被评论的 `FoodRecord`
+- `user_id` 指向提交评论的游客或登录用户
+- `content` 在 MVP 阶段最长 `500` 字符，空白内容必须被拒绝
+- 评论接口只允许访问公开且未删除的记录，避免私有记录通过社区能力泄露
+
 ### RecognitionTask
 
 - 物理表名：`recognition_tasks`
@@ -239,6 +256,8 @@
 - `FoodItemReport.food_item_id + created_at` 建立组合索引，支撑后台查看单个条目的报错明细
 - `FoodItemReport.reporter_user_id + created_at` 建立组合索引，支撑后续排查用户反馈行为
 - `FoodRecord.user_id + record_time` 建立组合索引
+- `FoodRecordComment.record_id + created_at` 建立组合索引，支撑公开记录最新评论展示
+- `FoodRecordComment.user_id + created_at` 建立组合索引，支撑后续用户评论行为排查
 - 向量字段与图片 embedding 字段按 `pgvector` 能力设计索引
 - 当前首版迁移已为 `FoodItem.name / alias / search_keywords` 落地 `pg_trgm` GIN 索引
 
@@ -267,6 +286,7 @@
 - 后台应支持 `FoodItem` 合并，将历史 `FoodRecord` 迁移到保留条目
 - MVP 阶段被合并条目先进入 `rejected` 状态，不再被普通搜索命中；后续如需要独立追踪合并来源，再通过迁移脚本新增 `merged` 状态和目标条目字段
 - 合并目标条目必须是 `approved` 状态，确保迁移后的历史记录仍绑定到可被普通用户搜索和识别的目录条目
+- 私有或已删除 `FoodRecord` 不应对外暴露评论列表，也不允许新增评论
 
 ## 变更记录维护规则
 
@@ -321,3 +341,4 @@
 | 2026-06-21 | Codex | 明确 MVP 条目合并状态策略 | 当前数据库约束仅支持 `pending / approved / rejected`，首版合并用 `rejected` 阻止重复条目继续搜索 |
 | 2026-06-21 | Codex | 明确条目合并目标状态约束 | 记录迁移后应绑定到已审核目录条目，避免历史记录指向待审或已拒绝条目 |
 | 2026-06-21 | Codex | 补充公开记录流与草稿公开状态约束 | Phase 5 公开分享只应暴露主动公开记录，弱网草稿补传需保留用户公开选择 |
+| 2026-06-21 | Codex | 增加 `FoodRecordComment` 评论模型 | Phase 5 公开记录流需要最小评论能力，并保持私有记录不暴露社区评论 |

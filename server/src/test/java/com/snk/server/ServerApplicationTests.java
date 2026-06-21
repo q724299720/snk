@@ -4,6 +4,7 @@ import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
 import com.snk.server.infrastructure.persistence.food.FoodItemReportRepository;
 import com.snk.server.infrastructure.persistence.review.ReviewConfigWordAuditLogRepository;
 import com.snk.server.infrastructure.persistence.review.ReviewConfigWordRepository;
+import com.snk.server.infrastructure.persistence.record.FoodRecordCommentRepository;
 import com.snk.server.infrastructure.persistence.record.FoodRecordImageRepository;
 import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
 import com.snk.server.infrastructure.persistence.recognition.RecognitionTaskRepository;
@@ -33,6 +34,9 @@ class ServerApplicationTests {
 
 	@MockBean
 	private FoodRecordImageRepository foodRecordImageRepository;
+
+	@MockBean
+	private FoodRecordCommentRepository foodRecordCommentRepository;
 
 	@MockBean
 	private RecognitionTaskRepository recognitionTaskRepository;

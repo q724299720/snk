@@ -97,6 +97,51 @@ class FoodRecordRepository(
         }
     }
 
+    suspend fun listRecordComments(
+        recordId: Long,
+        limit: Int = 10,
+    ): FoodRecordCommentsResult {
+        if (recordId <= 0L) {
+            return FoodRecordCommentsResult.Failure("记录不存在，暂时无法查看评论。")
+        }
+
+        return try {
+            FoodRecordCommentsResult.Success(
+                api.listRecordComments(recordId, limit).map(FoodRecordCommentResponse::toModel),
+            )
+        } catch (exception: Exception) {
+            FoodRecordCommentsResult.Failure(exception.asCommentMessage())
+        }
+    }
+
+    suspend fun createRecordComment(
+        recordId: Long,
+        userId: Long,
+        content: String,
+    ): FoodRecordCommentCreateResult {
+        val normalizedContent = content.trim()
+        if (recordId <= 0L || userId <= 0L) {
+            return FoodRecordCommentCreateResult.Failure("游客身份或记录信息无效，暂时无法评论。")
+        }
+        if (normalizedContent.isBlank()) {
+            return FoodRecordCommentCreateResult.Failure("评论不能为空。")
+        }
+
+        return try {
+            FoodRecordCommentCreateResult.Success(
+                api.createRecordComment(
+                    recordId = recordId,
+                    request = CreateFoodRecordCommentRequest(
+                        userId = userId,
+                        content = normalizedContent,
+                    ),
+                ).toModel(),
+            )
+        } catch (exception: Exception) {
+            FoodRecordCommentCreateResult.Failure(exception.asCommentMessage())
+        }
+    }
+
     suspend fun uploadRecordImage(
         imageBytes: ByteArray,
         fileName: String,
@@ -146,6 +191,14 @@ data class FoodRecordHistoryItem(
     val recordTime: String,
     val createdAt: String,
     val images: List<FoodRecordImageAttachment>,
+)
+
+data class FoodRecordComment(
+    val id: Long,
+    val recordId: Long,
+    val userId: Long,
+    val content: String,
+    val createdAt: String,
 )
 
 fun FoodRecordHistoryItem.toFoodSearchItem(): FoodSearchItem = FoodSearchItem(
@@ -211,6 +264,22 @@ sealed interface FoodRecordLikeResult {
     ) : FoodRecordLikeResult
 }
 
+sealed interface FoodRecordCommentsResult {
+    data class Success(
+        val comments: List<FoodRecordComment>,
+    ) : FoodRecordCommentsResult
+
+    data class Failure(val message: String) : FoodRecordCommentsResult
+}
+
+sealed interface FoodRecordCommentCreateResult {
+    data class Success(
+        val comment: FoodRecordComment,
+    ) : FoodRecordCommentCreateResult
+
+    data class Failure(val message: String) : FoodRecordCommentCreateResult
+}
+
 private fun FoodRecordHistoryResponse.toModel(): FoodRecordHistoryItem = FoodRecordHistoryItem(
     id = id,
     userId = userId,
@@ -234,6 +303,14 @@ private fun FoodRecordHistoryResponse.toModel(): FoodRecordHistoryItem = FoodRec
             thumbnailUrl = it.thumbnailUrl,
         )
     },
+)
+
+private fun FoodRecordCommentResponse.toModel(): FoodRecordComment = FoodRecordComment(
+    id = id,
+    recordId = recordId,
+    userId = userId,
+    content = content,
+    createdAt = createdAt,
 )
 
 private fun Exception.asUserFacingMessage(): String = when (this) {
@@ -264,4 +341,10 @@ private fun Exception.asImageUploadMessage(): String = when (this) {
     is IOException -> "无法连接服务端上传图片，请稍后重试。"
     is HttpException -> "服务端拒绝了这张图片，请更换图片后重试。"
     else -> "图片上传失败，请稍后重试。"
+}
+
+private fun Exception.asCommentMessage(): String = when (this) {
+    is IOException -> "无法连接服务端，暂时无法同步评论。"
+    is HttpException -> "服务端拒绝了这次评论操作。"
+    else -> "评论操作失败，请稍后重试。"
 }

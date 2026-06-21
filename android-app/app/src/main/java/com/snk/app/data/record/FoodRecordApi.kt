@@ -33,6 +33,18 @@ interface FoodRecordApi {
         @Path("recordId") recordId: Long,
     ): FoodRecordResponse
 
+    @GET("/api/records/{recordId}/comments")
+    suspend fun listRecordComments(
+        @Path("recordId") recordId: Long,
+        @Query("limit") limit: Int = 10,
+    ): List<FoodRecordCommentResponse>
+
+    @POST("/api/records/{recordId}/comments")
+    suspend fun createRecordComment(
+        @Path("recordId") recordId: Long,
+        @Body request: CreateFoodRecordCommentRequest,
+    ): FoodRecordCommentResponse
+
     @Multipart
     @POST("/api/upload/image")
     suspend fun uploadImage(
@@ -67,11 +79,33 @@ data class FoodRecordImageRequest(
 )
 
 @Serializable
+data class CreateFoodRecordCommentRequest(
+    @SerialName("userId")
+    val userId: Long,
+    @SerialName("content")
+    val content: String,
+)
+
+@Serializable
 data class FoodRecordImageResponse(
     @SerialName("imageUrl")
     val imageUrl: String,
     @SerialName("thumbnailUrl")
     val thumbnailUrl: String? = null,
+)
+
+@Serializable
+data class FoodRecordCommentResponse(
+    @SerialName("id")
+    val id: Long,
+    @SerialName("recordId")
+    val recordId: Long,
+    @SerialName("userId")
+    val userId: Long,
+    @SerialName("content")
+    val content: String,
+    @SerialName("createdAt")
+    val createdAt: String,
 )
 
 @Serializable

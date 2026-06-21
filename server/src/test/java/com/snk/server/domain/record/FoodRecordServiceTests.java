@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
 import com.snk.server.infrastructure.persistence.record.FoodRecordEntity;
+import com.snk.server.infrastructure.persistence.record.FoodRecordCommentEntity;
+import com.snk.server.infrastructure.persistence.record.FoodRecordCommentRepository;
 import com.snk.server.infrastructure.persistence.record.FoodRecordImageEntity;
 import com.snk.server.infrastructure.persistence.record.FoodRecordImageRepository;
 import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
@@ -24,6 +26,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class FoodRecordServiceTests {
@@ -33,6 +38,9 @@ class FoodRecordServiceTests {
 
 	@Mock
 	private FoodRecordImageRepository foodRecordImageRepository;
+
+	@Mock
+	private FoodRecordCommentRepository foodRecordCommentRepository;
 
 	@Mock
 	private UserRepository userRepository;
@@ -204,6 +212,92 @@ class FoodRecordServiceTests {
 		verify(foodRecordRepository).findByIsPublicTrueAndDeletedAtIsNullOrderByRecordTimeDesc(any());
 	}
 
+	@Test
+	void shouldCreateCommentForPublicRecord() throws Exception {
+		UserEntity user = new UserEntity();
+		setUserId(user, 100L);
+
+		FoodItemEntity foodItem = new FoodItemEntity();
+		setFoodItemId(foodItem, 200L);
+
+		FoodRecordEntity record = createRecordEntity(user, foodItem);
+		record.setPublic(true);
+
+		when(foodRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+		when(userRepository.findById(100L)).thenReturn(Optional.of(user));
+		when(foodRecordCommentRepository.save(any(FoodRecordCommentEntity.class))).thenAnswer(invocation -> {
+			FoodRecordCommentEntity entity = invocation.getArgument(0);
+			setCommentId(entity, 9L);
+			setCommentCreatedAt(entity, OffsetDateTime.parse("2026-06-21T12:00:00Z"));
+			return entity;
+		});
+
+		FoodRecordCommentResult result = foodRecordService.createComment(1L, 100L, "  看起来不错  ");
+
+		assertThat(result.id()).isEqualTo(9L);
+		assertThat(result.recordId()).isEqualTo(1L);
+		assertThat(result.userId()).isEqualTo(100L);
+		assertThat(result.content()).isEqualTo("看起来不错");
+
+		ArgumentCaptor<FoodRecordCommentEntity> captor = ArgumentCaptor.forClass(FoodRecordCommentEntity.class);
+		verify(foodRecordCommentRepository).save(captor.capture());
+		assertThat(captor.getValue().getRecord().getId()).isEqualTo(1L);
+		assertThat(captor.getValue().getUser().getId()).isEqualTo(100L);
+		assertThat(captor.getValue().getContent()).isEqualTo("看起来不错");
+	}
+
+	@Test
+	void shouldRejectCommentForPrivateRecord() throws Exception {
+		UserEntity user = new UserEntity();
+		setUserId(user, 100L);
+
+		FoodItemEntity foodItem = new FoodItemEntity();
+		setFoodItemId(foodItem, 200L);
+
+		FoodRecordEntity record = createRecordEntity(user, foodItem);
+		record.setPublic(false);
+
+		when(foodRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+		try {
+			foodRecordService.createComment(1L, 100L, "看起来不错");
+		} catch (ResponseStatusException exception) {
+			assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+			return;
+		}
+
+		throw new AssertionError("Expected private record comment to be rejected.");
+	}
+
+	@Test
+	void shouldListCommentsForPublicRecord() throws Exception {
+		UserEntity user = new UserEntity();
+		setUserId(user, 100L);
+
+		FoodItemEntity foodItem = new FoodItemEntity();
+		setFoodItemId(foodItem, 200L);
+
+		FoodRecordEntity record = createRecordEntity(user, foodItem);
+		record.setPublic(true);
+
+		FoodRecordCommentEntity comment = new FoodRecordCommentEntity();
+		setCommentId(comment, 9L);
+		setCommentCreatedAt(comment, OffsetDateTime.parse("2026-06-21T12:00:00Z"));
+		comment.setRecord(record);
+		comment.setUser(user);
+		comment.setContent("看起来不错");
+
+		when(foodRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+		when(foodRecordCommentRepository.findByRecord_IdOrderByCreatedAtDesc(eq(1L), any(Pageable.class)))
+			.thenReturn(List.of(comment));
+
+		List<FoodRecordCommentResult> result = foodRecordService.listComments(1L, 10);
+
+		assertThat(result).hasSize(1);
+		assertThat(result.getFirst().id()).isEqualTo(9L);
+		assertThat(result.getFirst().content()).isEqualTo("看起来不错");
+	}
+
 	private FoodRecordEntity createRecordEntity(UserEntity user, FoodItemEntity foodItem) throws Exception {
 		FoodRecordEntity record = new FoodRecordEntity();
 		setRecordId(record, 1L);
@@ -238,6 +332,18 @@ class FoodRecordServiceTests {
 
 	private void setCreatedAt(FoodRecordEntity entity, OffsetDateTime value) throws Exception {
 		Field field = FoodRecordEntity.class.getDeclaredField("createdAt");
+		field.setAccessible(true);
+		field.set(entity, value);
+	}
+
+	private void setCommentId(FoodRecordCommentEntity entity, Long id) throws Exception {
+		Field field = FoodRecordCommentEntity.class.getDeclaredField("id");
+		field.setAccessible(true);
+		field.set(entity, id);
+	}
+
+	private void setCommentCreatedAt(FoodRecordCommentEntity entity, OffsetDateTime value) throws Exception {
+		Field field = FoodRecordCommentEntity.class.getDeclaredField("createdAt");
 		field.setAccessible(true);
 		field.set(entity, value);
 	}
