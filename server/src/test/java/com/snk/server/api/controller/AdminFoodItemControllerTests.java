@@ -128,6 +128,14 @@ class AdminFoodItemControllerTests {
 	}
 
 	@Test
+	void shouldRejectApproveWhenFoodItemIdIsNotPositive() throws Exception {
+		mockMvc.perform(post("/api/admin/food-items/0/approve"))
+			.andExpect(status().isBadRequest());
+
+		verify(foodModerationService, never()).approveFoodItem(anyLong());
+	}
+
+	@Test
 	void shouldRejectFoodItem() throws Exception {
 		when(foodModerationService.rejectFoodItem(4L))
 			.thenReturn(moderationItem(4L, "Rejected Item", 2, "rejected"));
