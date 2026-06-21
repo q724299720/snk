@@ -122,6 +122,16 @@ class FoodSearchControllerTests {
 	}
 
 	@Test
+	void shouldRejectSearchQueryWhenTooLong() throws Exception {
+		String longQuery = "a".repeat(129);
+
+		mockMvc.perform(get("/api/foods/search").param("q", longQuery))
+			.andExpect(status().isBadRequest());
+
+		verify(foodSearchService, never()).search(longQuery);
+	}
+
+	@Test
 	void shouldReturnFoodWhenBarcodeMatches() throws Exception {
 		when(foodSearchService.lookupByBarcode(eq("6900000000011")))
 			.thenReturn(

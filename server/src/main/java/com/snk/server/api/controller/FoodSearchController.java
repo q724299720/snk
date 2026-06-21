@@ -27,6 +27,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Validated
 public class FoodSearchController {
 
+	private static final int MAX_SEARCH_QUERY_LENGTH = 128;
+
 	private final FoodSearchService foodSearchService;
 	private final ManualFoodItemService manualFoodItemService;
 
@@ -43,6 +45,9 @@ public class FoodSearchController {
 		String normalizedQuery = query == null ? "" : query.trim();
 		if (normalizedQuery.isBlank()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "query must not be blank");
+		}
+		if (normalizedQuery.length() > MAX_SEARCH_QUERY_LENGTH) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "query must be 128 characters or fewer");
 		}
 		FoodSearchResult result = userId == null
 			? foodSearchService.search(normalizedQuery)

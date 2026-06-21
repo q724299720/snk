@@ -33,6 +33,7 @@
 - `userId` 为可选参数；传入当前游客 / 用户 id 时，搜索结果可额外包含该用户自己创建且仍为 `pending` 的条目
 - 未传 `userId` 或 `userId` 非法时，不返回任何 `pending` 条目
 - 空白 `q` 直接返回 `400`
+- `q` 去除首尾空格后最长 `128` 字符，超过长度直接返回 `400`，避免高并发下超长模糊搜索放大数据库压力
 - 服务端会先按原始 `q` 搜索；当原始词组未命中时，会继续尝试去空格后的紧凑查询，并按食物条目 ID 去重
 - 当前响应包含 `items` 与 `qualitySignal`
 - `items[*]` 当前最小字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`、`averageRating`、`auditStatus`
@@ -365,6 +366,7 @@ Public record feed contract:
 | 2026-06-21 | Codex | 补充公开记录流接口约束 | Phase 5 需要最小公开分享列表，只暴露用户主动公开且未删除的记录 |
 | 2026-06-21 | Codex | 补充公开记录评论接口约束 | Phase 5 评论能力需要固定公开记录评论的读取、提交、字段和权限边界 |
 | 2026-06-21 | Codex | 补充名称搜索查询变体兜底约束 | Phase 5 搜索优化需要让带空格词组在原始搜索未命中时继续尝试紧凑查询 |
+| 2026-06-21 | Codex | 补充搜索查询长度上限约束 | Phase 5 搜索优化需要限制超长模糊查询进入数据库，降低高并发下的资源放大风险 |
 # Audit Trail Addendum
 
 | Date | Author | Scope | Reason |
