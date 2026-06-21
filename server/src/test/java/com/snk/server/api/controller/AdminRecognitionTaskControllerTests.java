@@ -77,6 +77,14 @@ class AdminRecognitionTaskControllerTests {
 	}
 
 	@Test
+	void shouldRejectRecognitionTaskListWhenStatusIsInvalid() throws Exception {
+		mockMvc.perform(get("/api/admin/recognition-tasks").param("status", "unknown"))
+			.andExpect(status().isBadRequest());
+
+		verify(recognitionTaskService, never()).listTasks(any(), any(), anyInt());
+	}
+
+	@Test
 	void shouldReturnRecognitionTaskDetail() throws Exception {
 		when(recognitionTaskService.getTask(20L))
 			.thenReturn(recognitionTask(20L, 5L, "failed"));
