@@ -1,6 +1,9 @@
 package com.snk.server.api.controller;
 
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -162,6 +165,16 @@ class AdminFoodItemControllerTests {
 			.andExpect(jsonPath("$.duplicateItem.auditStatus").value("rejected"))
 			.andExpect(jsonPath("$.targetItem.id").value(7))
 			.andExpect(jsonPath("$.migratedRecordCount").value(3));
+	}
+
+	@Test
+	void shouldRejectMergeWhenTargetFoodItemIdIsNotPositive() throws Exception {
+		mockMvc.perform(post("/api/admin/food-items/6/merge")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"targetFoodItemId\":0}"))
+			.andExpect(status().isBadRequest());
+
+		verify(foodModerationService, never()).mergeFoodItem(eq(6L), anyLong());
 	}
 
 	private FoodModerationItem moderationItem(Long id, String name, int reportCount, String auditStatus) {
