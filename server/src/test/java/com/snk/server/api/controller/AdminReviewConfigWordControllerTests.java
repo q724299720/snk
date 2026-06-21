@@ -2,6 +2,8 @@ package com.snk.server.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -100,6 +102,25 @@ class AdminReviewConfigWordControllerTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.word").value("melon"))
 			.andExpect(jsonPath("$.enabled").value(false));
+	}
+
+	@Test
+	void shouldRejectUpdateWhenWordIdIsNotPositive() throws Exception {
+		mockMvc.perform(put("/api/admin/review-config-words/0")
+			.contentType("application/json")
+			.content("""
+				{
+				  "word": "melon",
+				  "wordType": "valid_food_word",
+				  "source": "manual",
+				  "remark": "updated",
+				  "operatorId": "admin-2",
+				  "operatorName": "Moderator"
+				}
+				"""))
+			.andExpect(status().isBadRequest());
+
+		verify(reviewConfigWordService, never()).updateWord(any(UpdateReviewConfigWordCommand.class));
 	}
 
 	@Test

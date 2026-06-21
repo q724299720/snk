@@ -179,6 +179,7 @@
 - `POST /api/admin/review-config-words/{wordId}/enable`
 - `POST /api/admin/review-config-words/{wordId}/disable`
 - `GET /api/admin/review-config-words/{wordId}/audit-logs`
+- 上述带 `{wordId}` 的接口要求 `wordId` 为正整数，`0` 或负数直接返回 `400`
 
 审核词典当前约定：
 
@@ -301,3 +302,4 @@
 | 2026-06-21 | Codex | 补充合并目标 ID 入参校验约束 | 后台合并请求必须在控制器层拒绝缺失或非正数目标 ID，避免无效请求进入治理服务 |
 | 2026-06-21 | Codex | 补充报错明细未知条目返回 404 约束 | 后台查询不存在条目的报错明细不应返回空列表，避免误导人工治理判断 |
 | 2026-06-21 | Codex | 补充审核词典审计日志未知词条返回 404 约束 | 后台查询不存在词条的审计日志不应返回空列表，避免误导治理判断 |
+| 2026-06-21 | Codex | 补充审核词典 `wordId` 正数校验约束 | 后台词典操作接口应在控制器层拒绝 `0` 或负数 ID，避免无效请求进入服务层 |

@@ -8,6 +8,7 @@ import com.snk.server.domain.review.CreateReviewConfigWordCommand;
 import com.snk.server.domain.review.ReviewConfigWordService;
 import com.snk.server.domain.review.UpdateReviewConfigWordCommand;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,9 +20,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
 @RestController
 @RequestMapping("/api/admin/review-config-words")
+@Validated
 public class AdminReviewConfigWordController {
 
 	private final ReviewConfigWordService reviewConfigWordService;
@@ -42,7 +45,7 @@ public class AdminReviewConfigWordController {
 	}
 
 	@GetMapping("/{wordId}/audit-logs")
-	public List<ReviewConfigWordAuditLogResponse> listAuditLogs(@PathVariable("wordId") Long wordId) {
+	public List<ReviewConfigWordAuditLogResponse> listAuditLogs(@PathVariable("wordId") @Positive Long wordId) {
 		return reviewConfigWordService.listAuditLogs(wordId)
 			.stream()
 			.map(ReviewConfigWordAuditLogResponse::from)
@@ -67,7 +70,7 @@ public class AdminReviewConfigWordController {
 
 	@PutMapping("/{wordId}")
 	public ReviewConfigWordResponse updateWord(
-		@PathVariable("wordId") Long wordId,
+		@PathVariable("wordId") @Positive Long wordId,
 		@Valid @RequestBody UpdateReviewConfigWordRequest request
 	) {
 		return ReviewConfigWordResponse.from(reviewConfigWordService.updateWord(
@@ -85,7 +88,7 @@ public class AdminReviewConfigWordController {
 
 	@PostMapping("/{wordId}/enable")
 	public ReviewConfigWordResponse enableWord(
-		@PathVariable("wordId") Long wordId,
+		@PathVariable("wordId") @Positive Long wordId,
 		@Valid @RequestBody ReviewConfigWordOperatorRequest request
 	) {
 		return ReviewConfigWordResponse.from(reviewConfigWordService.enableWord(wordId, request.operatorId(), request.operatorName()));
@@ -93,7 +96,7 @@ public class AdminReviewConfigWordController {
 
 	@PostMapping("/{wordId}/disable")
 	public ReviewConfigWordResponse disableWord(
-		@PathVariable("wordId") Long wordId,
+		@PathVariable("wordId") @Positive Long wordId,
 		@Valid @RequestBody ReviewConfigWordOperatorRequest request
 	) {
 		return ReviewConfigWordResponse.from(reviewConfigWordService.disableWord(wordId, request.operatorId(), request.operatorName()));
