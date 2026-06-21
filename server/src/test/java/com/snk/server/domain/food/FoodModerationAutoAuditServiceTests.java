@@ -11,6 +11,8 @@ import static org.mockito.Mockito.when;
 import com.snk.server.infrastructure.moderation.ModerationProperties;
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
+import com.snk.server.infrastructure.persistence.review.ReviewConfigWordEntity;
+import com.snk.server.infrastructure.persistence.review.ReviewConfigWordRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -32,6 +34,9 @@ class FoodModerationAutoAuditServiceTests {
 	@Mock
 	private FoodModerationService foodModerationService;
 
+	@Mock
+	private ReviewConfigWordRepository reviewConfigWordRepository;
+
 	private ModerationProperties moderationProperties;
 	private Clock clock;
 	private FoodModerationAutoAuditService foodModerationAutoAuditService;
@@ -45,6 +50,7 @@ class FoodModerationAutoAuditServiceTests {
 		foodModerationAutoAuditService = new FoodModerationAutoAuditService(
 			foodItemRepository,
 			foodModerationService,
+			reviewConfigWordRepository,
 			moderationProperties,
 			clock
 		);
@@ -69,6 +75,25 @@ class FoodModerationAutoAuditServiceTests {
 		assertThat(summary.rejectedFoodItemIds()).containsExactly(1L);
 		verify(foodModerationService).rejectFoodItem(1L);
 		verify(foodModerationService, never()).rejectFoodItem(2L);
+	}
+
+	@Test
+	void shouldUseEnabledValidFoodWordsWhenRejectingExtremelyShortGarbage() {
+		FoodItemEntity shortGarbage = foodItem(3L, "x9", "2026-06-13T11:59:59Z");
+		FoodItemEntity shortValidWord = foodItem(4L, "aa", "2026-06-13T11:59:59Z");
+		when(foodItemRepository.findByAuditStatusAndCreatedAtBeforeOrderByCreatedAtAsc(eq("pending"), any(OffsetDateTime.class)))
+			.thenReturn(List.of(shortGarbage, shortValidWord));
+		when(reviewConfigWordRepository.findByEnabledAndWordTypeOrderByUpdatedAtDesc(true, "valid_food_word"))
+			.thenReturn(List.of(reviewWord("aa")));
+		when(foodModerationService.rejectFoodItem(3L)).thenReturn(moderationItem(3L, "x9", "rejected"));
+
+		FoodModerationAutoAuditService.AutoAuditSummary summary = foodModerationAutoAuditService.runAutoAudit();
+
+		assertThat(summary.scannedCount()).isEqualTo(2);
+		assertThat(summary.rejectedCount()).isEqualTo(1);
+		assertThat(summary.rejectedFoodItemIds()).containsExactly(3L);
+		verify(foodModerationService).rejectFoodItem(3L);
+		verify(foodModerationService, never()).rejectFoodItem(4L);
 	}
 
 	@Test
@@ -114,6 +139,15 @@ class FoodModerationAutoAuditServiceTests {
 		entity.setCreatedAt(OffsetDateTime.parse(createdAt));
 		entity.setUpdatedAt(OffsetDateTime.parse(createdAt));
 		setId(entity, id);
+		return entity;
+	}
+
+	private ReviewConfigWordEntity reviewWord(String word) {
+		ReviewConfigWordEntity entity = new ReviewConfigWordEntity();
+		entity.setWord(word);
+		entity.setWordType("valid_food_word");
+		entity.setEnabled(true);
+		entity.setSource("manual");
 		return entity;
 	}
 
