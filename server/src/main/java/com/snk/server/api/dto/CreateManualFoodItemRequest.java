@@ -14,6 +14,7 @@ public record CreateManualFoodItemRequest(
 	String category,
 	String subcategory,
 	String brand,
-	String barcode
+	String barcode,
+	String coverImageUrl
 ) {
 }

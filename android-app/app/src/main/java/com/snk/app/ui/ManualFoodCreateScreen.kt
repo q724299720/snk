@@ -1,17 +1,31 @@
 package com.snk.app.ui
 
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,14 +34,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.snk.app.SnkApplication
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.ManualFoodCreateResult
+import com.snk.app.data.record.RecordImageUploadResult
+import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.launch
 
 private data class ManualOption(
@@ -57,7 +77,8 @@ fun ManualFoodCreateScreen(
     onFoodCreated: (FoodSearchItem) -> Unit,
     onBack: () -> Unit,
 ) {
-    val application = LocalContext.current.applicationContext as SnkApplication
+    val context = LocalContext.current
+    val application = context.applicationContext as SnkApplication
     val coroutineScope = rememberCoroutineScope()
     var name by remember(initialName) { mutableStateOf(initialName) }
     var barcode by remember(initialBarcode) { mutableStateOf(initialBarcode) }
@@ -67,10 +88,46 @@ fun ManualFoodCreateScreen(
     var brand by remember { mutableStateOf("") }
     var submitMessage by remember { mutableStateOf<String?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var uploadedCoverImageUrl by remember { mutableStateOf<String?>(null) }
+    var imageUploadMessage by remember { mutableStateOf<String?>(null) }
+    var isUploadingImage by remember { mutableStateOf(false) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        selectedImageUri = uri
+        uploadedCoverImageUrl = null
+        imageUploadMessage = "封面图片上传中..."
+        coroutineScope.launch {
+            isUploadingImage = true
+            imageUploadMessage = try {
+                val payload = readManualImagePayload(context, uri)
+                when (
+                    val result = application.container.foodRecordRepository.uploadRecordImage(
+                        imageBytes = payload.bytes,
+                        fileName = payload.fileName,
+                        contentType = payload.contentType,
+                    )
+                ) {
+                    is RecordImageUploadResult.Success -> {
+                        uploadedCoverImageUrl = result.image.imageUrl
+                        "封面图片已上传。"
+                    }
+                    is RecordImageUploadResult.Failure -> result.message
+                }
+            } catch (exception: Exception) {
+                "图片读取失败，请重新选择。"
+            }
+            isUploadingImage = false
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -168,6 +225,36 @@ fun ManualFoodCreateScreen(
                         shape = RoundedCornerShape(18.dp),
                     )
                 }
+                Text(
+                    text = "封面图片（可选）",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                selectedImageUri?.let { uri ->
+                    AsyncImage(
+                        model = uri,
+                        contentDescription = "封面图片预览",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(160.dp)
+                            .clip(RoundedCornerShape(18.dp)),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+                imageUploadMessage?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (uploadedCoverImageUrl != null) Color(0xFF2E7D32) else Color(0xFF8A2E1C),
+                    )
+                }
+                OutlinedButton(
+                    onClick = { imagePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    enabled = !isSubmitting && !isUploadingImage,
+                    shape = RoundedCornerShape(18.dp),
+                ) {
+                    Text(if (isUploadingImage) "上传中..." else "选择图片")
+                }
             }
         }
         Text(
@@ -207,6 +294,7 @@ fun ManualFoodCreateScreen(
                             subcategory = subcategory,
                             brand = brand,
                             barcode = barcode,
+                            coverImageUrl = uploadedCoverImageUrl,
                         )
                     ) {
                         is ManualFoodCreateResult.Success -> onFoodCreated(result.item)
@@ -215,7 +303,7 @@ fun ManualFoodCreateScreen(
                     isSubmitting = false
                 }
             },
-            enabled = !isSubmitting && sessionState !is SessionUiState.Loading && sessionState !is SessionUiState.Failure,
+            enabled = !isSubmitting && !isUploadingImage && sessionState !is SessionUiState.Loading && sessionState !is SessionUiState.Failure,
             shape = RoundedCornerShape(18.dp),
         ) {
             Text(if (isSubmitting) "创建中..." else "创建并记一笔")
@@ -226,5 +314,36 @@ fun ManualFoodCreateScreen(
         ) {
             Text("返回")
         }
+    }
+}
+
+private data class ManualImagePayload(
+    val bytes: ByteArray,
+    val fileName: String,
+    val contentType: String,
+)
+
+private fun readManualImagePayload(context: android.content.Context, imageUri: Uri): ManualImagePayload {
+    val bitmap = decodeManualBitmap(context, imageUri)
+    val bytes = ByteArrayOutputStream().use { output ->
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
+        output.toByteArray()
+    }
+    return ManualImagePayload(
+        bytes = bytes,
+        fileName = "cover-${System.currentTimeMillis()}.jpg",
+        contentType = "image/jpeg",
+    )
+}
+
+private fun decodeManualBitmap(context: android.content.Context, imageUri: Uri): Bitmap {
+    val resolver = context.contentResolver
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        ImageDecoder.decodeBitmap(ImageDecoder.createSource(resolver, imageUri)) { decoder, _, _ ->
+            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+        }
+    } else {
+        @Suppress("DEPRECATION")
+        MediaStore.Images.Media.getBitmap(resolver, imageUri)
     }
 }

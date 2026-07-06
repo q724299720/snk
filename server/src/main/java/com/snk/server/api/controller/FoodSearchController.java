@@ -89,7 +89,8 @@ public class FoodSearchController {
 				request.category(),
 				request.subcategory(),
 				request.brand(),
-				request.barcode()
+				request.barcode(),
+				request.coverImageUrl()
 			)
 		);
 		return FoodSearchItemResponse.from(item);

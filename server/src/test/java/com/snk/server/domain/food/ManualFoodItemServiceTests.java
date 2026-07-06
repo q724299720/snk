@@ -51,7 +51,8 @@ class ManualFoodItemServiceTests {
 				"snack",
 				"chips",
 				"乐事",
-				" 6900 0000 00011 "
+				" 6900 0000 00011 ",
+				null
 			)
 		);
 
@@ -69,7 +70,7 @@ class ManualFoodItemServiceTests {
 
 		assertThatThrownBy(
 			() -> manualFoodItemService.createPendingItem(
-				new CreateManualFoodItemCommand(2L, "杨枝鲜花饼", "unknown_type", "dessert", null, null, null)
+				new CreateManualFoodItemCommand(2L, "杨枝鲜花饼", "unknown_type", "dessert", null, null, null, null)
 			)
 		)
 			.isInstanceOf(ResponseStatusException.class)
@@ -92,7 +93,8 @@ class ManualFoodItemServiceTests {
 					"snack",
 					"chips",
 					"乐事",
-					"6900000000011"
+					"6900000000011",
+					null
 				)
 			)
 		)

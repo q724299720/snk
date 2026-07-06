@@ -67,6 +67,8 @@ data class CreateManualFoodItemRequest(
     val brand: String? = null,
     @SerialName("barcode")
     val barcode: String? = null,
+    @SerialName("coverImageUrl")
+    val coverImageUrl: String? = null,
 )
 
 @Serializable

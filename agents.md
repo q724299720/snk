@@ -121,3 +121,4 @@
 | 2026-06-21 | Codex | 补充后台治理页面与 Admin Token 部署约束 | Phase 4 开始提供轻量后台页，生产环境需要用 `SNK_ADMIN_API_TOKEN` 保护后台 API |
 | 2026-06-21 | Codex | 补充每个增量后的手机端与网页端测试约束 | 用户要求后续每次完成后都必须连接手机测试和网页端测试，需要纳入全局工作流 |
 | 2026-07-06 | Codex | 搜索排序优化：品牌搜索纳入 WHERE + brand match 升序 + record count 热度降序 | 用户要求改善搜索排序质量，品牌名搜索命中率提升，热门记录排前 |
+| 2026-07-06 | Codex | 手动创建封面图片：Request/Command/Service 增加 coverImageUrl，Android 端增加图片选择/上传/预览 | 用户要求手动创建时支持上传封面图 |

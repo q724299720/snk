@@ -53,7 +53,7 @@ public class ManualFoodItemService {
 		entity.setAuditStatus("pending");
 		entity.setSearchKeywords(buildSearchKeywords(entity));
 		entity.setReportCount(0);
-		entity.setCoverImageUrl(null);
+		entity.setCoverImageUrl(command.coverImageUrl());
 		entity.setCreatedByUser(creator);
 
 		FoodItemEntity saved = foodItemRepository.save(entity);

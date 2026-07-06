@@ -209,7 +209,7 @@ class FoodSearchControllerTests {
 	void shouldCreatePendingFoodItem() throws Exception {
 		when(
 			manualFoodItemService.createPendingItem(
-				eq(new CreateManualFoodItemCommand(2L, "Mango Cake", "packaged_product", "snack", "chips", "SNK Bakery", "6900000000099"))
+				eq(new CreateManualFoodItemCommand(2L, "Mango Cake", "packaged_product", "snack", "chips", "SNK Bakery", "6900000000099", null))
 			)
 		).thenReturn(
 			new FoodSearchItem(
