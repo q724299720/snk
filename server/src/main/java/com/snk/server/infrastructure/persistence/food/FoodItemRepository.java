@@ -31,6 +31,7 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 			    lower(fi.name) LIKE lower(concat('%', :query, '%'))
 			    OR lower(coalesce(fi.alias, '')) LIKE lower(concat('%', :query, '%'))
 			    OR lower(coalesce(fi.search_keywords, '')) LIKE lower(concat('%', :query, '%'))
+			    OR lower(coalesce(fi.brand, '')) LIKE lower(concat('%', :query, '%'))
 			  )
 			GROUP BY
 			  fi.id,
@@ -48,8 +49,14 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 			    WHEN lower(fi.name) LIKE lower(concat(:query, '%')) THEN 1
 			    ELSE 2
 			  END,
+			  CASE
+			    WHEN lower(coalesce(fi.brand, '')) = lower(:query) THEN 0
+			    WHEN lower(coalesce(fi.brand, '')) LIKE lower(concat(:query, '%')) THEN 1
+			    ELSE 2
+			  END,
 			  similarity(fi.name, :query) DESC,
 			  coalesce(avg(fr.rating), 0) DESC,
+			  count(fr.id) DESC,
 			  fi.id DESC
 			LIMIT 10
 			""",
@@ -82,6 +89,7 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 			    lower(fi.name) LIKE lower(concat('%', :query, '%'))
 			    OR lower(coalesce(fi.alias, '')) LIKE lower(concat('%', :query, '%'))
 			    OR lower(coalesce(fi.search_keywords, '')) LIKE lower(concat('%', :query, '%'))
+			    OR lower(coalesce(fi.brand, '')) LIKE lower(concat('%', :query, '%'))
 			  )
 			GROUP BY
 			  fi.id,
@@ -99,9 +107,15 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 			    WHEN lower(fi.name) LIKE lower(concat(:query, '%')) THEN 1
 			    ELSE 2
 			  END,
+			  CASE
+			    WHEN lower(coalesce(fi.brand, '')) = lower(:query) THEN 0
+			    WHEN lower(coalesce(fi.brand, '')) LIKE lower(concat(:query, '%')) THEN 1
+			    ELSE 2
+			  END,
 			  CASE WHEN fi.audit_status = 'pending' THEN 0 ELSE 1 END,
 			  similarity(fi.name, :query) DESC,
 			  coalesce(avg(fr.rating), 0) DESC,
+			  count(fr.id) DESC,
 			  fi.id DESC
 			LIMIT 10
 			""",
