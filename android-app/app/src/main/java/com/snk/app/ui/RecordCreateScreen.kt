@@ -148,6 +148,7 @@ fun RecordCreateScreen(
         isUploadingImage = reset.isUploadingImage
         selectedImageUri = null
         uploadedRecordImage = null
+        scrollState.scrollTo(0)
     }
     val relatedFoodState by produceState<FoodSearchResult?>(initialValue = null, key1 = selectedFood.id) {
         value = application.container.foodSearchRepository.recommendRelatedFoods(selectedFood.id)
@@ -313,14 +314,13 @@ fun RecordCreateScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Text(
-                        text = "Share to public feed",
+                        text = "公开分享",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "Off by default. Turn on only when you want other users to see this record.",
+                        text = "默认关闭，开启后其他用户可在公开分享区看到本条记录。",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF5B4A42),
                     )
                 }
                 Switch(
@@ -368,9 +368,8 @@ fun RecordCreateScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "No photo selected",
+                        text = "暂无图片",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF8A5A44),
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
