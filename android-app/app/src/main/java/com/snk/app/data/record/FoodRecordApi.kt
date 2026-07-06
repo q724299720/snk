@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import okhttp3.MultipartBody
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.Path
@@ -34,6 +35,12 @@ interface FoodRecordApi {
         @Path("recordId") recordId: Long,
         @Body request: UpdateFoodRecordRequest,
     ): FoodRecordResponse
+
+    @DELETE("/api/records/{recordId}")
+    suspend fun deleteRecord(
+        @Path("recordId") recordId: Long,
+        @Query("userId") userId: Long,
+    )
 
     @POST("/api/records/{recordId}/like")
     suspend fun likeRecord(

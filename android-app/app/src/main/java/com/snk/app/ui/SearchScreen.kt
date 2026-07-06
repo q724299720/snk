@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +51,7 @@ import com.snk.app.data.record.FoodRecordComment
 import com.snk.app.data.record.FoodRecordCommentCreateResult
 import com.snk.app.data.record.FoodRecordCommentsResult
 import com.snk.app.data.record.FoodRecordHistoryItem
+import com.snk.app.data.record.FoodRecordDeleteResult
 import com.snk.app.data.record.FoodRecordHistoryResult
 import com.snk.app.data.record.FoodRecordLikeResult
 import com.snk.app.data.record.toFoodSearchItem
@@ -71,10 +74,12 @@ fun SearchScreen(
     val coroutineScope = rememberCoroutineScope()
     val sessionUserId = sessionState.userIdOrNull()
     var recentQueries by remember { mutableStateOf<List<String>>(emptyList()) }
+    var localRefreshToken by remember { mutableStateOf(0) }
     val recentRecordState by produceState<FoodRecordHistoryResult?>(
         initialValue = null,
         key1 = sessionUserId,
         key2 = recentRefreshToken,
+        key3 = localRefreshToken,
     ) {
         value = if (sessionUserId == null) {
             null
@@ -497,6 +502,16 @@ fun SearchScreen(
                             onEditRecord = {
                                 onEditRecord(record)
                             },
+                            onDeleteRecord = {
+                                val result = application.container.foodRecordRepository.deleteRecord(
+                                    recordId = record.id,
+                                    userId = record.userId,
+                                )
+                                if (result is FoodRecordDeleteResult.Success) {
+                                    localRefreshToken++
+                                }
+                                result
+                            },
                         )
                     }
                 }
@@ -510,6 +525,7 @@ private fun RecentRecordCard(
     record: FoodRecordHistoryItem,
     onReuseFood: () -> Unit,
     onEditRecord: (() -> Unit)? = null,
+    onDeleteRecord: (suspend () -> FoodRecordDeleteResult)? = null,
     sessionUserId: Long? = null,
     onLoadComments: (suspend (Long) -> FoodRecordCommentsResult)? = null,
     onSubmitComment: (suspend (Long, String) -> FoodRecordCommentCreateResult)? = null,
@@ -527,6 +543,8 @@ private fun RecentRecordCard(
         mutableStateOf(RecordLikeUiState(likeCount = record.likeCount))
     }
     var isLiking by remember(record.id) { mutableStateOf(false) }
+    var showDeleteConfirmation by remember(record.id) { mutableStateOf(false) }
+    var deleteMessage by remember(record.id) { mutableStateOf<String?>(null) }
     val commentsEnabled = record.isPublic && onLoadComments != null && onSubmitComment != null
     val likeEnabled = onLikeRecord != null
 
@@ -679,6 +697,24 @@ private fun RecentRecordCard(
                     Text("编辑记录")
                 }
             }
+            if (onDeleteRecord != null) {
+                Button(
+                    onClick = { showDeleteConfirmation = true },
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFD32F2F),
+                    ),
+                ) {
+                    Text("删除记录", color = Color.White)
+                }
+            }
+            deleteMessage?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8A2E1C),
+                )
+            }
             if (commentsEnabled) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -761,6 +797,37 @@ private fun RecentRecordCard(
                 }
             }
         }
+    }
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("确认删除") },
+            text = { Text("确定要删除「${record.foodName}」的记录吗？此操作不可撤销。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            val deleter = onDeleteRecord ?: return@launch
+                            showDeleteConfirmation = false
+                            when (val result = deleter()) {
+                                is FoodRecordDeleteResult.Success -> deleteMessage = "记录已删除。"
+                                is FoodRecordDeleteResult.Failure -> deleteMessage = result.message
+                            }
+                        }
+                    },
+                ) {
+                    Text("确认删除", color = Color(0xFFD32F2F))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteConfirmation = false },
+                ) {
+                    Text("取消")
+                }
+            },
+        )
     }
 }
 

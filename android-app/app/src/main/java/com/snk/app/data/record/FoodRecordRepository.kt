@@ -136,6 +136,22 @@ class FoodRecordRepository(
         }
     }
 
+    suspend fun deleteRecord(
+        recordId: Long,
+        userId: Long,
+    ): FoodRecordDeleteResult {
+        if (recordId <= 0L || userId <= 0L) {
+            return FoodRecordDeleteResult.Failure("记录或用户信息无效。")
+        }
+
+        return try {
+            api.deleteRecord(recordId, userId)
+            FoodRecordDeleteResult.Success
+        } catch (exception: Exception) {
+            FoodRecordDeleteResult.Failure(exception.asDeleteMessage())
+        }
+    }
+
     suspend fun likeRecord(recordId: Long): FoodRecordLikeResult {
         return try {
             val response = api.likeRecord(recordId)
@@ -328,6 +344,12 @@ enum class FoodRecordLikeFailureReason {
     UNKNOWN,
 }
 
+sealed interface FoodRecordDeleteResult {
+    data object Success : FoodRecordDeleteResult
+
+    data class Failure(val message: String) : FoodRecordDeleteResult
+}
+
 sealed interface FoodRecordLikeResult {
     data class Success(
         val likeCount: Int,
@@ -416,6 +438,12 @@ private fun Exception.asImageUploadMessage(): String = when (this) {
     is IOException -> "无法连接服务端上传图片，请稍后重试。"
     is HttpException -> "服务端拒绝了这张图片，请更换图片后重试。"
     else -> "图片上传失败，请稍后重试。"
+}
+
+private fun Exception.asDeleteMessage(): String = when (this) {
+    is IOException -> "无法连接服务端，暂时无法删除记录。"
+    is HttpException -> "服务端拒绝了这次删除请求。"
+    else -> "删除记录失败，请稍后重试。"
 }
 
 private fun Exception.asCommentMessage(): String = when (this) {

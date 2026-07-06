@@ -177,4 +177,8 @@ public class FoodRecordEntity {
 	public OffsetDateTime getDeletedAt() {
 		return deletedAt;
 	}
+
+	public void setDeletedAt(OffsetDateTime deletedAt) {
+		this.deletedAt = deletedAt;
+	}
 }

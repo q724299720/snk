@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -136,6 +137,32 @@ class FoodRecordControllerTests {
 		org.assertj.core.api.Assertions.assertThat(command.images()).hasSize(1);
 		org.assertj.core.api.Assertions.assertThat(command.images().getFirst().thumbnailUrl())
 			.isEqualTo("https://snk.qiuxinmin.cn/uploads/records/new-thumb.jpg");
+	}
+
+	@Test
+	void shouldDeleteOwnRecord() throws Exception {
+		mockMvc.perform(
+			delete("/api/records/1").param("userId", "100")
+		)
+			.andExpect(status().isNoContent());
+
+		verify(foodRecordService).deleteRecord(1L, 100L);
+	}
+
+	@Test
+	void shouldRejectDeleteWhenRecordIdIsNotPositive() throws Exception {
+		mockMvc.perform(
+			delete("/api/records/0").param("userId", "100")
+		)
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void shouldRejectDeleteWhenUserIdIsNotPositive() throws Exception {
+		mockMvc.perform(
+			delete("/api/records/1").param("userId", "0")
+		)
+			.andExpect(status().isBadRequest());
 	}
 
 	@Test

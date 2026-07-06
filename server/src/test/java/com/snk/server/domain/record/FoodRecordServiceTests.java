@@ -412,6 +412,71 @@ class FoodRecordServiceTests {
 		throw new AssertionError("Expected editing another user's record to be rejected.");
 	}
 
+	@Test
+	void shouldSoftDeleteOwnRecord() throws Exception {
+		UserEntity user = new UserEntity();
+		setUserId(user, 100L);
+
+		FoodItemEntity foodItem = new FoodItemEntity();
+		setFoodItemId(foodItem, 200L);
+
+		FoodRecordEntity record = createRecordEntity(user, foodItem);
+
+		when(foodRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+		when(foodRecordRepository.save(any(FoodRecordEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		FoodRecordResult result = foodRecordService.deleteRecord(1L, 100L);
+
+		assertThat(record.getDeletedAt()).isNotNull();
+		assertThat(result.id()).isEqualTo(1L);
+		verify(foodRecordRepository).save(record);
+	}
+
+	@Test
+	void shouldRejectDeleteWhenRecordBelongsToAnotherUser() throws Exception {
+		UserEntity owner = new UserEntity();
+		setUserId(owner, 100L);
+
+		FoodItemEntity foodItem = new FoodItemEntity();
+		setFoodItemId(foodItem, 200L);
+
+		FoodRecordEntity record = createRecordEntity(owner, foodItem);
+
+		when(foodRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+		try {
+			foodRecordService.deleteRecord(1L, 999L);
+		} catch (ResponseStatusException exception) {
+			assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+			return;
+		}
+
+		throw new AssertionError("Expected deleting another user's record to be rejected.");
+	}
+
+	@Test
+	void shouldRejectDeleteWhenRecordAlreadyDeleted() throws Exception {
+		UserEntity user = new UserEntity();
+		setUserId(user, 100L);
+
+		FoodItemEntity foodItem = new FoodItemEntity();
+		setFoodItemId(foodItem, 200L);
+
+		FoodRecordEntity record = createRecordEntity(user, foodItem);
+		record.setDeletedAt(OffsetDateTime.now());
+
+		when(foodRecordRepository.findById(1L)).thenReturn(Optional.of(record));
+
+		try {
+			foodRecordService.deleteRecord(1L, 100L);
+		} catch (ResponseStatusException exception) {
+			assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+			return;
+		}
+
+		throw new AssertionError("Expected deleting an already deleted record to be rejected.");
+	}
+
 	private FoodRecordEntity createRecordEntity(UserEntity user, FoodItemEntity foodItem) throws Exception {
 		FoodRecordEntity record = new FoodRecordEntity();
 		setRecordId(record, 1L);

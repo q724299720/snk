@@ -10,6 +10,7 @@ import com.snk.server.infrastructure.persistence.record.FoodRecordImageRepositor
 import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
 import com.snk.server.infrastructure.persistence.user.UserEntity;
 import com.snk.server.infrastructure.persistence.user.UserRepository;
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +94,13 @@ public class FoodRecordService {
 			foodRecordImageRepository.saveAll(toImageEntities(savedRecord, images));
 		}
 		return toResult(savedRecord, images);
+	}
+
+	@Transactional
+	public FoodRecordResult deleteRecord(Long recordId, Long userId) {
+		FoodRecordEntity entity = requireOwnedRecord(recordId, userId);
+		entity.setDeletedAt(OffsetDateTime.now());
+		return toResult(foodRecordRepository.save(entity));
 	}
 
 	@Transactional

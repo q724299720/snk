@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
 import java.util.Set;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -106,6 +107,15 @@ public class FoodRecordController {
 				)
 			)
 		);
+	}
+
+	@DeleteMapping("/{recordId}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void deleteRecord(
+		@PathVariable @Positive Long recordId,
+		@RequestParam("userId") @Positive Long userId
+	) {
+		foodRecordService.deleteRecord(recordId, userId);
 	}
 
 	private String validateSourceType(String sourceType) {
