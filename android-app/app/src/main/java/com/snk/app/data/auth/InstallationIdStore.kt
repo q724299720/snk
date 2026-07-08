@@ -1,6 +1,7 @@
 package com.snk.app.data.auth
 
 import android.content.Context
+import android.provider.Settings
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
@@ -29,7 +30,12 @@ class InstallationIdStore(
             return existing
         }
 
-        val generated = UUID.randomUUID().toString()
+        val androidId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+        val generated = if (!androidId.isNullOrBlank() && androidId != "9774d56d682e549c") {
+            "android_$androidId"
+        } else {
+            UUID.randomUUID().toString()
+        }
         context.authDataStore.edit { preferences ->
             preferences[Keys.INSTALLATION_ID] = generated
         }
