@@ -3,4 +3,10 @@
     <cache-path
         name="ocr_camera_cache"
         path="ocr-camera/" />
+    <cache-path
+        name="record_camera_cache"
+        path="record-camera/" />
+    <cache-path
+        name="manual_camera_cache"
+        path="manual-camera/" />
 </paths>
