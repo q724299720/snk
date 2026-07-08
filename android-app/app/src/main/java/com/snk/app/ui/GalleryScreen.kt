@@ -60,23 +60,26 @@ fun GalleryScreen(
     fun loadPage(page: Int) {
         if (sessionUserId == null) return
         coroutineScope.launch {
-            isLoading = true
-            loadError = null
-            when (val result = application.container.foodRecordRepository.listRecentRecords(sessionUserId, page, PAGE_SIZE)) {
-                is FoodRecordHistoryResult.Success -> {
-                    if (page == 0) {
-                        items = result.items
-                    } else {
-                        items = items + result.items
+            try {
+                isLoading = true
+                loadError = null
+                when (val result = application.container.foodRecordRepository.listRecentRecords(sessionUserId, page, PAGE_SIZE)) {
+                    is FoodRecordHistoryResult.Success -> {
+                        if (page == 0) {
+                            items = result.items
+                        } else {
+                            items = items + result.items
+                        }
+                        hasMore = result.items.size >= PAGE_SIZE
+                        currentPage = page
                     }
-                    hasMore = result.items.size >= PAGE_SIZE
-                    currentPage = page
+                    is FoodRecordHistoryResult.Failure -> {
+                        loadError = result.message
+                    }
                 }
-                is FoodRecordHistoryResult.Failure -> {
-                    loadError = result.message
-                }
+            } finally {
+                isLoading = false
             }
-            isLoading = false
         }
     }
 
@@ -87,14 +90,17 @@ fun GalleryScreen(
         return
     }
 
-    if (items.isEmpty() && !isLoading) {
-        loadPage(0)
+    LaunchedEffect(sessionUserId) {
+        if (items.isEmpty()) {
+            loadPage(0)
+        }
     }
 
     val gridState = rememberLazyStaggeredGridState()
 
     val shouldLoadMore = remember {
         derivedStateOf {
+            if (items.isEmpty()) return@derivedStateOf false
             val lastVisibleItem = gridState.layoutInfo.visibleItemsInfo.lastOrNull()
             if (lastVisibleItem == null) false
             else lastVisibleItem.index >= items.size - 3
