@@ -1,5 +1,7 @@
 package com.snk.app.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,8 +42,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.snk.app.SnkApplication
+import java.io.File
+import java.util.UUID
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.ManualFoodCreateResult
 import com.snk.app.data.record.RecordImageUploadResult
@@ -89,35 +96,59 @@ fun ManualFoodCreateScreen(
     var imageUploadMessage by remember { mutableStateOf<String?>(null) }
     var isUploadingImage by remember { mutableStateOf(false) }
 
+    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    suspend fun uploadCoverImage(uri: Uri) {
+        isUploadingImage = true
+        imageUploadMessage = "封面图片上传中..."
+        imageUploadMessage = try {
+            val compressed = com.snk.app.util.ImageCompressor.compress(context, uri)
+            when (val result = application.container.foodRecordRepository.uploadRecordImage(
+                    imageBytes = compressed.bytes,
+                    fileName = compressed.fileName,
+                    contentType = compressed.contentType,
+                )) {
+                is RecordImageUploadResult.Success -> {
+                    uploadedCoverImageUrl = result.image.imageUrl
+                    "封面图片已上传。"
+                }
+                is RecordImageUploadResult.Failure -> result.message
+            }
+        } catch (exception: Exception) {
+            "图片读取失败，请重新选择。"
+        }
+        isUploadingImage = false
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+    ) { success ->
+        val imageUri = pendingCameraUri
+        if (!success || imageUri == null) return@rememberLauncherForActivityResult
+        selectedImageUri = imageUri
+        uploadedCoverImageUrl = null
+        coroutineScope.launch { uploadCoverImage(imageUri) }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            val imageUri = createTempManualCameraImageUri(context)
+            pendingCameraUri = imageUri
+            cameraLauncher.launch(imageUri)
+        } else {
+            imageUploadMessage = "需要相机权限才能拍照。"
+        }
+    }
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         selectedImageUri = uri
         uploadedCoverImageUrl = null
-        imageUploadMessage = "封面图片上传中..."
-        coroutineScope.launch {
-            isUploadingImage = true
-            imageUploadMessage = try {
-                val compressed = com.snk.app.util.ImageCompressor.compress(context, uri)
-                when (
-                    val result = application.container.foodRecordRepository.uploadRecordImage(
-                        imageBytes = compressed.bytes,
-                        fileName = compressed.fileName,
-                        contentType = compressed.contentType,
-                    )
-                ) {
-                    is RecordImageUploadResult.Success -> {
-                        uploadedCoverImageUrl = result.image.imageUrl
-                        "封面图片已上传。"
-                    }
-                    is RecordImageUploadResult.Failure -> result.message
-                }
-            } catch (exception: Exception) {
-                "图片读取失败，请重新选择。"
-            }
-            isUploadingImage = false
-        }
+        coroutineScope.launch { uploadCoverImage(uri) }
     }
 
     Column(
@@ -239,13 +270,46 @@ fun ManualFoodCreateScreen(
                         color = if (uploadedCoverImageUrl != null) Color(0xFF2E7D32) else Color(0xFF8A2E1C),
                     )
                 }
-                OutlinedButton(
-                    onClick = { imagePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                    enabled = !isSubmitting && !isUploadingImage,
-                    shape = RoundedCornerShape(14.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                ) {
-                    Text(if (isUploadingImage) "上传中..." else "选择图片", style = MaterialTheme.typography.bodySmall)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            val hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                            if (hasCameraPermission) {
+                                val imageUri = createTempManualCameraImageUri(context)
+                                pendingCameraUri = imageUri
+                                cameraLauncher.launch(imageUri)
+                            } else {
+                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        enabled = !isSubmitting && !isUploadingImage,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                    ) {
+                        Text(if (isUploadingImage) "上传中..." else "拍照", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Button(
+                        onClick = { imagePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                        shape = RoundedCornerShape(14.dp),
+                        enabled = !isSubmitting && !isUploadingImage,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                    ) {
+                        Text(if (isUploadingImage) "上传中..." else "相册", style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (selectedImageUri != null) {
+                        Button(
+                            onClick = {
+                                selectedImageUri = null
+                                uploadedCoverImageUrl = null
+                                imageUploadMessage = null
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            enabled = !isSubmitting && !isUploadingImage,
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                        ) {
+                            Text("移除", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
                 }
             }
         }
@@ -301,6 +365,12 @@ fun ManualFoodCreateScreen(
             Text("返回")
         }
     }
+}
+
+private fun createTempManualCameraImageUri(context: android.content.Context): Uri {
+    val imageDirectory = File(context.cacheDir, "manual-camera").apply { mkdirs() }
+    val imageFile = File(imageDirectory, "camera-${UUID.randomUUID()}.jpg")
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", imageFile)
 }
 
 
