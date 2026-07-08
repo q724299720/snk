@@ -1,14 +1,18 @@
 package com.snk.app.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,6 +48,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.snk.app.SnkApplication
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodSearchResult
@@ -53,6 +59,8 @@ import com.snk.app.data.record.FoodRecordSubmissionCoordinator
 import com.snk.app.data.record.FoodRecordSubmissionResult
 import com.snk.app.data.record.RecordImageUploadResult
 import coil.compose.AsyncImage
+import java.io.File
+import java.util.UUID
 import kotlinx.coroutines.launch
 @Composable
 fun RecordCreateScreen(
@@ -90,6 +98,52 @@ fun RecordCreateScreen(
         result = submitState,
         hasUploadedImage = uploadedRecordImage != null,
     )
+    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    suspend fun uploadSelectedImage(uri: Uri): String = try {
+        val compressed = com.snk.app.util.ImageCompressor.compress(context, uri)
+        when (val result = application.container.foodRecordRepository.uploadRecordImage(
+                imageBytes = compressed.bytes,
+                fileName = compressed.fileName,
+                contentType = compressed.contentType,
+            )) {
+            is RecordImageUploadResult.Success -> {
+                uploadedRecordImage = result.image
+                "图片已上传，保存记录时会一起保存。"
+            }
+            is RecordImageUploadResult.Failure -> result.message
+        }
+    } catch (exception: Exception) {
+        "图片读取失败，请重新选择。"
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+    ) { success ->
+        val imageUri = pendingCameraUri
+        if (!success || imageUri == null) return@rememberLauncherForActivityResult
+        selectedImageUri = imageUri
+        uploadedRecordImage = null
+        imageUploadMessage = "图片上传中..."
+        coroutineScope.launch {
+            isUploadingImage = true
+            imageUploadMessage = uploadSelectedImage(uri = imageUri)
+            isUploadingImage = false
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            val imageUri = createTempRecordCameraImageUri(context)
+            pendingCameraUri = imageUri
+            cameraLauncher.launch(imageUri)
+        } else {
+            imageUploadMessage = "需要相机权限才能拍照。"
+        }
+    }
+
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) {
             return@rememberLauncherForActivityResult
@@ -99,28 +153,11 @@ fun RecordCreateScreen(
         imageUploadMessage = "图片上传中..."
         coroutineScope.launch {
             isUploadingImage = true
-            imageUploadMessage = try {
-                val compressed = com.snk.app.util.ImageCompressor.compress(context, uri)
-                when (
-                    val result = application.container.foodRecordRepository.uploadRecordImage(
-                        imageBytes = compressed.bytes,
-                        fileName = compressed.fileName,
-                        contentType = compressed.contentType,
-                    )
-                ) {
-                    is RecordImageUploadResult.Success -> {
-                        uploadedRecordImage = result.image
-                        "图片已上传，保存记录时会一起保存。"
-                    }
-
-                    is RecordImageUploadResult.Failure -> result.message
-                }
-            } catch (exception: Exception) {
-                "图片读取失败，请重新选择。"
-            }
+            imageUploadMessage = uploadSelectedImage(uri = uri)
             isUploadingImage = false
         }
     }
+
     LaunchedEffect(selectedFood.id) {
         val reset = RecordCreateTransientState(
             rating = rating,
@@ -302,6 +339,23 @@ fun RecordCreateScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = {
+                            val hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                            if (hasCameraPermission) {
+                                val imageUri = createTempRecordCameraImageUri(context)
+                                pendingCameraUri = imageUri
+                                cameraLauncher.launch(imageUri)
+                            } else {
+                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        enabled = !isSubmitting && !isUploadingImage,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                    ) {
+                        Text(if (isUploadingImage) "上传中..." else "拍照", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Button(
+                        onClick = {
                             imagePickerLauncher.launch(
                                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                             )
@@ -310,7 +364,7 @@ fun RecordCreateScreen(
                         enabled = !isSubmitting && !isUploadingImage,
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                     ) {
-                        Text(if (isUploadingImage) "上传中..." else "选择图片", style = MaterialTheme.typography.bodyMedium)
+                        Text(if (isUploadingImage) "上传中..." else "相册", style = MaterialTheme.typography.bodyMedium)
                     }
                     if (selectedImageUri != null) {
                         Button(
@@ -576,6 +630,12 @@ internal data class RecordCreateTransientState(
 )
 
 internal fun RecordCreateTransientState.resetForFoodSwitch(): RecordCreateTransientState = RecordCreateTransientState()
+
+private fun createTempRecordCameraImageUri(context: android.content.Context): Uri {
+    val imageDirectory = File(context.cacheDir, "record-camera").apply { mkdirs() }
+    val imageFile = File(imageDirectory, "camera-${UUID.randomUUID()}.jpg")
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", imageFile)
+}
 
 internal fun buildRecordShareText(
     foodName: String,
