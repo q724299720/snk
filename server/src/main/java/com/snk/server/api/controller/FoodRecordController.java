@@ -71,13 +71,13 @@ public class FoodRecordController {
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public FoodRecordResponse createRecord(@Valid @RequestBody CreateFoodRecordRequest request) {
-		FoodRecordResult result = foodRecordService.createRecord(
+			FoodRecordResult result = foodRecordService.createRecord(
 			new FoodRecordCreateCommand(
 				request.userId(),
 				request.foodItemId(),
 				validateSourceType(request.sourceType()),
 				request.isPublic(),
-				request.rating(),
+				(short) request.rating(),
 				request.comment(),
 				request.recordTime(),
 				request.imagesOrEmpty().stream()
@@ -98,7 +98,7 @@ public class FoodRecordController {
 				new FoodRecordUpdateCommand(
 					recordId,
 					request.userId(),
-					request.rating(),
+					(short) request.rating(),
 					request.comment(),
 					request.isPublic(),
 					request.imagesOrEmpty().stream()

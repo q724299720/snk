@@ -1,12 +1,7 @@
 package com.snk.app.ui
 
-import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -58,8 +54,6 @@ import com.snk.app.data.record.FoodRecordSubmissionResult
 import com.snk.app.data.record.RecordImageUploadResult
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
-import java.io.ByteArrayOutputStream
-
 @Composable
 fun RecordCreateScreen(
     selectedFood: FoodSearchItem,
@@ -106,12 +100,12 @@ fun RecordCreateScreen(
         coroutineScope.launch {
             isUploadingImage = true
             imageUploadMessage = try {
-                val payload = readRecordImagePayload(context, uri)
+                val compressed = com.snk.app.util.ImageCompressor.compress(context, uri)
                 when (
                     val result = application.container.foodRecordRepository.uploadRecordImage(
-                        imageBytes = payload.bytes,
-                        fileName = payload.fileName,
-                        contentType = payload.contentType,
+                        imageBytes = compressed.bytes,
+                        fileName = compressed.fileName,
+                        contentType = compressed.contentType,
                     )
                 ) {
                     is RecordImageUploadResult.Success -> {
@@ -165,23 +159,17 @@ fun RecordCreateScreen(
             .verticalScroll(scrollState)
             .imePadding()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(
-            text = "新建记录",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Black,
-            color = Color(0xFF2B1E18),
-        )
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFFEFBF7)),
         ) {
             Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
                     text = selectedFood.name,
@@ -191,95 +179,51 @@ fun RecordCreateScreen(
                 if (selectedFood.auditStatus != "approved") {
                     Text(
                         text = "该条目仍在审核中，当前记录会先绑定到待审核条目。",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFFB53A1A),
                     )
                 }
-                Text(
-                    text = buildString {
-                        append(selectedFood.category)
-                        selectedFood.subcategory?.takeIf { it.isNotBlank() }?.let {
-                            append(" / ")
-                            append(it)
-                        }
-                        selectedFood.brand?.takeIf { it.isNotBlank() }?.let {
-                            append(" / ")
-                            append(it)
-                        }
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF5B4A42),
-                )
-                selectedFood.barcode?.takeIf { it.isNotBlank() }?.let {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "条码: $it",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF8A5A44),
-                    )
-                }
-            }
-        }
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F1E7)),
-        ) {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text(
-                    text = "相似推荐",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                when (val related = relatedFoodState) {
-                    null -> Text(
-                        text = "正在加载同类食物推荐...",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = selectedFood.category,
+                        style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF5B4A42),
                     )
-
-                    is FoodSearchResult.Failure -> Text(
-                        text = related.message,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF8A2E1C),
-                    )
-
-                    is FoodSearchResult.Success -> {
+                    selectedFood.subcategory?.takeIf { it.isNotBlank() }?.let {
                         Text(
-                            text = if (related.items.isEmpty()) "暂时没有找到相似条目。" else "可以快速切换到以下相似条目：",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "/ $it",
+                            style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF5B4A42),
                         )
-                        related.items.take(3).forEach { item ->
-                            Button(
-                                onClick = { onSwitchRecommendedFood(item) },
-                                shape = RoundedCornerShape(14.dp),
-                            ) {
-                                Text(item.name)
-                            }
-                        }
+                    }
+                    selectedFood.brand?.takeIf { it.isNotBlank() }?.let {
+                        Text(
+                            text = "/ $it",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF5B4A42),
+                        )
                     }
                 }
             }
         }
         Text(
             text = "评分",
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF2B1E18),
         )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             (1..5).forEach { value ->
                 Button(
                     onClick = { rating = value },
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(14.dp),
                     enabled = !isSubmitting,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                 ) {
-                    Text(if (rating == value) "$value 分" else value.toString())
+                    Text(
+                        text = if (rating == value) "$value 分" else value.toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                 }
             }
         }
@@ -287,67 +231,50 @@ fun RecordCreateScreen(
             value = comment,
             onValueChange = { comment = it },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("备注，可选") },
+            label = { Text("备注（可选）") },
             supportingText = {
                 Text(commentValidation.message ?: "${comment.trim().length}/$MAX_RECORD_COMMENT_LENGTH")
             },
             isError = commentValidation.hasError,
-            minLines = 3,
-            maxLines = 5,
-            shape = RoundedCornerShape(20.dp),
+            minLines = 2,
+            maxLines = 4,
+            shape = RoundedCornerShape(16.dp),
             enabled = !isSubmitting,
         )
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF6EA)),
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(18.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text(
-                        text = "公开分享",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = "默认关闭，开启后其他用户可在公开分享区看到本条记录。",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-                Switch(
-                    checked = isPublic,
-                    onCheckedChange = { isPublic = it },
-                    enabled = !isSubmitting,
-                )
-            }
-        }
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F1E7)),
-        ) {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "记录图片",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = "公开分享",
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "可选。图片上传成功后会随记录保存，并显示在最近记录里。",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF5B4A42),
+                    text = "开启后其他用户可在公开分享区看到",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Switch(
+                checked = isPublic,
+                onCheckedChange = { isPublic = it },
+                enabled = !isSubmitting,
+            )
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F1E7)),
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = "记录图片",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
                 )
                 selectedImageUri?.let { uri ->
                     AsyncImage(
@@ -355,34 +282,35 @@ fun RecordCreateScreen(
                         contentDescription = "Selected record photo",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(180.dp)
-                            .clip(RoundedCornerShape(18.dp)),
+                            .height(140.dp)
+                            .clip(RoundedCornerShape(14.dp)),
                         contentScale = ContentScale.Crop,
                     )
                 } ?: Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(96.dp)
-                        .clip(RoundedCornerShape(18.dp))
+                        .height(80.dp)
+                        .clip(RoundedCornerShape(14.dp))
                         .background(Color(0xFFF2E3D3)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = "暂无图片",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = {
                             imagePickerLauncher.launch(
                                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                             )
                         },
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(14.dp),
                         enabled = !isSubmitting && !isUploadingImage,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                     ) {
-                        Text(if (isUploadingImage) "上传中..." else "选择图片")
+                        Text(if (isUploadingImage) "上传中..." else "选择图片", style = MaterialTheme.typography.bodyMedium)
                     }
                     if (selectedImageUri != null) {
                         Button(
@@ -391,49 +319,29 @@ fun RecordCreateScreen(
                                 uploadedRecordImage = null
                                 imageUploadMessage = null
                             },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(14.dp),
                             enabled = !isSubmitting && !isUploadingImage,
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                         ) {
-                            Text("移除")
+                            Text("移除", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
                 imageUploadMessage?.let { message ->
                     Text(
                         text = message,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = if (uploadedRecordImage != null) Color(0xFF3D6B35) else Color(0xFF8A5A44),
                     )
                 }
                 imageSaveValidation.message?.let { message ->
                     Text(
                         text = message,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF8A2E1C),
                     )
                 }
             }
-        }
-        Text(
-            text = when (sessionState) {
-                SessionUiState.Loading -> "游客身份初始化中，暂时不能提交。"
-                is SessionUiState.Remote -> "当前将记录到游客 user_id ${sessionState.session.userId}"
-                is SessionUiState.Cached -> "当前离线沿用缓存游客 user_id ${sessionState.session.userId}"
-                is SessionUiState.Failure -> sessionState.reason
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFF5B4A42),
-        )
-        submitFeedbackMessage?.let { message ->
-            Text(
-                text = message,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = when (submitState) {
-                    is FoodRecordSubmissionResult.Failure -> Color(0xFF8A2E1C)
-                    else -> Color(0xFF3D6B35)
-                },
-            )
         }
         Button(
             onClick = {
@@ -468,7 +376,9 @@ fun RecordCreateScreen(
                 !commentValidation.hasError &&
                 sessionState !is SessionUiState.Loading &&
                 sessionState !is SessionUiState.Failure,
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(vertical = 10.dp),
         ) {
             Text(if (isSubmitting) "保存中..." else "保存记录")
         }
@@ -477,7 +387,7 @@ fun RecordCreateScreen(
             is FoodRecordSubmissionResult.Failure -> {
                 Text(
                     text = result.message,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF8A2E1C),
                 )
             }
@@ -485,84 +395,69 @@ fun RecordCreateScreen(
             is FoodRecordSubmissionResult.Submitted -> {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFFCF1E6)),
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(14.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
                             text = "记录已保存",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                         )
-                        Text(
-                            text = "record_id: ${result.recordId}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF5B4A42),
-                        )
-                        Text(
-                            text = "已点赞 $likeCount 次",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF5B4A42),
-                        )
-                        Button(
-                            onClick = {
-                                coroutineScope.launch {
-                                    isLiking = true
-                                    when (val likeResult = application.container.foodRecordRepository.likeRecord(result.recordId)) {
-                                        is FoodRecordLikeResult.Success -> {
-                                            likeCount = likeResult.likeCount
-                                            interactionMessage = "已更新点赞数"
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        isLiking = true
+                                        when (val likeResult = application.container.foodRecordRepository.likeRecord(result.recordId)) {
+                                            is FoodRecordLikeResult.Success -> {
+                                                likeCount = likeResult.likeCount
+                                                interactionMessage = "已更新点赞数"
+                                            }
+                                            is FoodRecordLikeResult.Failure -> {
+                                                interactionMessage = likeResult.message
+                                            }
                                         }
-
-                                        is FoodRecordLikeResult.Failure -> {
-                                            interactionMessage = likeResult.message
-                                        }
+                                        isLiking = false
                                     }
-                                    isLiking = false
-                                }
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            enabled = !isLiking,
-                        ) {
-                            Text(if (isLiking) "点赞中..." else "点赞这条记录")
-                        }
-                        Button(
-                            onClick = {
-                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_SUBJECT, "SNK 记录分享")
-                                    putExtra(
-                                        Intent.EXTRA_TEXT,
-                                        buildRecordShareText(
-                                            foodName = selectedFood.name,
-                                            rating = rating,
-                                            comment = comment,
-                                            recordId = result.recordId,
-                                            recordTime = result.recordTime,
-                                        ),
-                                    )
-                                }
-                                context.startActivity(Intent.createChooser(shareIntent, "分享这条记录"))
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                        ) {
-                            Text("分享记录")
-                        }
-                        Button(
-                            onClick = onBackToSearch,
-                            shape = RoundedCornerShape(16.dp),
-                        ) {
-                            Text("返回搜索")
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                enabled = !isLiking,
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            ) {
+                                Text(if (isLiking) "点赞中..." else "点赞 ($likeCount)", style = MaterialTheme.typography.bodySmall)
+                            }
+                            Button(
+                                onClick = {
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_SUBJECT, "SNK 记录分享")
+                                        putExtra(Intent.EXTRA_TEXT, buildRecordShareText(foodName = selectedFood.name, rating = rating, comment = comment, recordId = result.recordId, recordTime = result.recordTime))
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "分享"))
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            ) {
+                                Text("分享", style = MaterialTheme.typography.bodySmall)
+                            }
+                            Button(
+                                onClick = onBackToSearch,
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            ) {
+                                Text("返回", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                 }
                 interactionMessage?.let { message ->
                     Text(
                         text = message,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF8A2E1C),
                     )
                 }
@@ -571,33 +466,29 @@ fun RecordCreateScreen(
             is FoodRecordSubmissionResult.SavedToDraft -> {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F2E8)),
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(14.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
                             text = "已转存草稿",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = "draft_id: ${result.draft.id}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF5B4A42),
-                        )
-                        Text(
                             text = "当前无法连接服务端，网络恢复后会自动补传。",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF5B4A42),
                         )
                         Button(
                             onClick = onOpenDrafts,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                         ) {
-                            Text("查看草稿")
+                            Text("查看草稿", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
@@ -715,33 +606,4 @@ internal fun buildRecordShareText(
     }
 }
 
-private data class RecordImagePayload(
-    val bytes: ByteArray,
-    val fileName: String,
-    val contentType: String,
-)
 
-private fun readRecordImagePayload(context: Context, imageUri: Uri): RecordImagePayload {
-    val bitmap = decodeRecordBitmap(context, imageUri)
-    val bytes = ByteArrayOutputStream().use { output ->
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
-        output.toByteArray()
-    }
-    return RecordImagePayload(
-        bytes = bytes,
-        fileName = "record-${System.currentTimeMillis()}.jpg",
-        contentType = "image/jpeg",
-    )
-}
-
-private fun decodeRecordBitmap(context: Context, imageUri: Uri): Bitmap {
-    val resolver = context.contentResolver
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        ImageDecoder.decodeBitmap(ImageDecoder.createSource(resolver, imageUri)) { decoder, _, _ ->
-            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
-        }
-    } else {
-        @Suppress("DEPRECATION")
-        MediaStore.Images.Media.getBitmap(resolver, imageUri)
-    }
-}

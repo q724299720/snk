@@ -19,7 +19,7 @@ public record CreateFoodRecordRequest(
 	boolean isPublic,
 	@Min(value = 1, message = "rating must be between 1 and 5")
 	@Max(value = 5, message = "rating must be between 1 and 5")
-	short rating,
+	int rating,
 	@Size(max = 500, message = "comment must be at most 500 characters")
 	String comment,
 	OffsetDateTime recordTime,

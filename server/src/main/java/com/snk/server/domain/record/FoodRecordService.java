@@ -64,6 +64,10 @@ public class FoodRecordService {
 		List<FoodRecordImageValue> images = normalizeImages(command.images());
 		if (!images.isEmpty()) {
 			foodRecordImageRepository.saveAll(toImageEntities(savedRecord, images));
+			if (foodItem.getCoverImageUrl() == null) {
+				foodItem.setCoverImageUrl(images.getFirst().imageUrl());
+				foodItemRepository.save(foodItem);
+			}
 		}
 		return toResult(savedRecord, images);
 	}

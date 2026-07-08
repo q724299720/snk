@@ -2,6 +2,7 @@ package com.snk.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -139,51 +140,28 @@ fun SearchScreen(
     }
 
     LazyColumn(
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item {
-            Text(
-                text = "SNK 搜索与记录",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Black,
-                color = Color(0xFF2B1E18),
-            )
-        }
-        item {
-            Text(
-                text = "输入名称，或者先从图片里提取文字，再用图片和评分确认条目。",
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color(0xFF5B4A42),
-            )
-        }
         item {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("输入食物名称、品牌或口味") },
+                placeholder = { Text("搜索食物名称、品牌或口味") },
                 singleLine = true,
-                shape = RoundedCornerShape(20.dp),
-            )
-        }
-        item {
-            Button(
-                onClick = onOpenOcrRecognition,
                 shape = RoundedCornerShape(16.dp),
-            ) {
-                Text("从图片提取文字")
-            }
+            )
         }
         if (recentQueries.isNotEmpty()) {
             item {
                 Card(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF8EEE2)),
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -192,7 +170,7 @@ fun SearchScreen(
                         ) {
                             Text(
                                 text = "最近搜索",
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                             )
                             TextButton(
@@ -203,17 +181,17 @@ fun SearchScreen(
                                     }
                                 },
                             ) {
-                                Text("清空")
+                                Text("清空", style = MaterialTheme.typography.bodySmall)
                             }
                         }
                         FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             recentQueries.forEach { item ->
                                 AssistChip(
                                     onClick = { query = item },
-                                    label = { Text(item) },
+                                    label = { Text(item, style = MaterialTheme.typography.bodySmall) },
                                 )
                             }
                         }
@@ -224,26 +202,26 @@ fun SearchScreen(
         if (ocrSuggestedQueries.isNotEmpty()) {
             item {
                 Card(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFFCF1E6)),
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
                             text = "OCR 识别词组",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                         )
                         FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             ocrSuggestedQueries.forEach { suggestion ->
                                 AssistChip(
                                     onClick = { query = suggestion },
-                                    label = { Text(suggestion) },
+                                    label = { Text(suggestion, style = MaterialTheme.typography.bodySmall) },
                                 )
                             }
                         }
@@ -296,16 +274,16 @@ fun SearchScreen(
         if (hasReportableSearchItems) {
             item {
                 Card(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFFCF1E6)),
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
                             text = "纠错原因",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                         )
                         OutlinedTextField(
@@ -314,17 +292,17 @@ fun SearchScreen(
                                 reportState = reportState.copy(reason = it, message = null)
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            label = { Text("例如：图片和名称不匹配、分类错误、品牌错误") },
+                            label = { Text("例如：图片和名称不匹配、分类错误") },
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(14.dp),
                         )
                         Text(
                             text = when {
                                 reportState.isSubmitting -> "正在提交纠错..."
                                 !reportState.message.isNullOrBlank() -> reportState.message.orEmpty()
-                                else -> "填写原因后，点击上方具体条目的“报错 / 纠错”提交。"
+                                else -> "点击具体条目的「报错/纠错」提交。"
                             },
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF8A5A44),
                         )
                     }
@@ -353,27 +331,18 @@ fun SearchScreen(
             }
         }
         item {
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "公开分享",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
+            Text(
+                text = "公开分享",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF5B4A42),
+            )
         }
         when (val publicHistory = publicRecordState) {
             null -> item {
                 Text(
                     text = "正在加载公开记录...",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF5B4A42),
                 )
             }
@@ -381,7 +350,7 @@ fun SearchScreen(
             is FoodRecordHistoryResult.Failure -> item {
                 Text(
                     text = publicHistory.message,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF8A2E1C),
                 )
             }
@@ -390,8 +359,8 @@ fun SearchScreen(
                 if (publicHistory.items.isEmpty()) {
                     item {
                         Text(
-                            text = "暂无公开记录。保存记录时打开公开开关后会出现在这里。",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "暂无公开记录。保存记录时打开公开开关后会出现。",
+                            style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF5B4A42),
                         )
                     }
@@ -430,21 +399,12 @@ fun SearchScreen(
             }
         }
         item {
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "最近记录",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
+            Text(
+                text = "最近记录",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF5B4A42),
+            )
         }
         when (val history = recentRecordState) {
             null -> item {
@@ -547,69 +507,68 @@ private fun RecentRecordCard(
     }
 
     Card(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDF8F2)),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (!displayImageUrl.isNullOrBlank()) {
                     AsyncImage(
                         model = displayImageUrl,
                         contentDescription = record.foodName,
                         modifier = Modifier
-                            .size(96.dp)
-                            .clip(RoundedCornerShape(16.dp)),
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(12.dp)),
                         contentScale = ContentScale.Crop,
                     )
                 } else {
                     Box(
                         modifier = Modifier
-                            .size(96.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "暂无图片",
+                            text = "无图",
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
                 }
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
                         text = record.foodName,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "评分 ${record.rating} / 5",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "评分 ${record.rating}",
+                        style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF8A5A44),
                     )
-                    Text(
-                        text = buildString {
-                            append(record.foodCategory)
-                            record.foodSubcategory?.takeIf { it.isNotBlank() }?.let {
-                                append(" / ")
-                                append(it)
-                            }
-                            record.foodBrand?.takeIf { it.isNotBlank() }?.let {
-                                append(" / ")
-                                append(it)
-                            }
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF5B4A42),
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = record.foodCategory,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF5B4A42),
+                        )
+                        record.foodSubcategory?.takeIf { it.isNotBlank() }?.let {
+                            Text(
+                                text = "/ $it",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF5B4A42),
+                            )
+                        }
+                    }
                     Text(
                         text = formatRecordTime(record.recordTime),
                         style = MaterialTheme.typography.bodySmall,
@@ -620,7 +579,7 @@ private fun RecentRecordCard(
             record.comment?.takeIf { it.isNotBlank() }?.let { comment ->
                 Text(
                     text = comment,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF5B4A42),
                 )
             }
@@ -629,21 +588,17 @@ private fun RecentRecordCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
+                Text(
+                    text = "点赞 ${likeState.likeCount}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8A5A44),
+                )
+                likeState.message?.takeIf { it.isNotBlank() }?.let { message ->
                     Text(
-                        text = "点赞 ${likeState.likeCount}",
+                        text = message,
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF8A5A44),
                     )
-                    likeState.message?.takeIf { it.isNotBlank() }?.let { message ->
-                        Text(
-                            text = message,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF8A5A44),
-                        )
-                    }
                 }
                 if (likeEnabled) {
                     Button(
@@ -656,7 +611,8 @@ private fun RecentRecordCard(
                             }
                         },
                         enabled = !isLiking,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
                     ) {
                         Text(if (isLiking) "提交中" else "点赞")
                     }

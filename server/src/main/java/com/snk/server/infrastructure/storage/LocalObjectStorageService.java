@@ -88,7 +88,9 @@ public class LocalObjectStorageService implements ObjectStorageService {
 
 		BufferedImage thumbnailImage = resizeImage(sourceImage, 320, 320);
 		Files.createDirectories(thumbnailFile.getParent());
-		if (!ImageIO.write(thumbnailImage, formatName, thumbnailFile.toFile())) {
+		BufferedImage rgbImage = new BufferedImage(thumbnailImage.getWidth(), thumbnailImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+		rgbImage.getGraphics().drawImage(thumbnailImage, 0, 0, null);
+		if (!ImageIO.write(rgbImage, formatName, thumbnailFile.toFile())) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to write thumbnail.");
 		}
 	}

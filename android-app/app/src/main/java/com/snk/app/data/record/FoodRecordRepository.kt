@@ -4,6 +4,7 @@ import com.snk.app.data.food.FoodSearchItem
 import java.io.IOException
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
+import android.util.Log
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.HttpException
 
@@ -436,7 +437,11 @@ private fun Exception.asLikeFailureReason(): FoodRecordLikeFailureReason = when 
 
 private fun Exception.asImageUploadMessage(): String = when (this) {
     is IOException -> "无法连接服务端上传图片，请稍后重试。"
-    is HttpException -> "服务端拒绝了这张图片，请更换图片后重试。"
+    is HttpException -> {
+        val body = response()?.errorBody()?.string()
+        android.util.Log.w("SnkUpload", "Image upload rejected: code=${response()?.code()} body=$body")
+        if (body != null) "服务端拒绝了这张图片: $body" else "服务端拒绝了这张图片，请更换图片后重试。"
+    }
     else -> "图片上传失败，请稍后重试。"
 }
 
