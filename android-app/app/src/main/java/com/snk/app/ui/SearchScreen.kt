@@ -1,5 +1,11 @@
 package com.snk.app.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +27,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
@@ -41,12 +48,18 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
 import com.snk.app.SnkApplication
 import com.snk.app.data.draft.DraftSyncStatus
 import com.snk.app.data.draft.FoodRecordDraft
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodSearchResult
+import com.snk.app.data.food.OcrSearchQueryBuilder
 import com.snk.app.data.record.FoodRecordComment
 import com.snk.app.data.record.FoodRecordCommentCreateResult
 import com.snk.app.data.record.FoodRecordCommentsResult
@@ -55,8 +68,14 @@ import com.snk.app.data.record.FoodRecordDeleteResult
 import com.snk.app.data.record.FoodRecordHistoryResult
 import com.snk.app.data.record.FoodRecordLikeResult
 import com.snk.app.data.record.toFoodSearchItem
+import java.io.File
+import java.io.IOException
+import java.util.UUID
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 @Composable
 fun SearchScreen(
@@ -70,7 +89,8 @@ fun SearchScreen(
     recentRefreshToken: Int = 0,
     onExternalQueryConsumed: () -> Unit = {},
 ) {
-    val application = LocalContext.current.applicationContext as SnkApplication
+    val context = LocalContext.current
+    val application = context.applicationContext as SnkApplication
     val coroutineScope = rememberCoroutineScope()
     val sessionUserId = sessionState.userIdOrNull()
     var recentQueries by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -103,6 +123,9 @@ fun SearchScreen(
     var isSearching by remember { mutableStateOf(false) }
     var reportState by remember { mutableStateOf(FoodReportUiState()) }
     var ocrSuggestedQueries by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isOcrProcessing by remember { mutableStateOf(false) }
+    var ocrStatusMessage by remember { mutableStateOf<String?>(null) }
+    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
     val hasReportableSearchItems = (searchState as? FoodSearchResult.Success)?.items?.isNotEmpty() == true
 
     LaunchedEffect(Unit) {
@@ -139,19 +162,132 @@ fun SearchScreen(
         }
     }
 
+    suspend fun runOcrSearch(uri: Uri) {
+        isOcrProcessing = true
+        ocrStatusMessage = "正在识别图片文字..."
+        try {
+            val rawText = recognizeText(context, uri)
+            val normalizedText = rawText.trim()
+            if (normalizedText.isBlank()) {
+                ocrStatusMessage = "未识别到文字，可手动输入搜索。"
+                return
+            }
+            when (val result = application.container.foodSearchRepository.searchByRecognizedText(normalizedText, sessionUserId)) {
+                is com.snk.app.data.food.FoodOcrSearchResult.Success -> {
+                    query = result.attemptedQueries.firstOrNull() ?: result.matchedQuery
+                    ocrSuggestedQueries = OcrSearchQueryBuilder.buildDisplayQueries(result.recognizedText)
+                    ocrStatusMessage = "已识别「${result.matchedQuery}」，点击下方建议搜索。"
+                }
+                is com.snk.app.data.food.FoodOcrSearchResult.NoMatch -> {
+                    val fallbackQuery = result.attemptedQueries.firstOrNull() ?: result.recognizedText
+                    if (fallbackQuery.isNotBlank()) {
+                        query = fallbackQuery
+                        ocrSuggestedQueries = OcrSearchQueryBuilder.buildDisplayQueries(result.recognizedText)
+                        ocrStatusMessage = "未直接匹配，已填入搜索框，请手动调整。"
+                    } else {
+                        ocrStatusMessage = "未识别到可用文字，可手动输入搜索。"
+                    }
+                }
+                is com.snk.app.data.food.FoodOcrSearchResult.Failure -> {
+                    ocrStatusMessage = result.message
+                }
+            }
+        } catch (exception: IOException) {
+            ocrStatusMessage = "无法读取图片，请重新选择。"
+        } catch (exception: Exception) {
+            ocrStatusMessage = "识别失败，请手动输入搜索。"
+        } finally {
+            isOcrProcessing = false
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+    ) { success ->
+        val imageUri = pendingCameraUri
+        if (!success || imageUri == null) return@rememberLauncherForActivityResult
+        coroutineScope.launch { runOcrSearch(imageUri) }
+    }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        coroutineScope.launch { runOcrSearch(uri) }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            val imageUri = createTempCameraImageUri(context)
+            pendingCameraUri = imageUri
+            cameraLauncher.launch(imageUri)
+        } else {
+            ocrStatusMessage = "需要相机权限才能拍照。"
+        }
+    }
+
     LazyColumn(
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("搜索食物名称、品牌或口味") },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-            )
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("搜索食物名称、品牌或口味") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                )
+                OutlinedButton(
+                    onClick = {
+                        val hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                        if (hasCameraPermission) {
+                            val imageUri = createTempCameraImageUri(context)
+                            pendingCameraUri = imageUri
+                            cameraLauncher.launch(imageUri)
+                        } else {
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    },
+                    enabled = !isOcrProcessing,
+                    shape = RoundedCornerShape(16.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                ) {
+                    Text(if (isOcrProcessing) "..." else "拍照", style = MaterialTheme.typography.labelSmall)
+                }
+                OutlinedButton(
+                    onClick = {
+                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                    enabled = !isOcrProcessing,
+                    shape = RoundedCornerShape(16.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                ) {
+                    Text(if (isOcrProcessing) "..." else "相册", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+        if (isOcrProcessing || ocrStatusMessage != null) {
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F2E8)),
+                ) {
+                    Text(
+                        text = ocrStatusMessage.orEmpty(),
+                        modifier = Modifier.padding(14.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF8A5A44),
+                    )
+                }
+            }
         }
         if (recentQueries.isNotEmpty()) {
             item {
@@ -838,4 +974,24 @@ internal fun validatePublicRecordCommentForUi(content: String): PublicRecordComm
 
 private fun formatRecordTime(recordTime: String): String {
     return recordTime.replace("T", " ").removeSuffix("Z").take(16)
+}
+
+private suspend fun recognizeText(context: android.content.Context, imageUri: Uri): String = suspendCancellableCoroutine { continuation ->
+    val recognizer = TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
+    try {
+        val image = InputImage.fromFilePath(context, imageUri)
+        recognizer.process(image)
+            .addOnSuccessListener { result -> continuation.resume(result.text) }
+            .addOnFailureListener { error -> continuation.resumeWithException(error) }
+            .addOnCompleteListener { recognizer.close() }
+    } catch (exception: Exception) {
+        recognizer.close()
+        continuation.resumeWithException(exception)
+    }
+}
+
+private fun createTempCameraImageUri(context: android.content.Context): Uri {
+    val imageDirectory = File(context.cacheDir, "ocr-camera").apply { mkdirs() }
+    val imageFile = File(imageDirectory, "camera-${UUID.randomUUID()}.jpg")
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", imageFile)
 }
