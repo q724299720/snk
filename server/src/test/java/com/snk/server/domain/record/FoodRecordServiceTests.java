@@ -159,7 +159,7 @@ class FoodRecordServiceTests {
 		when(foodRecordImageRepository.findByRecord_IdInOrderByCreatedAtAsc(List.of(1L)))
 			.thenReturn(List.of(image));
 
-		List<FoodRecordHistoryItem> result = foodRecordService.listRecentRecords(100L, 10);
+		List<FoodRecordHistoryItem> result = foodRecordService.listRecentRecords(100L, 0, 10);
 
 		assertThat(result).hasSize(1);
 		assertThat(result.getFirst().foodName()).isEqualTo("Lays Cucumber Chips");

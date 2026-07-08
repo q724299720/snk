@@ -14,6 +14,7 @@ import com.snk.server.domain.record.FoodRecordService;
 import com.snk.server.domain.record.FoodRecordUpdateCommand;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
 import java.util.Set;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,9 +45,10 @@ public class FoodRecordController {
 	@GetMapping
 	public List<FoodRecordHistoryResponse> listRecentRecords(
 		@RequestParam("userId") @Positive Long userId,
-		@RequestParam(value = "limit", defaultValue = "10") @Positive int limit
+		@RequestParam(value = "page", defaultValue = "0") @PositiveOrZero int page,
+		@RequestParam(value = "limit", defaultValue = "20") @Positive int limit
 	) {
-		return foodRecordService.listRecentRecords(userId, limit).stream()
+		return foodRecordService.listRecentRecords(userId, page, limit).stream()
 			.map(FoodRecordHistoryResponse::from)
 			.toList();
 	}

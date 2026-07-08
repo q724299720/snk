@@ -134,11 +134,11 @@ public class FoodRecordService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<FoodRecordHistoryItem> listRecentRecords(Long userId, int limit) {
-		int normalizedLimit = Math.min(Math.max(limit, 1), 20);
+	public List<FoodRecordHistoryItem> listRecentRecords(Long userId, int page, int limit) {
+		int normalizedLimit = Math.min(Math.max(limit, 1), 40);
 		List<FoodRecordEntity> records = foodRecordRepository.findByUser_IdAndDeletedAtIsNullOrderByRecordTimeDesc(
 			userId,
-			PageRequest.of(0, normalizedLimit)
+			PageRequest.of(page, normalizedLimit)
 		);
 		Map<Long, List<FoodRecordImageValue>> imagesByRecordId = imagesByRecordId(
 			records.stream()

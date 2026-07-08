@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Collections
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
@@ -41,12 +42,14 @@ private sealed class SnkDestination(
     val icon: ImageVector,
 ) {
     data object Search : SnkDestination("search", "首页", Icons.Outlined.Home)
+    data object Gallery : SnkDestination("gallery", "记录", Icons.Outlined.Collections)
     data object Drafts : SnkDestination("drafts", "草稿", Icons.Outlined.BookmarkBorder)
     data object Profile : SnkDestination("profile", "我的", Icons.Outlined.Person)
 }
 
 private val destinations = listOf(
     SnkDestination.Search,
+    SnkDestination.Gallery,
     SnkDestination.Drafts,
     SnkDestination.Profile,
 )
@@ -156,6 +159,11 @@ fun SnkApp() {
                             searchQuerySeed = null
                             searchSuggestedQueries = emptyList()
                         },
+                    )
+                }
+                composable(SnkDestination.Gallery.route) {
+                    GalleryScreen(
+                        sessionUserId = sessionState.userIdOrNull(),
                     )
                 }
                 composable(SnkDestination.Drafts.route) {

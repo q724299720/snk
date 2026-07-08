@@ -184,7 +184,7 @@ class FoodRecordControllerTests {
 
 	@Test
 	void shouldListRecentRecords() throws Exception {
-		when(foodRecordService.listRecentRecords(100L, 10)).thenReturn(
+		when(foodRecordService.listRecentRecords(100L, 0, 20)).thenReturn(
 			List.of(
 				new FoodRecordHistoryItem(
 					1L,

@@ -17,7 +17,8 @@ interface FoodRecordApi {
     @GET("/api/records")
     suspend fun listRecentRecords(
         @Query("userId") userId: Long,
-        @Query("limit") limit: Int = 10,
+        @Query("page") page: Int = 0,
+        @Query("limit") limit: Int = 20,
     ): List<FoodRecordHistoryResponse>
 
     @GET("/api/records/public")

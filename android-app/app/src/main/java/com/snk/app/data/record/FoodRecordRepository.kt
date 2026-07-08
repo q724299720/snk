@@ -14,6 +14,12 @@ class FoodRecordRepository(
     suspend fun listRecentRecords(
         userId: Long,
         limit: Int = 10,
+    ): FoodRecordHistoryResult = listRecentRecords(userId, 0, limit)
+
+    suspend fun listRecentRecords(
+        userId: Long,
+        page: Int,
+        limit: Int = 20,
     ): FoodRecordHistoryResult {
         if (userId <= 0L) {
             return FoodRecordHistoryResult.Failure("游客身份尚未完成初始化。")
@@ -21,7 +27,7 @@ class FoodRecordRepository(
 
         return try {
             FoodRecordHistoryResult.Success(
-                api.listRecentRecords(userId, limit).map(FoodRecordHistoryResponse::toModel),
+                api.listRecentRecords(userId, page, limit).map(FoodRecordHistoryResponse::toModel),
             )
         } catch (exception: Exception) {
             FoodRecordHistoryResult.Failure(exception.asHistoryMessage())
