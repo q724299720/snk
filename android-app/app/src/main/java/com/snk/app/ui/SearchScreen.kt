@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
@@ -233,46 +234,47 @@ fun SearchScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Row(
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("搜索食物名称、品牌或口味") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
-                )
-                OutlinedButton(
-                    onClick = {
-                        val hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                        if (hasCameraPermission) {
-                            val imageUri = createTempCameraImageUri(context)
-                            pendingCameraUri = imageUri
-                            cameraLauncher.launch(imageUri)
-                        } else {
-                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                        }
-                    },
-                    enabled = !isOcrProcessing,
-                    shape = RoundedCornerShape(16.dp),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-                ) {
-                    Text(if (isOcrProcessing) "..." else "拍照", style = MaterialTheme.typography.labelSmall)
-                }
-                OutlinedButton(
-                    onClick = {
-                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    },
-                    enabled = !isOcrProcessing,
-                    shape = RoundedCornerShape(16.dp),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-                ) {
-                    Text(if (isOcrProcessing) "..." else "相册", style = MaterialTheme.typography.labelSmall)
-                }
-            }
+                placeholder = { Text("搜索食物名称、品牌或口味") },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                trailingIcon = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = if (isOcrProcessing) "..." else "拍照",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isOcrProcessing) Color(0xFFBDBDBD) else Color(0xFF8A5A44),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable(enabled = !isOcrProcessing) {
+                                    val hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                                    if (hasCameraPermission) {
+                                        val imageUri = createTempCameraImageUri(context)
+                                        pendingCameraUri = imageUri
+                                        cameraLauncher.launch(imageUri)
+                                    } else {
+                                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                                    }
+                                }
+                                .padding(horizontal = 6.dp, vertical = 4.dp),
+                        )
+                        Text(
+                            text = if (isOcrProcessing) "..." else "相册",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isOcrProcessing) Color(0xFFBDBDBD) else Color(0xFF8A5A44),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable(enabled = !isOcrProcessing) {
+                                    photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                }
+                                .padding(horizontal = 6.dp, vertical = 4.dp),
+                        )
+                    }
+                },
+            )
         }
         if (isOcrProcessing || ocrStatusMessage != null) {
             item {
