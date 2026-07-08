@@ -1,15 +1,20 @@
 package com.snk.app.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,78 +25,117 @@ import androidx.compose.ui.unit.dp
 import com.snk.app.data.draft.DraftSyncStatus
 import com.snk.app.data.draft.FoodRecordDraft
 import com.snk.app.data.draft.toUserFacingText
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-/**
- * 单条离线草稿卡片，首页「待上传 / 失败重试」分区与「草稿」Tab 共用，避免两处分叉。
- */
 @Composable
 fun DraftItemCard(
     draft: FoodRecordDraft,
     onRetry: () -> Unit,
+    onDelete: () -> Unit,
 ) {
+    val statusColor = when (draft.syncStatus) {
+        DraftSyncStatus.DRAFT -> Color(0xFFE65100)
+        DraftSyncStatus.SYNCING -> Color(0xFF1565C0)
+        DraftSyncStatus.SYNCED -> Color(0xFF2E7D32)
+        DraftSyncStatus.FAILED -> Color(0xFFB71C1C)
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDF8F2)),
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Box(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = draft.foodName,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.CenterStart),
+                    color = Color(0xFF2B1E18),
+                    modifier = Modifier.weight(1f),
                 )
                 Text(
                     text = draft.statusLabel,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color(0xFF8A5A44),
-                    modifier = Modifier.align(Alignment.CenterEnd),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = statusColor,
                 )
             }
-            Text(
-                text = buildString {
-                    append("评分 ${draft.rating} / 5")
-                    draft.barcode?.takeIf { it.isNotBlank() }?.let {
-                        append(" · 条码 ")
-                        append(it)
-                    }
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF5B4A42),
-            )
-            if (draft.comment.isNotBlank()) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
-                    text = draft.comment,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF5B4A42),
-                )
-            }
-            Text(
-                text = draft.failureMessage ?: draft.failureReason?.toUserFacingText() ?: "等待同步状态更新。",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF5B4A42),
-            )
-            if (draft.syncStatus == DraftSyncStatus.SYNCED && draft.remoteRecordId != null) {
-                Text(
-                    text = "remote record_id: ${draft.remoteRecordId}",
+                    text = "${draft.category}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF7A6A61),
                 )
+                draft.brand?.takeIf { it.isNotBlank() }?.let {
+                    Text(text = "·", style = MaterialTheme.typography.bodySmall, color = Color(0xFF7A6A61))
+                    Text(text = it, style = MaterialTheme.typography.bodySmall, color = Color(0xFF7A6A61))
+                }
+                Text(text = "·", style = MaterialTheme.typography.bodySmall, color = Color(0xFF7A6A61))
+                Text(text = "${draft.rating}/5", style = MaterialTheme.typography.bodySmall, color = Color(0xFF7A6A61))
             }
-            if (draft.syncStatus == DraftSyncStatus.FAILED) {
-                Button(
-                    onClick = onRetry,
-                    shape = RoundedCornerShape(16.dp),
-                ) {
-                    Text("手动重试")
+            if (draft.comment.isNotBlank()) {
+                Text(
+                    text = draft.comment,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF5B4A42),
+                    maxLines = 2,
+                )
+            }
+            val failText = draft.failureMessage ?: draft.failureReason?.toUserFacingText()
+            if (failText != null && draft.syncStatus != DraftSyncStatus.SYNCED) {
+                Text(
+                    text = failText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF8A2E1C),
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = formatDraftTime(draft.createdAt),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF9E8E84),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (draft.syncStatus == DraftSyncStatus.FAILED || draft.syncStatus == DraftSyncStatus.DRAFT) {
+                        OutlinedButton(
+                            onClick = onRetry,
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                        ) {
+                            Text("重试", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    Button(
+                        onClick = onDelete,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE0D6CC)),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                    ) {
+                        Text("删除", style = MaterialTheme.typography.labelSmall, color = Color(0xFF5B4A42))
+                    }
                 }
             }
         }
     }
+}
+
+private fun formatDraftTime(timestamp: Long): String {
+    val sdf = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
+    return sdf.format(Date(timestamp))
 }

@@ -104,6 +104,14 @@ class DraftRecordRepository(
         )
     }
 
+    suspend fun deleteDraft(draftId: Long) {
+        draftDao.deleteById(draftId)
+    }
+
+    suspend fun deleteAllSynced() {
+        draftDao.deleteAllByStatus(DraftSyncStatus.SYNCED.name)
+    }
+
     suspend fun requestRetry(draftId: Long) {
         val draft = draftDao.findById(draftId) ?: return
         draftDao.updateSyncState(

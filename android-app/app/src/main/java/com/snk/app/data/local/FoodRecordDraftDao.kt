@@ -58,4 +58,10 @@ interface FoodRecordDraftDao {
         remoteRecordTime: String,
         updatedAt: Long,
     )
+
+    @Query("DELETE FROM food_record_drafts WHERE id = :draftId")
+    suspend fun deleteById(draftId: Long)
+
+    @Query("DELETE FROM food_record_drafts WHERE sync_status = :syncStatus")
+    suspend fun deleteAllByStatus(syncStatus: String)
 }

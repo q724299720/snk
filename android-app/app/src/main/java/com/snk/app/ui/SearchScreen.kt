@@ -327,6 +327,11 @@ fun SearchScreen(
                             application.container.scheduleDraftRetry(draft.id)
                         }
                     },
+                    onDelete = {
+                        coroutineScope.launch {
+                            application.container.draftRecordRepository.deleteDraft(draft.id)
+                        }
+                    },
                 )
             }
         }
