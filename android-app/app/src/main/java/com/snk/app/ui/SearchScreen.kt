@@ -573,12 +573,35 @@ private fun RecentRecordCard(
                                 color = Color(0xFF5B4A42),
                             )
                         }
+                        record.foodBrand?.takeIf { it.isNotBlank() }?.let {
+                            Text(
+                                text = "/ $it",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF8A5A44),
+                            )
+                        }
                     }
-                    Text(
-                        text = formatRecordTime(record.recordTime),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF7A6A61),
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = formatRecordTime(record.recordTime),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF7A6A61),
+                        )
+                        Text(text = "·", style = MaterialTheme.typography.bodySmall, color = Color(0xFF9E8E84))
+                        Text(
+                            text = sourceTypeLabel(record.sourceType),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF8A5A44),
+                        )
+                        if (onEditRecord != null) {
+                            Text(text = "·", style = MaterialTheme.typography.bodySmall, color = Color(0xFF9E8E84))
+                            Text(
+                                text = if (record.isPublic) "公开" else "仅自己",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (record.isPublic) Color(0xFF2E7D32) else Color(0xFF7A6A61),
+                            )
+                        }
+                    }
                 }
             }
             record.comment?.takeIf { it.isNotBlank() }?.let { comment ->
@@ -784,8 +807,16 @@ private fun RecentRecordCard(
 }
 
 /** 首页最近记录默认展示条数，对齐 PRD「首页最近记录默认展示最近 5 条」。 */
-private const val HOME_RECENT_RECORD_LIMIT = 5
+private const val HOME_RECENT_RECORD_LIMIT = 10
 private const val HOME_PUBLIC_RECORD_LIMIT = 5
+
+private fun sourceTypeLabel(sourceType: String): String = when (sourceType) {
+    "text_search" -> "文本搜索"
+    "ocr" -> "OCR"
+    "manual" -> "手动"
+    "barcode" -> "条码"
+    else -> sourceType
+}
 internal const val MAX_PUBLIC_RECORD_COMMENT_LENGTH = 500
 
 internal data class PublicRecordCommentUiValidation(
