@@ -20,12 +20,12 @@
 - Modify: `server/src/main/resources/application.yml`
 - Test: `server/src/test/java/com/snk/server/ServerApplicationTests.java`
 
-- [ ] 在上述五份文档写入已确认设计中的账号状态、角色、Token 生命周期、匿名认领、单节点限流、无分类和默认公开，并逐份追加变更记录。
-- [ ] 在 `server/build.gradle` 增加 `spring-boot-starter-security`、`spring-security-oauth2-jose`、`caffeine` 和 `spring-security-test`。
-- [ ] 在 `application.yml` 只声明环境变量引用与安全默认值，不写入真实密钥：JWT 15 分钟、Refresh 宽限 60 秒、Bootstrap OWNER 和强制重置开关。
-- [ ] 先在 `ServerApplicationTests` 增加“缺失生产密钥时测试 profile 可启动”的测试；运行 `./gradlew test --tests '*ServerApplicationTests'`，确认新增配置绑定前失败。
-- [ ] 增加 `AuthProperties`、`OwnerBootstrapProperties` 和测试 profile 配置后重跑同一命令，确认通过。
-- [ ] 提交并推送：`docs: finalize account authentication contracts`
+- [x] 在上述五份文档写入已确认设计中的账号状态、角色、Token 生命周期、匿名认领、单节点限流、无分类和默认公开，并逐份追加变更记录。
+- [x] 在 `server/build.gradle` 增加 `spring-boot-starter-security`、`spring-security-oauth2-jose`、`caffeine` 和 `spring-security-test`。
+- [x] 在 `application.yml` 只声明环境变量引用与安全默认值，不写入真实密钥：JWT 15 分钟、Refresh 宽限 60 秒、Bootstrap OWNER 和强制重置开关。
+- [x] 先在 `ServerApplicationTests` 增加“缺失生产密钥时测试 profile 可启动”的测试；运行 `./gradlew test --tests '*ServerApplicationTests'`，确认新增配置绑定前失败。
+- [x] 增加 `AuthProperties`、`OwnerBootstrapProperties` 和测试 profile 配置后重跑同一命令，确认通过。
+- [x] 提交并推送：`docs: finalize account authentication contracts`
 
 ## Task 2: 数据库迁移与认证持久化模型
 
@@ -167,3 +167,4 @@
 | 日期 | 修改人 | 变更范围 | 原因 |
 | --- | --- | --- | --- |
 | 2026-07-11 | Codex | 新建后端账号、鉴权与治理实施计划 | 把账号安全设计拆成可测试、可独立提交的服务端任务 |
+| 2026-07-11 | Codex | 完成 Task 1 文档契约、认证依赖与配置绑定 | 正式启动必须登录与 OWNER 审核方案的服务端实施 |

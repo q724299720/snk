@@ -11,14 +11,26 @@ import com.snk.server.infrastructure.persistence.recognition.RecognitionTaskRepo
 import com.snk.server.infrastructure.persistence.user.UserRepository;
 import com.snk.server.domain.food.FoodSearchService;
 import com.snk.server.domain.recognition.ImageRecognitionTaskProvider;
+import com.snk.server.infrastructure.security.AuthProperties;
+import com.snk.server.infrastructure.security.OwnerBootstrapProperties;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = {
 	"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration"
 })
 class ServerApplicationTests {
+
+	@Autowired
+	private AuthProperties authProperties;
+
+	@Autowired
+	private OwnerBootstrapProperties ownerBootstrapProperties;
 
 	@MockBean
 	private UserRepository userRepository;
@@ -55,6 +67,14 @@ class ServerApplicationTests {
 
 	@Test
 	void contextLoads() {
+		assertThat(authProperties.accessTokenTtl()).isEqualTo(Duration.ofMinutes(15));
+		assertThat(authProperties.refreshGracePeriod()).isEqualTo(Duration.ofSeconds(60));
+		assertThat(authProperties.jwtPrivateKey()).isNull();
+		assertThat(authProperties.jwtPublicKey()).isNull();
+		assertThat(authProperties.tokenEncryptionKey()).isNull();
+		assertThat(ownerBootstrapProperties.username()).isNull();
+		assertThat(ownerBootstrapProperties.password()).isNull();
+		assertThat(ownerBootstrapProperties.forceReset()).isFalse();
 	}
 
 }

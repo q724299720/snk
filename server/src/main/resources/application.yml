@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: snk-server
+  # Task 5 will replace this compatibility exclusion with the explicit Bearer security chain.
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
   config:
     import:
       - optional:file:${SNK_RUNTIME_CONFIG:./runtime/application-runtime.yml}
@@ -51,6 +54,16 @@ logging:
     org.flywaydb: info
 
 snk:
+  auth:
+    access-token-ttl: ${SNK_ACCESS_TOKEN_TTL:15m}
+    refresh-grace-period: ${SNK_REFRESH_GRACE_PERIOD:60s}
+    jwt-private-key: ${SNK_JWT_PRIVATE_KEY:}
+    jwt-public-key: ${SNK_JWT_PUBLIC_KEY:}
+    token-encryption-key: ${SNK_TOKEN_ENCRYPTION_KEY:}
+    owner:
+      username: ${SNK_OWNER_USERNAME:}
+      password: ${SNK_OWNER_PASSWORD:}
+      force-reset: ${SNK_OWNER_FORCE_RESET:false}
   admin:
     api-token: ${SNK_ADMIN_API_TOKEN:}
     token-header: ${SNK_ADMIN_TOKEN_HEADER:X-SNK-ADMIN-TOKEN}

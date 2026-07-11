@@ -413,3 +413,36 @@ Public record feed contract:
 | 日期 | 修改人 | 变更范围 | 原因 |
 | --- | --- | --- | --- |
 | 2026-07-11 | Codex | 增加幂等快速记录与待分类治理接口契约 | 支持名称加评分快速保存并防止重复提交和待分类条目失控 |
+
+## 2026-07-11 正式账号鉴权接口契约
+
+本节替代此前由客户端提交 `userId` 决定业务身份、游客初始化和待分类创建的冲突约定。
+
+### 公开认证接口
+
+- `POST /api/auth/register`：请求 `username/password`，不接收 `deviceId`；返回 `accountStatus=PENDING` 和一次性 `approvalTicket`，不签发业务 Token。
+- `GET /api/auth/registration-status?ticket=`：只返回 `PENDING / ACTIVE / REJECTED / DISABLED`，票据不能访问业务 API。
+- `POST /api/auth/login`：请求 `username/password/deviceId`；仅 ACTIVE 账号签发 15 分钟 Access Token 与长期 Refresh Token。
+- `POST /api/auth/refresh`：请求 `refreshToken/deviceId`；成功后轮换 Refresh Token。轮换后 60 秒内同设备重试返回同一替代会话，超时重放撤销会话链。
+- `POST /api/auth/logout`：要求 Bearer Token，撤销当前设备 Refresh Token。
+- `GET /api/auth/me`：要求 Bearer Token，返回 `userId/username/role/accountStatus/mustChangePassword`。
+- `POST /api/auth/password/change`：要求 Bearer Token与 `oldPassword/newPassword`；成功后撤销全部会话并要求重新登录。
+- `POST /api/auth/legacy-claim`：要求 Bearer Token 与旧 `installationId`；匿名历史只允许被一个正式账号认领一次。
+
+### OWNER 账号治理接口
+
+`/api/admin/accounts/**` 同时要求 `X-SNK-ADMIN-TOKEN` 和 OWNER Bearer Token，提供列表、批准、拒绝、禁用、启用、升降角色、撤销会话与重置临时密码。禁止禁用或降级最后一个 OWNER，当前 OWNER 不得自行降级。管理员重置密码只返回一次临时密码，并设置 `mustChangePassword=true`。
+
+### 业务接口身份与产品规则
+
+- 除健康检查、注册、注册状态、登录和刷新外，App API 默认要求 `Authorization: Bearer <accessToken>`。
+- 创建、读取、修改、删除、点赞、评论、反馈、识别和上传均从 Token 获取 userId；请求中旧 `userId` 不再作为授权依据并逐步移除。
+- 上传接口记录当前用户归属；未登录上传返回 `401`。
+- Android 和后台 API 不再要求或展示分类；新产品强制 `category=none`、`subcategory=null`、`auditStatus=approved`。
+- 新产品默认全局可搜索；后台提供 `POST /api/admin/products/{id}/hide` 与 `/restore` 控制 `is_searchable`，隐藏不删除历史记录。
+- 新记录省略 `isPublic` 时按 `true` 处理，显式 `false` 仍保存为私密；每次修改立即提交，不存在每日批量提交接口。
+- 认证错误统一使用 `code/message/requestId`，至少覆盖 `AUTH_REQUIRED`、`TOKEN_EXPIRED`、`ACCOUNT_PENDING`、`ACCOUNT_REJECTED`、`ACCOUNT_DISABLED`、`MUST_CHANGE_PASSWORD`。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | 增加正式账号、Token、OWNER 治理和可信身份接口契约 | 用服务端鉴权身份替代客户端 userId，并固定审核与会话异常边界 |

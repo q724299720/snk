@@ -382,3 +382,22 @@ MVP 可在 `infrastructure/search` 中直接封装 PostgreSQL 的 `pg_trgm` 和 
 | 日期 | 修改人 | 变更范围 | 原因 |
 | --- | --- | --- | --- |
 | 2026-07-11 | Codex | 增加快速记录幂等、离线媒体、结构化 OCR 与治理架构 | 为整体体验改版固定低运维实现边界 |
+
+## 2026-07-11 正式账号鉴权架构增补
+
+- 服务端新增独立 `auth` 领域，Spring Security 通过 Bearer Token 建立可信 `CurrentUser`；业务接口不再信任请求中的 `userId`。
+- Access Token 为 15 分钟 JWT；Refresh Token 原文只返回客户端，服务端长期保存 SHA-256 哈希，并以数据库行锁完成单次轮换。
+- 旧 Refresh Token 在轮换后保留 60 秒弱网宽限：同一设备重试返回同一替代会话；替代 Token 只在宽限期内以 AES-GCM 密文保存，超时重放撤销会话链。
+- Android 使用系统 Keystore 加密保存 Refresh Token，Access Token 只驻留内存；并发 401 通过互斥刷新合并为一次网络请求。
+- 注册、登录限流采用 Caffeine 单机内存实现；系统明确为 `Single Node Deployment`，未经重新设计不得直接横向扩容。
+- 后台账号治理同时要求非空 `X-SNK-ADMIN-TOKEN` 和 OWNER Access Token；最后一个 OWNER 不得被禁用或降级。
+- 旧匿名身份仅作为升级兼容数据源保留；一次性认领在同一事务内迁移记录、评论、报告、产品创建者和本地草稿归属。
+- Android Room 草稿增加 `draftOwnerUserId`，列表与 WorkManager 均只处理当前登录账号的数据，防止切换账号串号。
+- 客户端和后台移除分类 UI；新产品自动 `approved`，搜索可见性由独立 `is_searchable` 控制。
+- 新记录默认公开且每次修改立即写入服务端；不新增每日 15:00 或其他定时批量提交任务。
+
+安全配置通过环境变量注入：`SNK_JWT_PRIVATE_KEY`、`SNK_JWT_PUBLIC_KEY`、`SNK_TOKEN_ENCRYPTION_KEY`、`SNK_OWNER_USERNAME`、`SNK_OWNER_PASSWORD`、`SNK_OWNER_FORCE_RESET`。生产日志不得记录密码、Access Token、Refresh Token、Admin Token 或替代 Token 密文。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | 增加正式账号鉴权、会话轮换、单节点限流和多账号隔离架构 | 为必须登录与 OWNER 审核方案固定安全和部署边界 |

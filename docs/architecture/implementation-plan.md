@@ -430,3 +430,23 @@ The `3000`-item seed target is not a gate for this addendum. No new external dat
 | Date | Author | Scope | Reason |
 | --- | --- | --- | --- |
 | 2026-07-11 | Codex | Phase 5 quick personal record UX overhaul | Lock the dependency order and keep cold-start data expansion out of the current implementation scope |
+
+## Phase 5 Addendum: Account Authentication And Product Simplification
+
+本增补替代此前游客、待分类产品和默认私密的冲突实施项，执行顺序固定为：
+
+1. 同步 PRD、架构、实施计划、API 和数据库契约，并引入认证配置依赖。
+2. 完成账号、Refresh Token、历史认领与上传归属的 PostgreSQL 迁移。
+3. 完成注册、OWNER 初始化、审核、密码管理、JWT 和 Refresh Token 轮换。
+4. 接入 Spring Security 与可信 `CurrentUser`，但暂不在 Android 登录能力就绪前切断旧 APK。
+5. 完成 Android 安全凭据存储、登录、注册、审核轮询和自动刷新。
+6. 完成 Room 多账号草稿隔离及一次性匿名历史认领。
+7. 服务端与 Android 同步切换为强制登录，所有业务身份从 Token 获取。
+8. 完成无分类、产品自动审核、默认公开、图片显示、记录入口编辑和后台隐藏/恢复。
+9. 依次执行服务端、Android、APK、ADB、正式域名 API 与后台页面总回归。
+
+发布门禁：数据库已备份；生产密钥与首 OWNER 环境变量已配置；Refresh Token 60 秒宽限、最后 OWNER 保护、A/B 草稿隔离、一次性历史认领和旧 APK 兼容窗口均完成验证。系统继续按单节点部署，不引入 Redis、消息队列、邮件、短信或第三方登录。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | 增加账号鉴权与产品简化的依赖顺序和发布门禁 | 避免服务端提前强制鉴权导致旧 APK 不可用，并固定多账号数据隔离顺序 |

@@ -357,3 +357,31 @@
 | 日期 | 修改人 | 变更范围 | 原因 |
 | --- | --- | --- | --- |
 | 2026-07-11 | Codex | 增加待分类食物、幂等记录和新版草稿状态模型 | 支持极简记录、弱网恢复和后台合并一致性 |
+
+## 2026-07-11 正式账号与产品简化数据模型
+
+本节替代此前游客主路径、待分类产品和默认私密的冲突规则；旧匿名行和分类列仅为升级兼容保留。
+
+### users
+
+- 正式账号新增 `username VARCHAR(64)`（`lower(username)` 唯一）、`password_hash VARCHAR(255)`、`role OWNER/USER`、`account_status PENDING/ACTIVE/REJECTED/DISABLED`。
+- 增加 `token_version`、`must_change_password`、`approved_by_user_id`、`approved_at`；修改密码、禁用或强制退出时递增 tokenVersion。
+- 旧匿名用户允许正式账号字段为空；`anonymous_installation_id` 继续唯一，但只能用于一次性历史认领，不能继续创建新游客会话。
+
+### refresh_tokens 与 legacy_identity_claims
+
+- Refresh Token 保存 `token_hash`、`family_id`、`device_id`、`rotated_at`、`replacement_ciphertext`、`replacement_expires_at`、`revoked_at` 和时间戳，不保存长期可用的原文。
+- `token_hash` 唯一；轮换使用行锁。替代密文只保留 60 秒，AAD 绑定 refresh row、family 和 device。
+- `legacy_identity_claims` 对匿名 installationId 建唯一约束，记录目标正式 userId 和认领时间，确保永久不可二次认领。
+
+### 产品、上传与记录
+
+- `food_items` 保留 `category/subcategory` 兼容列，但历史数据迁移为 `none/NULL`，所有新写入统一使用该值。
+- 新增 `is_searchable BOOLEAN NOT NULL DEFAULT TRUE`；新产品直接 `audit_status=approved`，隐藏只修改搜索可见性。
+- 新增 `uploaded_objects` 元数据，保存 object key、owner userId、contentType、size 和 createdAt。
+- `food_records.is_public` 的服务端创建默认值改为 true；显式 false 仍受支持，逻辑删除和历史关联保持不变。
+- Android Room 草稿增加非空 `draft_owner_user_id` 与 owner+updatedAt 索引；所有读取、同步、去重和删除必须按当前 userId 过滤。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | 增加正式账号、Refresh 会话、一次性认领和多账号草稿模型 | 为必须登录、弱网长期会话和账号间数据隔离提供持久化契约 |
