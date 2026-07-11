@@ -26,6 +26,14 @@
 - [ ] 运行 `./gradlew testDebugUnitTest --tests '*AuthRepositoryTest'` 和连接设备上的 `connectedDebugAndroidTest` 指定安全存储测试。
 - [ ] 提交并推送：`feat(android): add auth api and secure token storage`
 
+### Task 1 实施状态（2026-07-11）
+
+已完成全部认证端点 DTO 与 Retrofit 契约、稳定 `deviceId`、认证错误码映射、仅内存 Access Token，以及 Android Keystore AES-GCM 加密的 Refresh Token/审批票据存储。普通 DataStore 只保存账号元数据、设备 ID、会话状态和密文版本；任何认证模型的 `toString()` 均不输出密码或凭据原文。Task 2 可在此基础上接入双客户端、Bearer Interceptor 和并发安全刷新。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | 标记 Android 认证计划 Task 1 完成 | 为自动刷新和登录界面提供可验证、不可明文落盘的认证数据层 |
+
 ## Task 2: 自动 Bearer 与并发安全刷新
 
 **Files:**
