@@ -391,3 +391,25 @@ Public record feed contract:
 - The server must reject editing another user's record with `403` and missing/deleted records with `404`.
 - `images` is the complete replacement list after edit. Clients must upload a new image through `POST /api/upload/image` first, then send the returned `{ imageUrl, thumbnailUrl }` in `PUT /api/records/{recordId}`.
 - Sending `images: []` removes all record images.
+
+## 2026-07-11 快速记录与后台治理接口增补
+
+### 幂等记录创建
+
+- `POST /api/records` 新增可选 `clientRequestId`；新版 Android 必须发送 UUID。
+- 当同一 `userId + clientRequestId` 已存在记录时，服务端返回原记录，不重复写入。
+- 新增 `POST /api/records/quick`，请求字段为 `clientRequestId`、`userId`、`name`、`rating`、可选 `comment`、`isPublic`、`recordTime` 与 `images`。
+- 快速记录默认 `isPublic=false`，`rating` 必须为 `1-5`，`name` 不能为空且最长 `255` 字符。
+- 快速记录依次复用已审核精确同名条目、当前用户精确同名 `pending` 条目，否则创建 `unknown / uncategorized / pending` 条目。
+- 匹配或创建食物条目与创建记录必须在同一数据库事务中完成，响应复用 `FoodRecordResponse`。
+
+### 后台待分类治理
+
+- `GET /api/admin/food-items` 新增可选 `itemType` 与 `category` 过滤。
+- 新增 `PUT /api/admin/food-items/{foodItemId}`，允许更新名称、类型、分类、二级分类、品牌、别名和搜索关键词。
+- 新增 `GET /api/admin/food-items/{foodItemId}/merge-candidates?limit=`，使用 PostgreSQL 相似度返回最多 `10` 个候选。
+- 合并目标仍必须为 `approved`；合并事务迁移全部历史记录并保留记录图片、评论、公开状态、点赞与删除状态。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | 增加幂等快速记录与待分类治理接口契约 | 支持名称加评分快速保存并防止重复提交和待分类条目失控 |

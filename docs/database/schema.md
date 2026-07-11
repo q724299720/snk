@@ -344,3 +344,16 @@
 | 2026-06-21 | Codex | 补充公开记录流与草稿公开状态约束 | Phase 5 公开分享只应暴露主动公开记录，弱网草稿补传需保留用户公开选择 |
 | 2026-06-21 | Codex | 增加 `FoodRecordComment` 评论模型 | Phase 5 公开记录流需要最小评论能力，并保持私有记录不暴露社区评论 |
 | 2026-06-21 | Codex | 明确 `FoodRecord.comment` 长度上限 | Phase 5 稳定性优化需要限制记录备注体积，避免超长文本增加请求、存储和分享成本 |
+
+## 2026-07-11 快速记录数据模型增补
+
+- `FoodItem.item_type` 增加 `unknown`，与 `category=uncategorized` 组合表示待分类快速创建条目。
+- `FoodRecord.client_request_id` 使用 UUID，可空以兼容旧客户端；非空时与 `user_id` 组成唯一约束。
+- 快速记录的同名匹配采用去首尾空白、合并连续空白和小写化后的精确比较；不自动进行模糊合并。
+- Android Room 草稿增加稳定 `client_request_id`、可空 `food_item_id`、可空 `rating` 与本地草稿图片路径。
+- 草稿状态固定为 `editing / queued / syncing / synced / failed`；`synced` 草稿通过 `remote_record_id` 与正式记录去重后清理。
+- 服务端条目合并必须在事务内迁移所有 `food_records.food_item_id`，来源条目标记为 `rejected`；记录图片和评论因绑定记录主键而保持不变。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | 增加待分类食物、幂等记录和新版草稿状态模型 | 支持极简记录、弱网恢复和后台合并一致性 |

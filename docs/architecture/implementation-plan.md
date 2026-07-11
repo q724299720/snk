@@ -411,3 +411,22 @@
 - Saving while a replacement image is still uploading must be blocked.
 - Backend update replaces the complete image list for the record after owner validation.
 - Record create and edit must normalize selected device media to `image/jpeg` before calling `POST /api/upload/image`, so HEIC/WEBP/PNG gallery formats do not fail server-side thumbnail generation.
+
+## Phase 5 Addendum: Quick Personal Record UX Overhaul
+
+Implementation order is fixed:
+
+1. Update product, API, database, recognition, and architecture contracts.
+2. Add PostgreSQL migrations for `unknown` food items and idempotent record creation.
+3. Add transactional quick-record creation and strengthen admin uncategorized-item governance.
+4. Migrate Android drafts to stable `clientRequestId`, nullable food/rating editing state, and local draft media.
+5. Preserve ML Kit OCR text blocks and add tap-to-select plus full-text edit fallback.
+6. Centralize camera permission denial and permanent-denial recovery.
+7. Replace navigation with Home / Records / Discover / Profile and rebuild the fast-record flow.
+8. Run server, Android, ADB, public API, and admin-page regression checks after every increment.
+
+The `3000`-item seed target is not a gate for this addendum. No new external data is imported in this increment.
+
+| Date | Author | Scope | Reason |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | Phase 5 quick personal record UX overhaul | Lock the dependency order and keep cold-start data expansion out of the current implementation scope |
