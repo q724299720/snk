@@ -10,12 +10,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.snk.server.domain.auth.AccountRegistrationService;
+import com.snk.server.domain.auth.AuthService;
 import com.snk.server.domain.auth.PasswordService;
 import com.snk.server.domain.auth.RegistrationResult;
 import com.snk.server.domain.auth.RegistrationStatusResult;
 import com.snk.server.infrastructure.persistence.user.AccountRole;
 import com.snk.server.infrastructure.persistence.user.AccountStatus;
 import com.snk.server.infrastructure.security.CurrentUser;
+import com.snk.server.infrastructure.security.AuthRateLimiter;
 import com.snk.server.infrastructure.storage.StorageProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +44,12 @@ class AuthControllerRegistrationTests {
 
 	@MockBean
 	private CurrentUser currentUser;
+
+	@MockBean
+	private AuthService authService;
+
+	@MockBean
+	private AuthRateLimiter rateLimiter;
 
 	@TestConfiguration
 	static class ControllerTestConfiguration {

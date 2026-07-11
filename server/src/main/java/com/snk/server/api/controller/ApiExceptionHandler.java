@@ -1,10 +1,14 @@
 package com.snk.server.api.controller;
 
+import com.snk.server.domain.auth.AuthException;
+import com.snk.server.domain.auth.RateLimitException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -57,5 +61,21 @@ public class ApiExceptionHandler {
 		detail.setTitle("Internal error");
 		detail.setDetail(exception.getMessage());
 		return detail;
+	}
+
+	@ExceptionHandler(AuthException.class)
+	public ProblemDetail handleAuth(AuthException exception) {
+		ProblemDetail detail = ProblemDetail.forStatus(exception.status());
+		detail.setTitle(exception.code());
+		detail.setProperty("code", exception.code());
+		return detail;
+	}
+
+	@ExceptionHandler(RateLimitException.class)
+	public ResponseEntity<ProblemDetail> handleRateLimit(RateLimitException exception) {
+		ProblemDetail detail = ProblemDetail.forStatus(HttpStatus.TOO_MANY_REQUESTS);
+		detail.setTitle("AUTH_RATE_LIMITED"); detail.setProperty("code", "AUTH_RATE_LIMITED");
+		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+			.header(HttpHeaders.RETRY_AFTER, String.valueOf(exception.retryAfterSeconds())).body(detail);
 	}
 }

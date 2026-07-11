@@ -10,6 +10,18 @@
 
 - `POST /api/auth/anonymous`
 - `POST /api/auth/login`
+
+### Task 4 已落地约束（2026-07-11）
+
+- `POST /api/auth/login` 只允许 `ACTIVE` 账号，响应为 RSA-SHA256 JWT 与 256-bit 随机 Refresh Token。
+- Access Token 包含 `sub`、`username`、`role`、`tokenVersion`、`mustChangePassword`，默认有效期 15 分钟。
+- Refresh Token 数据库只保存 SHA-256 哈希；轮换使用数据库行锁，同设备 60 秒内重试返回相同替代令牌，超时或跨设备重放撤销整条会话链。
+- 替代 Refresh Token 仅在宽限期内以 AES-256-GCM 密文保存，AAD 绑定令牌行、会话族和设备。
+- 登录按 `IP + username`、注册按 IP 执行单节点内存限流；触发时返回 `429` 和 `Retry-After`。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | 落地 JWT 登录、Refresh Token 轮换、退出和认证限流接口 | Task 4 建立正式账号会话，并处理移动弱网重复刷新与重放风险 |
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
 

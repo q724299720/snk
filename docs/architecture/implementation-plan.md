@@ -412,6 +412,14 @@
 - Backend update replaces the complete image list for the record after owner validation.
 - Record create and edit must normalize selected device media to `image/jpeg` before calling `POST /api/upload/image`, so HEIC/WEBP/PNG gallery formats do not fail server-side thumbnail generation.
 
+### 2026-07-11 Task 4 实施状态
+
+Task 4 已完成 JWT 登录、Refresh Token 单次轮换与 60 秒弱网宽限、设备退出和单节点认证限流。Task 5 可在此基础上接入 Bearer Filter、路由权限和一次性历史身份认领；正式生产切换仍须等待 Android 登录闭环完成。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | 标记后端认证计划 Task 4 完成 | 固定 Task 5 的鉴权接入前置条件，同时保留旧 APK 兼容发布门禁 |
+
 ## Phase 5 Addendum: Quick Personal Record UX Overhaul
 
 Implementation order is fixed:
