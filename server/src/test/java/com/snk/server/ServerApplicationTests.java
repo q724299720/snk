@@ -12,6 +12,7 @@ import com.snk.server.infrastructure.persistence.user.UserRepository;
 import com.snk.server.infrastructure.persistence.auth.AccountAuditLogRepository;
 import com.snk.server.infrastructure.persistence.auth.RefreshTokenRepository;
 import com.snk.server.infrastructure.persistence.auth.RegistrationApprovalTicketRepository;
+import com.snk.server.infrastructure.persistence.auth.LegacyIdentityClaimRepository;
 import com.snk.server.domain.food.FoodSearchService;
 import com.snk.server.domain.recognition.ImageRecognitionTaskProvider;
 import com.snk.server.infrastructure.security.AuthProperties;
@@ -20,13 +21,21 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = {
-	"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration"
+	"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration",
+	"snk.auth.enforce-security=true"
 })
+@AutoConfigureMockMvc
 class ServerApplicationTests {
 
 	@Autowired
@@ -34,6 +43,12 @@ class ServerApplicationTests {
 
 	@Autowired
 	private OwnerBootstrapProperties ownerBootstrapProperties;
+
+	@Autowired
+	private SecurityFilterChain securityFilterChain;
+
+	@Autowired
+	private MockMvc mockMvc;
 
 	@MockBean
 	private UserRepository userRepository;
@@ -46,6 +61,9 @@ class ServerApplicationTests {
 
 	@MockBean
 	private AccountAuditLogRepository accountAuditLogRepository;
+
+	@MockBean
+	private LegacyIdentityClaimRepository legacyIdentityClaimRepository;
 
 	@MockBean
 	private FoodItemRepository foodItemRepository;
@@ -79,6 +97,7 @@ class ServerApplicationTests {
 
 	@Test
 	void contextLoads() {
+		assertThat(securityFilterChain).isNotNull();
 		assertThat(authProperties.accessTokenTtl()).isEqualTo(Duration.ofMinutes(15));
 		assertThat(authProperties.refreshGracePeriod()).isEqualTo(Duration.ofSeconds(60));
 		assertThat(authProperties.jwtPrivateKey()).isNull();
@@ -87,6 +106,17 @@ class ServerApplicationTests {
 		assertThat(ownerBootstrapProperties.username()).isNull();
 		assertThat(ownerBootstrapProperties.password()).isNull();
 		assertThat(ownerBootstrapProperties.forceReset()).isFalse();
+	}
+
+	@Test
+	void protectedApiRequiresAuthentication() throws Exception {
+		mockMvc.perform(get("/api/records/public")).andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void adminApiRejectsNonOwnerRole() throws Exception {
+		mockMvc.perform(get("/api/admin/stats").with(user("member").roles("USER")))
+			.andExpect(status().isForbidden());
 	}
 
 }

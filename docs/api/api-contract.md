@@ -11,6 +11,18 @@
 - `POST /api/auth/anonymous`
 - `POST /api/auth/login`
 
+### Task 5 已落地约束（2026-07-11）
+
+- 默认 `SNK_AUTH_ENFORCE_SECURITY=true`：健康检查、注册、注册状态、登录、刷新和后台静态页公开，其余 API 必须提供 Bearer Token。
+- `/api/admin/**` 除现有 Admin Token 外还要求 JWT 角色为 `OWNER`；缺少身份返回 `401 AUTH_REQUIRED`，角色不足返回 `403 AUTH_FORBIDDEN`。
+- Bearer Filter 每次从数据库校验 `ACTIVE` 状态与 `tokenVersion`，密码修改、会话撤销或账号状态变化后旧 Access Token 立即失效。
+- `POST /api/auth/legacy-claim` 仅从当前 Token 获取目标账号；在单一事务内迁移历史记录、评论、举报和产品创建者，重复认领返回 `409`。
+- 测试环境通过 `snk.auth.enforce-security=false` 使用兼容链，安全集成测试必须显式开启真实链验证 `401/403`，生产默认不能关闭。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | 落地 Bearer 鉴权、OWNER 路由授权和一次性历史身份认领 | Task 5 消除客户端 userId 授权风险，并提供旧游客数据迁移通道 |
+
 ### Task 4 已落地约束（2026-07-11）
 
 - `POST /api/auth/login` 只允许 `ACTIVE` 账号，响应为 RSA-SHA256 JWT 与 256-bit 随机 Refresh Token。

@@ -6,8 +6,14 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Modifying;
+import com.snk.server.infrastructure.persistence.user.UserEntity;
 
 public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> {
+	@Modifying
+	@Query("UPDATE FoodItemEntity food SET food.createdByUser = :target WHERE food.createdByUser = :source")
+	int reassignCreator(UserEntity source, UserEntity target);
+
 	long countByCategory(String category);
 
 	@Query(

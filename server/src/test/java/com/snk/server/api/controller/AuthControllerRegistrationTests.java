@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.snk.server.domain.auth.AccountRegistrationService;
 import com.snk.server.domain.auth.AuthService;
+import com.snk.server.domain.auth.LegacyIdentityClaimService;
 import com.snk.server.domain.auth.PasswordService;
 import com.snk.server.domain.auth.RegistrationResult;
 import com.snk.server.domain.auth.RegistrationStatusResult;
@@ -50,6 +51,9 @@ class AuthControllerRegistrationTests {
 
 	@MockBean
 	private AuthRateLimiter rateLimiter;
+
+	@MockBean
+	private LegacyIdentityClaimService legacyIdentityClaimService;
 
 	@TestConfiguration
 	static class ControllerTestConfiguration {

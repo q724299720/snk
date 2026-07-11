@@ -14,6 +14,10 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	Optional<UserEntity> findByAnonymousInstallationId(String anonymousInstallationId);
 
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("SELECT user FROM UserEntity user WHERE user.anonymousInstallationId = :installationId")
+	Optional<UserEntity> findByAnonymousInstallationIdForUpdate(@Param("installationId") String installationId);
+
 	Optional<UserEntity> findByUsernameIgnoreCase(String username);
 
 	long countByRoleAndAccountStatus(AccountRole role, AccountStatus accountStatus);

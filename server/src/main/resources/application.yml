@@ -4,9 +4,6 @@ server:
 spring:
   application:
     name: snk-server
-  # Task 5 will replace this compatibility exclusion with the explicit Bearer security chain.
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
   config:
     import:
       - optional:file:${SNK_RUNTIME_CONFIG:./runtime/application-runtime.yml}
@@ -55,6 +52,7 @@ logging:
 
 snk:
   auth:
+    enforce-security: ${SNK_AUTH_ENFORCE_SECURITY:true}
     access-token-ttl: ${SNK_ACCESS_TOKEN_TTL:15m}
     refresh-grace-period: ${SNK_REFRESH_GRACE_PERIOD:60s}
     jwt-private-key: ${SNK_JWT_PRIVATE_KEY:}

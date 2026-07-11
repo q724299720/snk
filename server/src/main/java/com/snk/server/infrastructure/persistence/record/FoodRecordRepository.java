@@ -1,6 +1,7 @@
 package com.snk.server.infrastructure.persistence.record;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
+import com.snk.server.infrastructure.persistence.user.UserEntity;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,4 +25,8 @@ public interface FoodRecordRepository extends JpaRepository<FoodRecordEntity, Lo
 	@Modifying
 	@Query("UPDATE FoodRecordEntity record SET record.foodItem = :targetFoodItem WHERE record.foodItem = :sourceFoodItem")
 	int reassignFoodItem(FoodItemEntity sourceFoodItem, FoodItemEntity targetFoodItem);
+
+	@Modifying
+	@Query("UPDATE FoodRecordEntity record SET record.user = :target WHERE record.user = :source")
+	int reassignUser(UserEntity source, UserEntity target);
 }

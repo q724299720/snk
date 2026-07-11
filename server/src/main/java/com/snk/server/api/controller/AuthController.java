@@ -5,11 +5,14 @@ import com.snk.server.api.dto.LoginRequest;
 import com.snk.server.api.dto.LogoutRequest;
 import com.snk.server.api.dto.RefreshRequest;
 import com.snk.server.api.dto.TokenPairResponse;
+import com.snk.server.api.dto.LegacyIdentityClaimRequest;
+import com.snk.server.api.dto.CurrentAccountResponse;
 import com.snk.server.api.dto.RegisterRequest;
 import com.snk.server.api.dto.RegistrationResponse;
 import com.snk.server.api.dto.RegistrationStatusResponse;
 import com.snk.server.domain.auth.AccountRegistrationService;
 import com.snk.server.domain.auth.AuthService;
+import com.snk.server.domain.auth.LegacyIdentityClaimService;
 import com.snk.server.domain.auth.PasswordService;
 import com.snk.server.domain.auth.RegistrationResult;
 import com.snk.server.infrastructure.security.CurrentUser;
@@ -37,19 +40,34 @@ public class AuthController {
 	private final CurrentUser currentUser;
 	private final AuthService authService;
 	private final AuthRateLimiter rateLimiter;
+	private final LegacyIdentityClaimService legacyClaims;
 
 	public AuthController(
 		AccountRegistrationService registrationService,
 		PasswordService passwordService,
 		CurrentUser currentUser,
 		AuthService authService,
-		AuthRateLimiter rateLimiter
+		AuthRateLimiter rateLimiter,
+		LegacyIdentityClaimService legacyClaims
 	) {
 		this.registrationService = registrationService;
 		this.passwordService = passwordService;
 		this.currentUser = currentUser;
 		this.authService = authService;
 		this.rateLimiter = rateLimiter;
+		this.legacyClaims = legacyClaims;
+	}
+
+	@PostMapping("/legacy-claim")
+	public ResponseEntity<Void> claimLegacyIdentity(@Valid @RequestBody LegacyIdentityClaimRequest request) {
+		legacyClaims.claim(currentUser.requiredUserId(), request.installationId());
+		return ResponseEntity.noContent().build();
+	}
+
+	@GetMapping("/me")
+	public CurrentAccountResponse me() {
+		var principal = currentUser.requiredPrincipal();
+		return new CurrentAccountResponse(principal.userId(), principal.username(), principal.role(), principal.mustChangePassword());
 	}
 
 	@PostMapping("/login")
