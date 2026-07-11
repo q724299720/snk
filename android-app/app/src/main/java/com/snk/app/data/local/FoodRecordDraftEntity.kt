@@ -40,4 +40,6 @@ data class FoodRecordDraftEntity(
     val createdAt: Long,
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long,
+    @ColumnInfo(name = "client_request_id", defaultValue = "")
+    val clientRequestId: String = "",
 )

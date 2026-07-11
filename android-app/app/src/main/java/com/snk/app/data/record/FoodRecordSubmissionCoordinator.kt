@@ -12,6 +12,7 @@ class FoodRecordSubmissionCoordinator(
     private val draftSyncTrigger: DraftSyncTrigger,
 ) {
     suspend fun submit(
+        clientRequestId: String = java.util.UUID.randomUUID().toString(),
         userId: Long,
         selectedFood: FoodSearchItem,
         rating: Int,
@@ -22,6 +23,7 @@ class FoodRecordSubmissionCoordinator(
     ): FoodRecordSubmissionResult {
         return when (
             val result = remoteWriter.createRecord(
+                clientRequestId = clientRequestId,
                 userId = userId,
                 foodItemId = selectedFood.id,
                 rating = rating,
@@ -54,6 +56,7 @@ class FoodRecordSubmissionCoordinator(
                             comment = comment,
                             sourceType = sourceType,
                             isPublic = isPublic,
+                            clientRequestId = clientRequestId,
                         ),
                     )
                     draftSyncTrigger.scheduleDraftSync(draft.id)

@@ -69,6 +69,8 @@ interface FoodRecordApi {
 
 @Serializable
 data class CreateFoodRecordRequest(
+    @SerialName("clientRequestId")
+    val clientRequestId: String,
     @SerialName("userId")
     val userId: Long,
     @SerialName("foodItemId")

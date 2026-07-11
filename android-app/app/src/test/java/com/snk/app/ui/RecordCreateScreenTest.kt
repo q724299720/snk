@@ -10,6 +10,17 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 class RecordCreateScreenTest {
+    @Test
+    fun `record create keeps one client request id for the screen lifetime`() {
+        val sourcePath = listOf(
+            Path.of("src/main/java/com/snk/app/ui/RecordCreateScreen.kt"),
+            Path.of("app/src/main/java/com/snk/app/ui/RecordCreateScreen.kt"),
+        ).first(Files::exists)
+        val source = String(Files.readAllBytes(sourcePath))
+
+        assertTrue(source.contains("remember { UUID.randomUUID().toString() }"))
+        assertTrue(source.contains("clientRequestId = clientRequestId"))
+    }
 
     @Test
     fun `buildRecordShareText includes food rating and record metadata`() {

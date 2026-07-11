@@ -27,6 +27,7 @@ class DraftSyncWorker(
 
         return when (
             val result = container.foodRecordRepository.createRecord(
+                clientRequestId = draft.clientRequestId,
                 userId = draft.userId,
                 foodItemId = draft.foodItemId,
                 rating = draft.rating,

@@ -21,6 +21,7 @@ data class FoodRecordDraft(
     val remoteRecordTime: String?,
     val createdAt: Long,
     val updatedAt: Long,
+    val clientRequestId: String = java.util.UUID.randomUUID().toString(),
 ) {
     val statusLabel: String
         get() = when (syncStatus) {
@@ -43,6 +44,7 @@ data class FoodRecordDraftCreateRequest(
     val comment: String,
     val sourceType: String,
     val isPublic: Boolean,
+    val clientRequestId: String = java.util.UUID.randomUUID().toString(),
 )
 
 data class FoodRecordDraftPayload(
@@ -54,6 +56,7 @@ data class FoodRecordDraftPayload(
     val sourceType: String,
     val isPublic: Boolean,
     val retryCount: Int,
+    val clientRequestId: String,
 )
 
 enum class DraftSyncStatus {

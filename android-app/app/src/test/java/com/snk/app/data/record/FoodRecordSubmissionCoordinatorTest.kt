@@ -27,6 +27,7 @@ class FoodRecordSubmissionCoordinatorTest {
         )
 
         val result = coordinator.submit(
+            clientRequestId = "b462a65b-b346-4a6d-bd87-c2022897544a",
             userId = 1L,
             selectedFood = testFood(),
             rating = 4,
@@ -54,6 +55,7 @@ class FoodRecordSubmissionCoordinatorTest {
         )
 
         val result = coordinator.submit(
+            clientRequestId = "b462a65b-b346-4a6d-bd87-c2022897544a",
             userId = 1L,
             selectedFood = testFood(),
             rating = 4,
@@ -64,6 +66,7 @@ class FoodRecordSubmissionCoordinatorTest {
         assertTrue(result is FoodRecordSubmissionResult.SavedToDraft)
         assertEquals(1L, draftSaver.savedDrafts.single().id)
         assertTrue(draftSaver.savedDrafts.single().isPublic)
+        assertEquals("b462a65b-b346-4a6d-bd87-c2022897544a", draftSaver.savedDrafts.single().clientRequestId)
         assertEquals(listOf(1L), syncTrigger.scheduledDraftIds)
     }
 
@@ -85,6 +88,7 @@ private class FakeRemoteWriter(
     private val result: FoodRecordCreateResult,
 ) : RemoteFoodRecordWriter {
     override suspend fun createRecord(
+        clientRequestId: String,
         userId: Long,
         foodItemId: Long,
         rating: Int,
@@ -120,6 +124,7 @@ private class FakeDraftSaver : DraftRecordSaver {
             remoteRecordTime = null,
             createdAt = 0L,
             updatedAt = 0L,
+            clientRequestId = request.clientRequestId,
         )
         savedDrafts += draft
         return draft

@@ -45,6 +45,7 @@ class FoodRecordRepository(
     }
 
     override suspend fun createRecord(
+        clientRequestId: String,
         userId: Long,
         foodItemId: Long,
         rating: Int,
@@ -70,6 +71,7 @@ class FoodRecordRepository(
         return try {
             val response = api.createRecord(
                 CreateFoodRecordRequest(
+                    clientRequestId = clientRequestId,
                     userId = userId,
                     foodItemId = foodItemId,
                     sourceType = sourceType,

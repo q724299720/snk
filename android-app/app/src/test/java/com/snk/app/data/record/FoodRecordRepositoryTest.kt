@@ -78,6 +78,7 @@ class FoodRecordRepositoryTest {
         )
 
         val result = repository.createRecord(
+            clientRequestId = "b462a65b-b346-4a6d-bd87-c2022897544a",
             userId = 100,
             foodItemId = 200,
             rating = 5,
@@ -95,6 +96,7 @@ class FoodRecordRepositoryTest {
         assertEquals(55L, (result as FoodRecordCreateResult.Success).recordId)
         assertEquals(0, result.likeCount)
         val requestBody = server.takeRequest().body.readUtf8()
+        assertTrue(requestBody.contains("\"clientRequestId\":\"b462a65b-b346-4a6d-bd87-c2022897544a\""))
         assertTrue(requestBody.contains("\"images\""))
         assertTrue(requestBody.contains("https://snk.qiuxinmin.cn/uploads/records/noodle.jpg"))
     }

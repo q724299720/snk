@@ -76,6 +76,7 @@ fun RecordCreateScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    val clientRequestId = remember { UUID.randomUUID().toString() }
     var rating by remember { mutableIntStateOf(DEFAULT_RECORD_RATING) }
     var comment by remember { mutableStateOf("") }
     var submitState by remember { mutableStateOf<FoodRecordSubmissionResult?>(null) }
@@ -408,6 +409,7 @@ fun RecordCreateScreen(
                 coroutineScope.launch {
                     isSubmitting = true
                     val result = submissionCoordinator.submit(
+                        clientRequestId = clientRequestId,
                         userId = userId,
                         selectedFood = selectedFood,
                         rating = rating,

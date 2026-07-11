@@ -35,6 +35,7 @@ class DraftRecordRepository(
                 remoteRecordTime = null,
                 createdAt = now,
                 updatedAt = now,
+                clientRequestId = request.clientRequestId,
             ),
         )
         return requireNotNull(getDraft(draftId))
@@ -145,6 +146,7 @@ class DraftRecordRepository(
         remoteRecordTime = remoteRecordTime,
         createdAt = createdAt,
         updatedAt = updatedAt,
+        clientRequestId = clientRequestId,
     )
 
     private fun FoodRecordDraftEntity.toPayload(): FoodRecordDraftPayload = FoodRecordDraftPayload(
@@ -156,5 +158,6 @@ class DraftRecordRepository(
         sourceType = sourceType,
         isPublic = isPublic,
         retryCount = retryCount,
+        clientRequestId = clientRequestId,
     )
 }

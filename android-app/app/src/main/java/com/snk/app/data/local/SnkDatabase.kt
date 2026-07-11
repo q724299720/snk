@@ -7,7 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [FoodRecordDraftEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class SnkDatabase : RoomDatabase() {
@@ -19,6 +19,12 @@ abstract class SnkDatabase : RoomDatabase() {
                 db.execSQL(
                     "ALTER TABLE food_record_drafts ADD COLUMN is_public INTEGER NOT NULL DEFAULT 0",
                 )
+            }
+        }
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE food_record_drafts ADD COLUMN client_request_id TEXT NOT NULL DEFAULT ''")
+                db.execSQL("UPDATE food_record_drafts SET client_request_id = printf('00000000-0000-0000-0000-%012x', id) WHERE client_request_id = ''")
             }
         }
     }
