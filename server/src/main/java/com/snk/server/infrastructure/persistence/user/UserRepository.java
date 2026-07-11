@@ -18,6 +18,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	long countByRoleAndAccountStatus(AccountRole role, AccountStatus accountStatus);
 
+	boolean existsByRole(AccountRole role);
+
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("""
 		SELECT account

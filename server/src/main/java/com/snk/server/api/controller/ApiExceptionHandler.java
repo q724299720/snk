@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -30,6 +31,14 @@ public class ApiExceptionHandler {
 			.map(e -> e.getField() + ": " + e.getDefaultMessage())
 			.reduce((a, b) -> a + "; " + b)
 			.orElse("Validation failed"));
+		return detail;
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	public ProblemDetail handleHttpMessageNotReadable() {
+		ProblemDetail detail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+		detail.setTitle("Malformed request");
 		return detail;
 	}
 

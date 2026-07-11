@@ -99,7 +99,7 @@ CREATE TABLE account_audit_logs (
         CHECK (action IN (
             'APPROVE', 'REJECT', 'DISABLE', 'ENABLE', 'PROMOTE', 'DEMOTE',
             'REVOKE_SESSIONS', 'RESET_PASSWORD', 'CHANGE_PASSWORD',
-            'OWNER_FORCE_RESET', 'LEGACY_CLAIM'
+            'BOOTSTRAP_OWNER', 'OWNER_FORCE_RESET', 'LEGACY_CLAIM'
         ))
 );
 

@@ -61,16 +61,20 @@
 - Create: `server/src/main/java/com/snk/server/api/dto/RegisterRequest.java`
 - Create: `server/src/main/java/com/snk/server/api/dto/RegistrationResponse.java`
 - Create: `server/src/main/java/com/snk/server/api/dto/PasswordChangeRequest.java`
+- Create: `server/src/main/java/com/snk/server/infrastructure/security/CurrentUser.java`
+- Create: `server/src/main/java/com/snk/server/infrastructure/security/PasswordConfiguration.java`
 - Create: `server/src/test/java/com/snk/server/domain/auth/AccountRegistrationServiceTests.java`
 - Create: `server/src/test/java/com/snk/server/domain/auth/BootstrapOwnerServiceTests.java`
+- Create: `server/src/test/java/com/snk/server/domain/auth/PasswordServiceTests.java`
+- Create: `server/src/test/java/com/snk/server/api/controller/AuthControllerRegistrationTests.java`
 
-- [ ] 先写失败测试：注册不接收 `deviceId`、新账号为 `USER/PENDING`、重复用户名返回 409、审批查询票据不可用于业务 API、Bootstrap 只创建首 OWNER、`SNK_OWNER_FORCE_RESET=true` 才能覆盖已有 OWNER 密码。
-- [ ] 实现 `POST /api/auth/register`，返回随机高熵且只存哈希的一次性 `approvalTicket`；实现 `GET /api/auth/registration-status?ticket=...`，只返回 PENDING/ACTIVE/REJECTED/DISABLED。
-- [ ] BCrypt 强度固定为 12；用户名 trim 后用 `lower(username)` 唯一，密码长度 12–72，错误响应不泄漏账户是否存在（注册重复除外）。
-- [ ] 实现 `POST /api/auth/password/change`：验证旧密码、更新哈希、清除 `must_change_password`、递增 `token_version`、撤销该用户全部 Refresh Token。
-- [ ] 实现 Bootstrap OWNER 与强制重置审计日志；日志只记录 userId/username/action，不记录密码。
-- [ ] 运行 `./gradlew test --tests '*AccountRegistrationServiceTests' --tests '*BootstrapOwnerServiceTests'` 和 `./gradlew test`。
-- [ ] 提交并推送：`feat: add registration owner bootstrap and password change`
+- [x] 先写失败测试：注册不接收 `deviceId`、新账号为 `USER/PENDING`、重复用户名返回 409、审批查询票据不可用于业务 API、Bootstrap 只创建首 OWNER、`SNK_OWNER_FORCE_RESET=true` 才能覆盖已有 OWNER 密码。
+- [x] 实现 `POST /api/auth/register`，返回随机高熵且只存哈希的一次性 `approvalTicket`；实现 `GET /api/auth/registration-status?ticket=...`，只返回 PENDING/ACTIVE/REJECTED/DISABLED。
+- [x] BCrypt 强度固定为 12；用户名 trim 后用 `lower(username)` 唯一，密码长度 12–72，错误响应不泄漏账户是否存在（注册重复除外）。
+- [x] 实现 `POST /api/auth/password/change`：验证旧密码、更新哈希、清除 `must_change_password`、递增 `token_version`、撤销该用户全部 Refresh Token。
+- [x] 实现 Bootstrap OWNER 与强制重置审计日志；日志只记录 userId/username/action，不记录密码。
+- [x] 运行 `./gradlew test --tests '*AccountRegistrationServiceTests' --tests '*BootstrapOwnerServiceTests'` 和 `./gradlew test`。
+- [x] 提交并推送：`feat: add registration owner bootstrap and password change`
 
 ## Task 4: JWT、Refresh Token 轮换与单机限流
 
@@ -99,7 +103,7 @@
 **Files:**
 - Create: `server/src/main/java/com/snk/server/infrastructure/security/SecurityConfiguration.java`
 - Create: `server/src/main/java/com/snk/server/infrastructure/security/BearerTokenFilter.java`
-- Create: `server/src/main/java/com/snk/server/infrastructure/security/CurrentUser.java`
+- Modify: `server/src/main/java/com/snk/server/infrastructure/security/CurrentUser.java`
 - Create: `server/src/main/java/com/snk/server/domain/auth/LegacyIdentityClaimService.java`
 - Create: `server/src/main/java/com/snk/server/api/controller/LegacyIdentityClaimController.java`
 - Modify: `server/src/main/java/com/snk/server/api/controller/ApiExceptionHandler.java`
@@ -173,3 +177,4 @@
 | 2026-07-11 | Codex | 新建后端账号、鉴权与治理实施计划 | 把账号安全设计拆成可测试、可独立提交的服务端任务 |
 | 2026-07-11 | Codex | 完成 Task 1 文档契约、认证依赖与配置绑定 | 正式启动必须登录与 OWNER 审核方案的服务端实施 |
 | 2026-07-11 | Codex | 完成 Task 2 V12/V13 迁移与认证持久化模型 | 建立账号、审批票据、Refresh 会话、认领和审计的数据约束与仓库 |
+| 2026-07-11 | Codex | 完成 Task 3 注册、密码管理与 Bootstrap OWNER | 建立待审核注册、审批查询、可信改密和紧急 OWNER 恢复能力 |

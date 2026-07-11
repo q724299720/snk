@@ -20,4 +20,6 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity
 	List<RefreshTokenEntity> findByFamilyIdAndRevokedAtIsNull(UUID familyId);
 
 	List<RefreshTokenEntity> findByUser_IdAndDeviceIdAndRevokedAtIsNull(Long userId, String deviceId);
+
+	List<RefreshTokenEntity> findByUser_IdAndRevokedAtIsNull(Long userId);
 }
