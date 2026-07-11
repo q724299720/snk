@@ -25,6 +25,9 @@ public class FoodItemEntity {
 	@Column(nullable = false, length = 255)
 	private String name;
 
+	@Column
+	private String alias;
+
 	@Column(name = "item_type", nullable = false, length = 32)
 	private String itemType;
 
@@ -94,6 +97,14 @@ public class FoodItemEntity {
 
 	public String getItemType() {
 		return itemType;
+	}
+
+	public String getAlias() {
+		return alias;
+	}
+
+	public void setAlias(String alias) {
+		this.alias = alias;
 	}
 
 	public String getCategory() {

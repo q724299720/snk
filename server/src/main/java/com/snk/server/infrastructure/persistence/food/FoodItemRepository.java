@@ -151,6 +151,22 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 		@Param("normalizedName") String normalizedName
 	);
 
+	@Query(
+		value = """
+			SELECT * FROM food_items
+			WHERE id <> :sourceId
+			  AND audit_status IN ('approved', 'pending')
+			ORDER BY similarity(lower(name), lower(:name)) DESC, id
+			LIMIT :limit
+			""",
+		nativeQuery = true
+	)
+	List<FoodItemEntity> findMergeCandidates(
+		@Param("sourceId") Long sourceId,
+		@Param("name") String name,
+		@Param("limit") int limit
+	);
+
 	Optional<FoodItemEntity> findByAuditStatusAndBarcode(String auditStatus, String barcode);
 
 	Optional<FoodItemEntity> findFirstByItemTypeAndBarcode(String itemType, String barcode);

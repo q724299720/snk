@@ -52,6 +52,19 @@ class AdminConsoleStaticPageTests {
 	}
 
 	@Test
+	void adminConsoleExposesUncategorizedEditAndCandidateFlow() throws Exception {
+		String html = readAdminConsoleHtml();
+
+		assertThat(html).contains("id=\"loadUncategorized\"");
+		assertThat(html).contains("id=\"foodEditName\"");
+		assertThat(html).contains("id=\"saveFoodItem\"");
+		assertThat(html).contains("async function updateFoodItem");
+		assertThat(html).contains("async function loadMergeCandidates");
+		assertThat(html).contains("/api/admin/food-items/${id}/merge-candidates");
+		assertThat(html).contains("method: \"PUT\"");
+	}
+
+	@Test
 	void adminConsoleExposesManualAutoAuditFlow() throws Exception {
 		String html = readAdminConsoleHtml();
 

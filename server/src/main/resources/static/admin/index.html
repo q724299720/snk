@@ -295,6 +295,7 @@
         <input id="foodLimit" type="number" min="1" max="100" value="20">
         <button id="loadFoodItems" class="primary">查询条目</button>
         <button id="loadPending">待审核</button>
+        <button id="loadUncategorized">待分类</button>
         <button id="loadReported">报错条目</button>
         <input id="mergeTargetFoodItemId" type="number" min="1" placeholder="合并目标条目 ID">
         <button id="previewMergeTarget">预览合并目标</button>
@@ -317,6 +318,23 @@
         </table>
       </div>
       <div id="foodItemDetail" class="detail-grid"></div>
+      <div class="word-form">
+        <input id="foodEditName" placeholder="规范名称">
+        <select id="foodEditItemType">
+          <option value="unknown">待分类</option>
+          <option value="packaged_product">包装食品</option>
+          <option value="dish">菜品/饮品</option>
+          <option value="fruit">水果</option>
+        </select>
+        <input id="foodEditCategory" placeholder="分类">
+        <input id="foodEditSubcategory" placeholder="二级分类">
+        <input id="foodEditBrand" placeholder="品牌">
+        <input id="foodEditAlias" placeholder="别名">
+        <input id="foodEditKeywords" placeholder="搜索关键词">
+        <button id="saveFoodItem" class="primary">保存条目资料</button>
+        <button id="loadMergeCandidates">查找相似条目</button>
+      </div>
+      <div id="mergeCandidates" class="detail-grid"></div>
       <div id="mergeTargetPreview" class="detail-grid"></div>
       <div id="foodItemReports" class="table-wrap"></div>
     </section>
@@ -419,6 +437,7 @@
     const savedToken = sessionStorage.getItem("snkAdminToken") || "";
     let reviewWordCache = [];
     let mergeTargetPreviewItem = null;
+    let currentFoodItemId = null;
     let editingWordId = null;
     tokenInput.value = savedToken;
 
@@ -505,6 +524,11 @@
     }
 
     function renderFoodItemDetail(item) {
+      document.querySelector("#foodEditName").value = item.name || "";
+      document.querySelector("#foodEditItemType").value = item.itemType || "unknown";
+      document.querySelector("#foodEditCategory").value = item.category || "";
+      document.querySelector("#foodEditSubcategory").value = item.subcategory || "";
+      document.querySelector("#foodEditBrand").value = item.brand || "";
       const fields = [
         ["ID", item.id],
         ["名称", item.name],
@@ -525,6 +549,40 @@
           <strong>${escapeHtml(value)}</strong>
         </div>
       `).join("");
+    }
+
+    async function updateFoodItem() {
+      if (!currentFoodItemId) {
+        setMessage("请先打开一个食物条目详情。", true);
+        return;
+      }
+      const body = {
+        name: document.querySelector("#foodEditName").value.trim(),
+        itemType: document.querySelector("#foodEditItemType").value,
+        category: document.querySelector("#foodEditCategory").value.trim(),
+        subcategory: document.querySelector("#foodEditSubcategory").value.trim() || null,
+        brand: document.querySelector("#foodEditBrand").value.trim() || null,
+        alias: document.querySelector("#foodEditAlias").value.trim() || null,
+        searchKeywords: document.querySelector("#foodEditKeywords").value.trim() || null,
+      };
+      await requestJson(`/api/admin/food-items/${currentFoodItemId}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      });
+      await Promise.all([loadFoodItems(), loadFoodItemDetail(currentFoodItemId)]);
+      setMessage(`条目 ${currentFoodItemId} 资料已更新。`);
+    }
+
+    async function loadMergeCandidates() {
+      const id = currentFoodItemId;
+      if (!id) {
+        setMessage("请先打开一个食物条目详情。", true);
+        return;
+      }
+      const items = await requestJson(`/api/admin/food-items/${id}/merge-candidates`);
+      document.querySelector("#mergeCandidates").innerHTML = items.length
+        ? items.map(item => `<button data-candidate-id="${escapeHtml(item.id)}">${escapeHtml(item.name)} · ${escapeHtml(item.auditStatus)}</button>`).join("")
+        : '<p class="muted">没有找到相似候选。</p>';
     }
 
     function renderMergeTargetPreview(item) {
@@ -729,6 +787,7 @@
     }
 
     async function loadFoodItemDetail(id) {
+      currentFoodItemId = Number(id);
       const [detail, reports] = await Promise.all([
         requestJson(`/api/admin/food-items/${id}`),
         loadFoodItemReports(id),
@@ -869,7 +928,20 @@
     document.querySelector("#runAutoAudit").addEventListener("click", () => runAutoAudit().catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadFoodItems").addEventListener("click", () => loadFoodItems().catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadPending").addEventListener("click", () => loadFoodItems("pending").catch((error) => setMessage(error.message, true)));
+    document.querySelector("#loadUncategorized").addEventListener("click", async () => {
+      const items = await requestJson("/api/admin/food-items?itemType=unknown&category=uncategorized&limit=100");
+      renderFoodItems(items);
+    });
     document.querySelector("#loadReported").addEventListener("click", () => loadFoodItems("reported").catch((error) => setMessage(error.message, true)));
+    document.querySelector("#saveFoodItem").addEventListener("click", () => updateFoodItem().catch((error) => setMessage(error.message, true)));
+    document.querySelector("#loadMergeCandidates").addEventListener("click", () => loadMergeCandidates().catch((error) => setMessage(error.message, true)));
+    document.querySelector("#mergeCandidates").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-candidate-id]");
+      if (!button) return;
+      document.querySelector("#mergeTargetFoodItemId").value = button.dataset.candidateId;
+      clearMergeTargetPreview(false);
+      previewMergeTarget().catch((error) => setMessage(error.message, true));
+    });
     document.querySelector("#previewMergeTarget").addEventListener("click", () => previewMergeTarget().catch((error) => setMessage(error.message, true)));
     document.querySelector("#mergeTargetFoodItemId").addEventListener("input", () => {
       clearMergeTargetPreview(false);

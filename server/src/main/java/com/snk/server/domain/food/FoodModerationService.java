@@ -5,6 +5,7 @@ import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
 import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class FoodModerationService {
+	private static final Set<String> ALLOWED_ITEM_TYPES = Set.of("packaged_product", "dish", "fruit", "unknown");
 
 	private final FoodItemRepository foodItemRepository;
 	private final FoodRecordRepository foodRecordRepository;
@@ -41,12 +43,27 @@ public class FoodModerationService {
 
 	@Transactional(readOnly = true)
 	public List<FoodModerationItem> listFoodItems(String auditStatus, String query, int limit) {
+		return listFoodItems(auditStatus, query, null, null, limit);
+	}
+
+	@Transactional(readOnly = true)
+	public List<FoodModerationItem> listFoodItems(
+		String auditStatus,
+		String query,
+		String itemType,
+		String category,
+		int limit
+	) {
 		int normalizedLimit = Math.min(Math.max(limit, 1), 100);
 		String normalizedAuditStatus = normalizeOptional(auditStatus);
 		String normalizedQuery = normalizeOptional(query);
+		String normalizedItemType = normalizeOptional(itemType);
+		String normalizedCategory = normalizeOptional(category);
 		return foodItemRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
 			.stream()
 			.filter(entity -> normalizedAuditStatus == null || normalizedAuditStatus.equals(entity.getAuditStatus()))
+			.filter(entity -> normalizedItemType == null || normalizedItemType.equals(entity.getItemType()))
+			.filter(entity -> normalizedCategory == null || normalizedCategory.equals(entity.getCategory()))
 			.filter(entity -> normalizedQuery == null || matchesQuery(entity, normalizedQuery))
 			.limit(normalizedLimit)
 			.map(this::toModerationItem)
@@ -58,6 +75,35 @@ public class FoodModerationService {
 		FoodItemEntity entity = foodItemRepository.findById(foodItemId)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food item not found."));
 		return toModerationItem(entity);
+	}
+
+	@Transactional
+	public FoodModerationItem updateFoodItem(Long foodItemId, UpdateFoodItemCommand command) {
+		FoodItemEntity entity = foodItemRepository.findById(foodItemId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food item not found."));
+		String name = normalizeRequired(command.name(), "name");
+		String itemType = normalizeRequired(command.itemType(), "itemType");
+		if (!ALLOWED_ITEM_TYPES.contains(itemType)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid food item type.");
+		}
+		entity.setName(name);
+		entity.setItemType(itemType);
+		entity.setCategory(normalizeRequired(command.category(), "category"));
+		entity.setSubcategory(normalizeOptional(command.subcategory()));
+		entity.setBrand(normalizeOptional(command.brand()));
+		entity.setAlias(normalizeOptional(command.alias()));
+		entity.setSearchKeywords(normalizeOptional(command.searchKeywords()) == null ? name : normalizeOptional(command.searchKeywords()));
+		return toModerationItem(foodItemRepository.save(entity));
+	}
+
+	@Transactional(readOnly = true)
+	public List<FoodModerationItem> findMergeCandidates(Long foodItemId, int limit) {
+		FoodItemEntity source = foodItemRepository.findById(foodItemId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food item not found."));
+		return foodItemRepository.findMergeCandidates(source.getId(), source.getName(), Math.min(Math.max(limit, 1), 10))
+			.stream()
+			.map(this::toModerationItem)
+			.toList();
 	}
 
 	@Transactional
@@ -147,6 +193,14 @@ public class FoodModerationService {
 		}
 		String normalized = value.trim();
 		return normalized.isBlank() ? null : normalized;
+	}
+
+	private String normalizeRequired(String value, String fieldName) {
+		String normalized = normalizeOptional(value);
+		if (normalized == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " must not be blank");
+		}
+		return normalized;
 	}
 
 	public record FoodModerationItem(

@@ -1,6 +1,7 @@
 package com.snk.server.api.controller;
 
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -9,11 +10,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.springframework.http.MediaType;
 import com.snk.server.domain.food.FoodModerationService;
+import com.snk.server.domain.food.UpdateFoodItemCommand;
 import com.snk.server.domain.food.FoodModerationService.FoodModerationItem;
 import com.snk.server.domain.food.FoodFeedbackService;
 import com.snk.server.infrastructure.storage.StorageProperties;
@@ -48,6 +51,33 @@ class AdminFoodItemControllerTests {
 		StorageProperties storageProperties() {
 			return new StorageProperties();
 		}
+	}
+
+	@Test
+	void shouldUpdateFoodItemForGovernance() throws Exception {
+		when(foodModerationService.updateFoodItem(eq(6L), any())).thenReturn(moderationItem(6L, "麦当劳薯条", 0, "approved"));
+
+		mockMvc.perform(put("/api/admin/food-items/6")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{"name":"麦当劳薯条","itemType":"dish","category":"meal","brand":"麦当劳","alias":"薯条","searchKeywords":"麦当劳 薯条"}
+					"""))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.name").value("麦当劳薯条"));
+
+		org.mockito.ArgumentCaptor<UpdateFoodItemCommand> captor = org.mockito.ArgumentCaptor.forClass(UpdateFoodItemCommand.class);
+		verify(foodModerationService).updateFoodItem(eq(6L), captor.capture());
+		org.assertj.core.api.Assertions.assertThat(captor.getValue().brand()).isEqualTo("麦当劳");
+	}
+
+	@Test
+	void shouldListMergeCandidates() throws Exception {
+		when(foodModerationService.findMergeCandidates(6L, 10))
+			.thenReturn(List.of(moderationItem(7L, "薯条 麦当劳", 0, "approved")));
+
+		mockMvc.perform(get("/api/admin/food-items/6/merge-candidates"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].id").value(7));
 	}
 
 	@Test

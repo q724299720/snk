@@ -127,6 +127,54 @@ class FoodModerationServiceTests {
 	}
 
 	@Test
+	void shouldUpdateUncategorizedFoodItemBeforeApproval() {
+		FoodItemEntity entity = foodItem(21L, "薯条(麦当劳)", 0);
+		entity.setItemType("unknown");
+		entity.setCategory("uncategorized");
+		when(foodItemRepository.findById(21L)).thenReturn(java.util.Optional.of(entity));
+		when(foodItemRepository.save(any(FoodItemEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+		FoodModerationService.FoodModerationItem result = foodModerationService.updateFoodItem(
+			21L,
+			new UpdateFoodItemCommand("麦当劳薯条", "dish", "meal", "fast_food", "麦当劳", "薯条", "麦当劳 薯条")
+		);
+
+		assertThat(result.name()).isEqualTo("麦当劳薯条");
+		assertThat(result.itemType()).isEqualTo("dish");
+		assertThat(result.category()).isEqualTo("meal");
+		verify(foodItemRepository).save(entity);
+	}
+
+	@Test
+	void shouldReturnSimilarMergeCandidatesWithoutSourceItem() {
+		FoodItemEntity source = foodItem(31L, "麦当劳薯条", 0);
+		FoodItemEntity candidate = foodItem(32L, "薯条 麦当劳", 0);
+		candidate.setAuditStatus("approved");
+		when(foodItemRepository.findById(31L)).thenReturn(java.util.Optional.of(source));
+		when(foodItemRepository.findMergeCandidates(31L, "麦当劳薯条", 10)).thenReturn(List.of(candidate));
+
+		List<FoodModerationService.FoodModerationItem> result = foodModerationService.findMergeCandidates(31L, 10);
+
+		assertThat(result).extracting(FoodModerationService.FoodModerationItem::id).containsExactly(32L);
+	}
+
+	@Test
+	void shouldFilterUncategorizedItems() {
+		FoodItemEntity uncategorized = foodItem(41L, "待分类", 0);
+		uncategorized.setItemType("unknown");
+		uncategorized.setCategory("uncategorized");
+		FoodItemEntity approved = foodItem(42L, "标准", 0);
+		approved.setAuditStatus("approved");
+		when(foodItemRepository.findAll(any(org.springframework.data.domain.Sort.class)))
+			.thenReturn(List.of(uncategorized, approved));
+
+		List<FoodModerationService.FoodModerationItem> result =
+			foodModerationService.listFoodItems(null, null, "unknown", "uncategorized", 20);
+
+		assertThat(result).extracting(FoodModerationService.FoodModerationItem::id).containsExactly(41L);
+	}
+
+	@Test
 	void shouldListFoodItemsWithFiltersAndLimit() {
 		FoodItemEntity first = foodItem(10L, "Alpha Crackers", 0);
 		first.setAuditStatus("approved");

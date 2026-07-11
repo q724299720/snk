@@ -4,8 +4,10 @@ import com.snk.server.api.dto.AdminFoodItemResponse;
 import com.snk.server.api.dto.AdminFoodItemReportResponse;
 import com.snk.server.api.dto.MergeFoodItemRequest;
 import com.snk.server.api.dto.MergeFoodItemResponse;
+import com.snk.server.api.dto.UpdateFoodItemRequest;
 import com.snk.server.domain.food.FoodFeedbackService;
 import com.snk.server.domain.food.FoodModerationService;
+import com.snk.server.domain.food.UpdateFoodItemCommand;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
@@ -15,6 +17,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -41,9 +44,14 @@ public class AdminFoodItemController {
 	public List<AdminFoodItemResponse> listFoodItems(
 		@RequestParam(value = "auditStatus", required = false) String auditStatus,
 		@RequestParam(value = "q", required = false) String query,
+		@RequestParam(value = "itemType", required = false) String itemType,
+		@RequestParam(value = "category", required = false) String category,
 		@RequestParam(value = "limit", defaultValue = "20") @Positive int limit
 	) {
-		return foodModerationService.listFoodItems(validateAuditStatus(auditStatus), query, limit)
+		List<FoodModerationService.FoodModerationItem> items = itemType == null && category == null
+			? foodModerationService.listFoodItems(validateAuditStatus(auditStatus), query, limit)
+			: foodModerationService.listFoodItems(validateAuditStatus(auditStatus), query, itemType, category, limit);
+		return items
 			.stream()
 			.map(AdminFoodItemResponse::from)
 			.toList();
@@ -52,6 +60,33 @@ public class AdminFoodItemController {
 	@GetMapping("/{foodItemId}")
 	public AdminFoodItemResponse getFoodItem(@PathVariable("foodItemId") @Positive Long foodItemId) {
 		return AdminFoodItemResponse.from(foodModerationService.getFoodItem(foodItemId));
+	}
+
+	@PutMapping("/{foodItemId}")
+	public AdminFoodItemResponse updateFoodItem(
+		@PathVariable("foodItemId") @Positive Long foodItemId,
+		@Valid @RequestBody UpdateFoodItemRequest request
+	) {
+		return AdminFoodItemResponse.from(
+			foodModerationService.updateFoodItem(
+				foodItemId,
+				new UpdateFoodItemCommand(
+					request.name(), request.itemType(), request.category(), request.subcategory(),
+					request.brand(), request.alias(), request.searchKeywords()
+				)
+			)
+		);
+	}
+
+	@GetMapping("/{foodItemId}/merge-candidates")
+	public List<AdminFoodItemResponse> listMergeCandidates(
+		@PathVariable("foodItemId") @Positive Long foodItemId,
+		@RequestParam(value = "limit", defaultValue = "10") @Positive int limit
+	) {
+		return foodModerationService.findMergeCandidates(foodItemId, limit)
+			.stream()
+			.map(AdminFoodItemResponse::from)
+			.toList();
 	}
 
 	@GetMapping("/{foodItemId}/reports")
