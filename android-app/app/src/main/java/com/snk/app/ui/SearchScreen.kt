@@ -401,7 +401,7 @@ fun SearchScreen(
                         }
                     }
                 },
-                noResultActionLabel = if (query.isNotBlank()) "没有找到？手动创建" else null,
+                noResultActionLabel = if (query.isNotBlank()) "记录「${query.trim()}」" else null,
                 onNoResultAction = if (query.isNotBlank()) {
                     { onOpenManualCreate(query.trim()) }
                 } else {

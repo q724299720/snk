@@ -48,6 +48,35 @@ class FoodRecordRepositoryTest {
     }
 
     @Test
+    fun `createQuickRecord posts only the minimum private record fields`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setResponseCode(201)
+                .setBody(
+                    """{"id":58,"userId":100,"foodItemId":202,"sourceType":"manual","isPublic":false,"rating":5,"likeCount":0,"recordTime":"2026-07-11T10:00:00Z","createdAt":"2026-07-11T10:00:00Z"}""",
+                ),
+        )
+
+        val result = repository.createQuickRecord(
+            clientRequestId = "7e93a069-8fe9-45cc-a8ca-498a515b06cf",
+            userId = 100,
+            name = "  麦当劳薯条  ",
+            rating = 5,
+        )
+
+        assertTrue(result.toString(), result is FoodRecordCreateResult.Success)
+        val request = server.takeRequest()
+        assertEquals("/api/records/quick", request.path)
+        assertEquals("POST", request.method)
+        val body = request.body.readUtf8()
+        assertTrue(body.contains("\"clientRequestId\":\"7e93a069-8fe9-45cc-a8ca-498a515b06cf\""))
+        assertTrue(body.contains("\"name\":\"麦当劳薯条\""))
+        assertTrue(body.contains("\"rating\":5"))
+        assertTrue(body.contains("\"isPublic\":false"))
+    }
+
+    @Test
     fun `createRecord sends images and returns success when backend accepts request`() = runTest {
         server.enqueue(
             MockResponse()

@@ -11,14 +11,14 @@ data class FoodRecordDraftEntity(
     @ColumnInfo(name = "user_id")
     val userId: Long,
     @ColumnInfo(name = "food_item_id")
-    val foodItemId: Long,
+    val foodItemId: Long?,
     @ColumnInfo(name = "food_name")
     val foodName: String,
     val category: String,
     val subcategory: String?,
     val brand: String?,
     val barcode: String?,
-    val rating: Int,
+    val rating: Int?,
     val comment: String,
     @ColumnInfo(name = "source_type")
     val sourceType: String,
@@ -42,4 +42,6 @@ data class FoodRecordDraftEntity(
     val updatedAt: Long,
     @ColumnInfo(name = "client_request_id", defaultValue = "")
     val clientRequestId: String = "",
+    @ColumnInfo(name = "local_image_path")
+    val localImagePath: String? = null,
 )

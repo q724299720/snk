@@ -11,6 +11,56 @@ import retrofit2.HttpException
 class FoodRecordRepository(
     private val api: FoodRecordApi,
 ) : RemoteFoodRecordWriter {
+    suspend fun createQuickRecord(
+        clientRequestId: String,
+        userId: Long,
+        name: String,
+        rating: Int,
+        comment: String = "",
+        isPublic: Boolean = false,
+        images: List<FoodRecordImageAttachment> = emptyList(),
+    ): FoodRecordCreateResult {
+        val normalizedName = name.trim()
+        val normalizedComment = comment.trim()
+        if (normalizedName.isBlank()) {
+            return FoodRecordCreateResult.Failure(
+                FoodRecordCreateFailureReason.UNKNOWN,
+                "请输入食物名称。",
+            )
+        }
+        if (rating !in 1..5) {
+            return FoodRecordCreateResult.Failure(
+                FoodRecordCreateFailureReason.UNKNOWN,
+                "请主动选择 1 到 5 星评分。",
+            )
+        }
+        if (normalizedComment.length > MAX_RECORD_COMMENT_LENGTH) {
+            return FoodRecordCreateResult.Failure(
+                FoodRecordCreateFailureReason.UNKNOWN,
+                "备注最长支持 500 个字符。",
+            )
+        }
+
+        return try {
+            val response = api.createQuickRecord(
+                CreateQuickFoodRecordRequest(
+                    clientRequestId = clientRequestId,
+                    userId = userId,
+                    name = normalizedName,
+                    rating = rating,
+                    comment = normalizedComment.ifBlank { null },
+                    isPublic = isPublic,
+                    images = images.map {
+                        FoodRecordImageRequest(it.imageUrl, it.thumbnailUrl)
+                    },
+                ),
+            )
+            FoodRecordCreateResult.Success(response.id, response.recordTime, response.likeCount)
+        } catch (exception: Exception) {
+            FoodRecordCreateResult.Failure(exception.asFailureReason(), exception.asUserFacingMessage())
+        }
+    }
+
     suspend fun listRecentRecords(
         userId: Long,
         limit: Int = 10,

@@ -36,7 +36,8 @@ fun DraftItemCard(
     onDelete: () -> Unit,
 ) {
     val statusColor = when (draft.syncStatus) {
-        DraftSyncStatus.DRAFT -> Color(0xFFE65100)
+        DraftSyncStatus.EDITING -> Color(0xFF6D4C41)
+        DraftSyncStatus.DRAFT, DraftSyncStatus.QUEUED -> Color(0xFFE65100)
         DraftSyncStatus.SYNCING -> Color(0xFF1565C0)
         DraftSyncStatus.SYNCED -> Color(0xFF2E7D32)
         DraftSyncStatus.FAILED -> Color(0xFFB71C1C)
@@ -64,7 +65,13 @@ fun DraftItemCard(
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    text = draft.statusLabel,
+                    text = when (draft.syncStatus) {
+                        DraftSyncStatus.EDITING -> "✎ ${draft.statusLabel}"
+                        DraftSyncStatus.DRAFT, DraftSyncStatus.QUEUED -> "◷ ${draft.statusLabel}"
+                        DraftSyncStatus.SYNCING -> "↻ ${draft.statusLabel}"
+                        DraftSyncStatus.SYNCED -> "✓ ${draft.statusLabel}"
+                        DraftSyncStatus.FAILED -> "! ${draft.statusLabel}"
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     color = statusColor,
                 )
@@ -83,7 +90,11 @@ fun DraftItemCard(
                     Text(text = it, style = MaterialTheme.typography.bodySmall, color = Color(0xFF7A6A61))
                 }
                 Text(text = "·", style = MaterialTheme.typography.bodySmall, color = Color(0xFF7A6A61))
-                Text(text = "${draft.rating}/5", style = MaterialTheme.typography.bodySmall, color = Color(0xFF7A6A61))
+                Text(
+                    text = draft.rating?.let { "$it/5" } ?: "待评分",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF7A6A61),
+                )
             }
             if (draft.comment.isNotBlank()) {
                 Text(
@@ -112,7 +123,10 @@ fun DraftItemCard(
                     color = Color(0xFF9E8E84),
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (draft.syncStatus == DraftSyncStatus.FAILED || draft.syncStatus == DraftSyncStatus.DRAFT) {
+                    if (draft.syncStatus == DraftSyncStatus.FAILED ||
+                        draft.syncStatus == DraftSyncStatus.DRAFT ||
+                        draft.syncStatus == DraftSyncStatus.QUEUED
+                    ) {
                         OutlinedButton(
                             onClick = onRetry,
                             shape = RoundedCornerShape(12.dp),

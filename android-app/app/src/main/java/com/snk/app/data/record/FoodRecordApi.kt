@@ -31,6 +31,11 @@ interface FoodRecordApi {
         @Body request: CreateFoodRecordRequest,
     ): FoodRecordResponse
 
+    @POST("/api/records/quick")
+    suspend fun createQuickRecord(
+        @Body request: CreateQuickFoodRecordRequest,
+    ): FoodRecordResponse
+
     @PUT("/api/records/{recordId}")
     suspend fun updateRecord(
         @Path("recordId") recordId: Long,
@@ -83,6 +88,24 @@ data class CreateFoodRecordRequest(
     val rating: Int,
     @SerialName("comment")
     val comment: String? = null,
+    @SerialName("images")
+    val images: List<FoodRecordImageRequest> = emptyList(),
+)
+
+@Serializable
+data class CreateQuickFoodRecordRequest(
+    @SerialName("clientRequestId")
+    val clientRequestId: String,
+    @SerialName("userId")
+    val userId: Long,
+    @SerialName("name")
+    val name: String,
+    @SerialName("rating")
+    val rating: Int,
+    @SerialName("comment")
+    val comment: String? = null,
+    @SerialName("isPublic")
+    val isPublic: Boolean,
     @SerialName("images")
     val images: List<FoodRecordImageRequest> = emptyList(),
 )

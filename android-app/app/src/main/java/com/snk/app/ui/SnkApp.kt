@@ -63,7 +63,6 @@ fun SnkApp() {
     var recordRefreshToken by remember { mutableIntStateOf(0) }
     var selectedSourceType by remember { mutableStateOf("text_search") }
     var manualCreateSeedName by remember { mutableStateOf("") }
-    var manualCreateSeedBarcode by remember { mutableStateOf("") }
     var searchQuerySeed by remember { mutableStateOf<String?>(null) }
     var searchSuggestedQueries by remember { mutableStateOf<List<String>>(emptyList()) }
     val sessionState by produceState<SessionUiState>(
@@ -92,7 +91,6 @@ fun SnkApp() {
 
     fun openManualCreate(seedName: String) {
         manualCreateSeedName = seedName
-        manualCreateSeedBarcode = ""
         navController.navigate("manual_food_create")
     }
 
@@ -277,14 +275,12 @@ fun SnkApp() {
                     )
                 }
                 composable("manual_food_create") {
-                    ManualFoodCreateScreen(
+                    QuickRecordScreen(
                         sessionState = sessionState,
                         initialName = manualCreateSeedName,
-                        initialBarcode = manualCreateSeedBarcode,
-                        onFoodCreated = { item ->
-                            selectedFood = item
-                            selectedSourceType = "manual"
-                            navController.navigate("record_create") {
+                        onSaved = {
+                            recordRefreshToken++
+                            navController.navigate(SnkDestination.Gallery.route) {
                                 popUpTo("manual_food_create") {
                                     inclusive = true
                                 }

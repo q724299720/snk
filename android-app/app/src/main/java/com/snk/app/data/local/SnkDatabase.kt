@@ -7,7 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [FoodRecordDraftEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class SnkDatabase : RoomDatabase() {
@@ -25,6 +25,56 @@ abstract class SnkDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE food_record_drafts ADD COLUMN client_request_id TEXT NOT NULL DEFAULT ''")
                 db.execSQL("UPDATE food_record_drafts SET client_request_id = printf('00000000-0000-0000-0000-%012x', id) WHERE client_request_id = ''")
+            }
+        }
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE food_record_drafts_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        user_id INTEGER NOT NULL,
+                        food_item_id INTEGER,
+                        food_name TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        subcategory TEXT,
+                        brand TEXT,
+                        barcode TEXT,
+                        rating INTEGER,
+                        comment TEXT NOT NULL,
+                        source_type TEXT NOT NULL,
+                        is_public INTEGER NOT NULL DEFAULT 0,
+                        sync_status TEXT NOT NULL,
+                        retry_count INTEGER NOT NULL,
+                        failure_reason TEXT,
+                        failure_message TEXT,
+                        remote_record_id INTEGER,
+                        remote_record_time TEXT,
+                        created_at INTEGER NOT NULL,
+                        updated_at INTEGER NOT NULL,
+                        client_request_id TEXT NOT NULL DEFAULT '',
+                        local_image_path TEXT
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    INSERT INTO food_record_drafts_new (
+                        id, user_id, food_item_id, food_name, category, subcategory, brand, barcode,
+                        rating, comment, source_type, is_public, sync_status, retry_count,
+                        failure_reason, failure_message, remote_record_id, remote_record_time,
+                        created_at, updated_at, client_request_id
+                    ) SELECT
+                        id, user_id, food_item_id, food_name, category, subcategory, brand, barcode,
+                        rating, comment, source_type, is_public,
+                        CASE WHEN sync_status = 'DRAFT' THEN 'QUEUED' ELSE sync_status END,
+                        retry_count, failure_reason, failure_message, remote_record_id, remote_record_time,
+                        created_at, updated_at, client_request_id
+                    FROM food_record_drafts
+                    """.trimIndent(),
+                )
+                db.execSQL("DROP TABLE food_record_drafts")
+                db.execSQL("ALTER TABLE food_record_drafts_new RENAME TO food_record_drafts")
             }
         }
     }

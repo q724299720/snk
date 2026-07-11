@@ -3,13 +3,13 @@ package com.snk.app.data.draft
 data class FoodRecordDraft(
     val id: Long,
     val userId: Long,
-    val foodItemId: Long,
+    val foodItemId: Long?,
     val foodName: String,
     val category: String,
     val subcategory: String?,
     val brand: String?,
     val barcode: String?,
-    val rating: Int,
+    val rating: Int?,
     val comment: String,
     val sourceType: String,
     val isPublic: Boolean,
@@ -22,11 +22,13 @@ data class FoodRecordDraft(
     val createdAt: Long,
     val updatedAt: Long,
     val clientRequestId: String = java.util.UUID.randomUUID().toString(),
+    val localImagePath: String? = null,
 ) {
     val statusLabel: String
         get() = when (syncStatus) {
-            DraftSyncStatus.DRAFT -> "待上传"
-            DraftSyncStatus.SYNCING -> "补传中"
+            DraftSyncStatus.EDITING -> "草稿·待完善"
+            DraftSyncStatus.DRAFT, DraftSyncStatus.QUEUED -> "等待上传"
+            DraftSyncStatus.SYNCING -> "正在上传"
             DraftSyncStatus.SYNCED -> "已同步"
             DraftSyncStatus.FAILED -> "补传失败"
         }
@@ -34,33 +36,38 @@ data class FoodRecordDraft(
 
 data class FoodRecordDraftCreateRequest(
     val userId: Long,
-    val foodItemId: Long,
+    val foodItemId: Long?,
     val foodName: String,
     val category: String,
     val subcategory: String?,
     val brand: String?,
     val barcode: String?,
-    val rating: Int,
+    val rating: Int?,
     val comment: String,
     val sourceType: String,
     val isPublic: Boolean,
     val clientRequestId: String = java.util.UUID.randomUUID().toString(),
+    val localImagePath: String? = null,
 )
 
 data class FoodRecordDraftPayload(
     val id: Long,
     val userId: Long,
-    val foodItemId: Long,
-    val rating: Int,
+    val foodItemId: Long?,
+    val foodName: String,
+    val rating: Int?,
     val comment: String,
     val sourceType: String,
     val isPublic: Boolean,
     val retryCount: Int,
     val clientRequestId: String,
+    val localImagePath: String?,
 )
 
 enum class DraftSyncStatus {
+    EDITING,
     DRAFT,
+    QUEUED,
     SYNCING,
     SYNCED,
     FAILED,

@@ -27,7 +27,7 @@ class DraftRecordRepository(
                 comment = request.comment.trim(),
                 sourceType = request.sourceType,
                 isPublic = request.isPublic,
-                syncStatus = DraftSyncStatus.DRAFT.name,
+                syncStatus = if (request.rating == null) DraftSyncStatus.EDITING.name else DraftSyncStatus.QUEUED.name,
                 retryCount = 0,
                 failureReason = DraftFailureReason.NETWORK.name,
                 failureMessage = "当前无法连接服务端，已转存草稿等待补传。",
@@ -36,6 +36,7 @@ class DraftRecordRepository(
                 createdAt = now,
                 updatedAt = now,
                 clientRequestId = request.clientRequestId,
+                localImagePath = request.localImagePath,
             ),
         )
         return requireNotNull(getDraft(draftId))
@@ -65,7 +66,7 @@ class DraftRecordRepository(
     ) {
         draftDao.updateSyncState(
             draftId = draftId,
-            syncStatus = DraftSyncStatus.DRAFT.name,
+            syncStatus = DraftSyncStatus.QUEUED.name,
             retryCount = retryCount,
             failureReason = failureReason.name,
             failureMessage = failureMessage,
@@ -117,7 +118,7 @@ class DraftRecordRepository(
         val draft = draftDao.findById(draftId) ?: return
         draftDao.updateSyncState(
             draftId = draftId,
-            syncStatus = DraftSyncStatus.DRAFT.name,
+            syncStatus = DraftSyncStatus.QUEUED.name,
             retryCount = draft.retryCount,
             failureReason = draft.failureReason,
             failureMessage = "已加入重试队列，等待网络可用时补传。",
@@ -147,17 +148,20 @@ class DraftRecordRepository(
         createdAt = createdAt,
         updatedAt = updatedAt,
         clientRequestId = clientRequestId,
+        localImagePath = localImagePath,
     )
 
     private fun FoodRecordDraftEntity.toPayload(): FoodRecordDraftPayload = FoodRecordDraftPayload(
         id = id,
         userId = userId,
         foodItemId = foodItemId,
+        foodName = foodName,
         rating = rating,
         comment = comment,
         sourceType = sourceType,
         isPublic = isPublic,
         retryCount = retryCount,
         clientRequestId = clientRequestId,
+        localImagePath = localImagePath,
     )
 }

@@ -8,6 +8,8 @@ import com.snk.app.data.draft.DraftFailureReason
 import com.snk.app.data.draft.DraftRecordRepository
 import com.snk.app.data.record.FoodRecordCreateFailureReason
 import com.snk.app.data.record.FoodRecordCreateResult
+import com.snk.app.data.record.RecordImageUploadResult
+import java.io.File
 
 class DraftSyncWorker(
     appContext: Context,
@@ -25,18 +27,73 @@ class DraftSyncWorker(
 
         container.draftRecordRepository.markSyncing(draftId)
 
-        return when (
-            val result = container.foodRecordRepository.createRecord(
+        val images = when (val localPath = draft.localImagePath) {
+            null -> emptyList()
+            else -> {
+                val file = File(localPath)
+                if (!file.exists()) {
+                    container.draftRecordRepository.markFailed(
+                        draftId,
+                        draft.retryCount,
+                        DraftFailureReason.IMAGE,
+                        "本地图片已不可用，请编辑草稿后重试。",
+                    )
+                    return Result.success()
+                }
+                when (val upload = container.foodRecordRepository.uploadRecordImage(
+                    file.readBytes(),
+                    file.name,
+                    "image/jpeg",
+                )) {
+                    is RecordImageUploadResult.Success -> listOf(upload.image)
+                    is RecordImageUploadResult.Failure -> {
+                        container.draftRecordRepository.markRetryPending(
+                            draftId,
+                            draft.retryCount + 1,
+                            DraftFailureReason.IMAGE,
+                            upload.message,
+                        )
+                        return Result.retry()
+                    }
+                }
+            }
+        }
+
+        val selectedRating = draft.rating
+        if (selectedRating == null) {
+            container.draftRecordRepository.markFailed(
+                draftId,
+                draft.retryCount,
+                DraftFailureReason.UNKNOWN,
+                "请先选择评分再上传。",
+            )
+            return Result.success()
+        }
+
+        val result = if (draft.foodItemId == null) {
+            container.foodRecordRepository.createQuickRecord(
+                clientRequestId = draft.clientRequestId,
+                userId = draft.userId,
+                name = draft.foodName,
+                rating = selectedRating,
+                comment = draft.comment,
+                isPublic = draft.isPublic,
+                images = images,
+            )
+        } else {
+            container.foodRecordRepository.createRecord(
                 clientRequestId = draft.clientRequestId,
                 userId = draft.userId,
                 foodItemId = draft.foodItemId,
-                rating = draft.rating,
+                rating = selectedRating,
                 comment = draft.comment,
                 sourceType = draft.sourceType,
                 isPublic = draft.isPublic,
-                images = emptyList(),
+                images = images,
             )
-        ) {
+        }
+
+        return when (result) {
             is FoodRecordCreateResult.Success -> {
                 container.draftRecordRepository.markSynced(
                     draftId = draftId,
@@ -44,6 +101,7 @@ class DraftSyncWorker(
                     remoteRecordId = result.recordId,
                     remoteRecordTime = result.recordTime,
                 )
+                draft.localImagePath?.let { File(it).delete() }
                 Result.success()
             }
 
