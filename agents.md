@@ -82,6 +82,11 @@
 | `docs/recognition/recognition-plan.md` | 名称搜索、OCR 文本辅助与手动创建的识别策略 |
 | `docs/process/document-governance.md` | 文档维护规则、审计记录规则、协作约束 |
 | `docs/process/github-workflow.md` | GitHub 仓库创建、远程连接记录与日常提交流程 |
+| `docs/superpowers/specs/2026-07-11-account-auth-and-product-simplification-design.md` | 必须登录、账号审核、Token、安全会话、历史认领与产品简化的已确认设计 |
+| `docs/superpowers/plans/2026-07-11-account-auth-and-product-simplification-master-plan.md` | 账号鉴权与产品简化实施总入口、依赖顺序和发布门禁 |
+| `docs/superpowers/plans/2026-07-11-backend-account-authentication-plan.md` | 后端账号、鉴权、历史认领和后台账号治理任务 |
+| `docs/superpowers/plans/2026-07-11-android-auth-session-plan.md` | Android 登录、长期会话、审核轮询和草稿隔离任务 |
+| `docs/superpowers/plans/2026-07-11-product-simplification-and-media-plan.md` | 无分类、自动审核、默认公开、图片展示和记录编辑任务 |
 
 ## 当前开发前必查文档
 
@@ -124,4 +129,5 @@
 | 2026-06-21 | Codex | 补充每个增量后的手机端与网页端测试约束 | 用户要求后续每次完成后都必须连接手机测试和网页端测试，需要纳入全局工作流 |
 | 2026-07-06 | Codex | 搜索排序优化：品牌搜索纳入 WHERE + brand match 升序 + record count 热度降序 | 用户要求改善搜索排序质量，品牌名搜索命中率提升，热门记录排前 |
 | 2026-07-06 | Codex | 手动创建封面图片：Request/Command/Service 增加 coverImageUrl，Android 端增加图片选择/上传/预览 | 用户要求手动创建时支持上传封面图 |
+| 2026-07-11 | Codex | 增加账号鉴权与产品简化设计、总计划及三个分模块实施计划索引 | 用户确认正式账号制与产品简化文档，进入可执行任务拆解阶段 |
 | 2026-07-11 | Codex | 明确 Phase 5 快速个人记录体验改版与暂缓数据扩充 | 已确认本轮不新增外部数据，以极简记录、OCR 文本选择、幂等草稿和后台治理为实施重点 |
