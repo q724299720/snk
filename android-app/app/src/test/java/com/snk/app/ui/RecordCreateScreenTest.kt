@@ -115,10 +115,7 @@ class RecordCreateScreenTest {
         ).first(Files::exists)
         val source = String(Files.readAllBytes(sourcePath))
 
-        assertTrue(source.contains("ImageDecoder.decodeBitmap"))
-        assertTrue(source.contains("Bitmap.CompressFormat.JPEG"))
-        assertTrue(source.contains("contentType = \"image/jpeg\""))
-        assertTrue(source.contains("record-${'$'}{System.currentTimeMillis()}.jpg"))
+        assertTrue(source.contains("ImageCompressor.compress"))
     }
 
     @Test

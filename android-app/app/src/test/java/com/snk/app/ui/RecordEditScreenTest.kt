@@ -72,7 +72,7 @@ class RecordEditScreenTest {
         val source = String(Files.readAllBytes(sourcePath))
 
         assertTrue(source.contains("onEditRecord"))
-        assertTrue(source.contains("编辑记录"))
+        assertTrue(source.contains("Text(\"编辑\")"))
     }
 
     @Test
