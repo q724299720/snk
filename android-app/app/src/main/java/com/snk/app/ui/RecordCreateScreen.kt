@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -100,6 +101,7 @@ fun RecordCreateScreen(
         hasUploadedImage = uploadedRecordImage != null,
     )
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+    var cameraPermanentlyDenied by remember { mutableStateOf(false) }
 
     suspend fun uploadSelectedImage(uri: Uri): String = try {
         val compressed = com.snk.app.util.ImageCompressor.compress(context, uri)
@@ -133,17 +135,22 @@ fun RecordCreateScreen(
         }
     }
 
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        if (granted) {
-            val imageUri = createTempRecordCameraImageUri(context)
-            pendingCameraUri = imageUri
-            cameraLauncher.launch(imageUri)
-        } else {
-            imageUploadMessage = "需要相机权限才能拍照。"
-        }
+    fun launchCamera() {
+        val imageUri = createTempRecordCameraImageUri(context)
+        pendingCameraUri = imageUri
+        cameraLauncher.launch(imageUri)
     }
+    val cameraPermission = rememberCameraPermissionController(
+        onGranted = ::launchCamera,
+        onDenied = { kind ->
+            cameraPermanentlyDenied = kind == CameraDenialKind.PERMANENT
+            imageUploadMessage = if (cameraPermanentlyDenied) {
+                "相机权限已被永久拒绝，可去系统设置，或从相册选择/跳过图片。"
+            } else {
+                "未获得相机权限，可以从相册选择或跳过图片。"
+            }
+        },
+    )
 
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) {
@@ -339,21 +346,15 @@ fun RecordCreateScreen(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
-                        onClick = {
-                            val hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                            if (hasCameraPermission) {
-                                val imageUri = createTempRecordCameraImageUri(context)
-                                pendingCameraUri = imageUri
-                                cameraLauncher.launch(imageUri)
-                            } else {
-                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                            }
-                        },
+                        onClick = cameraPermission.request,
                         shape = RoundedCornerShape(14.dp),
                         enabled = !isSubmitting && !isUploadingImage,
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                     ) {
                         Text(if (isUploadingImage) "上传中..." else "拍照", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    if (cameraPermanentlyDenied) {
+                        TextButton(onClick = cameraPermission.openSettings) { Text("去系统设置") }
                     }
                     Button(
                         onClick = {

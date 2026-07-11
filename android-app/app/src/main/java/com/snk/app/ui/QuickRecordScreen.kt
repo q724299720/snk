@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +32,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.snk.app.SnkApplication
 import com.snk.app.data.record.FoodRecordCreateResult
@@ -57,13 +59,14 @@ fun QuickRecordScreen(
     var rating by remember { mutableStateOf<Int?>(null) }
     var comment by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+    var cameraPermanentlyDenied by remember { mutableStateOf(false) }
     var localImagePath by remember { mutableStateOf<String?>(null) }
     var uploadedImage by remember { mutableStateOf<FoodRecordImageAttachment?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
     var isBusy by remember { mutableStateOf(false) }
 
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
+    fun handleSelectedImage(uri: Uri) {
         val localFile = copyQuickRecordImageToPrivateStorage(context, uri)
         localImagePath = localFile?.absolutePath
         selectedImageUri = localFile?.let(Uri::fromFile) ?: uri
@@ -90,6 +93,40 @@ fun QuickRecordScreen(
             isBusy = false
         }
     }
+
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) {
+            message = "已取消选择图片；仍可保存纯文字记录。"
+        } else {
+            handleSelectedImage(uri)
+        }
+    }
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        val uri = pendingCameraUri
+        if (success && uri != null) handleSelectedImage(uri)
+        else message = "拍照未完成；仍可保存纯文字记录。"
+    }
+    fun launchCamera() {
+        val directory = File(context.cacheDir, "record-camera").apply { mkdirs() }
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            File(directory, "camera-${UUID.randomUUID()}.jpg"),
+        )
+        pendingCameraUri = uri
+        cameraLauncher.launch(uri)
+    }
+    val cameraPermission = rememberCameraPermissionController(
+        onGranted = ::launchCamera,
+        onDenied = { kind ->
+            cameraPermanentlyDenied = kind == CameraDenialKind.PERMANENT
+            message = if (cameraPermanentlyDenied) {
+                "相机权限已被永久拒绝，可去系统设置，或从相册选择/跳过图片。"
+            } else {
+                "未获得相机权限，可以从相册选择或跳过图片。"
+            }
+        },
+    )
 
     Column(
         modifier = Modifier
@@ -135,7 +172,7 @@ fun QuickRecordScreen(
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { message = "未获得相机权限时，可从相册选择或继续纯文字记录。" }) {
+                    OutlinedButton(onClick = cameraPermission.request) {
                         Text("拍照")
                     }
                     OutlinedButton(onClick = {
@@ -143,6 +180,9 @@ fun QuickRecordScreen(
                     }) {
                         Text("相册")
                     }
+                }
+                if (cameraPermanentlyDenied) {
+                    TextButton(onClick = cameraPermission.openSettings) { Text("去系统设置") }
                 }
             }
         }

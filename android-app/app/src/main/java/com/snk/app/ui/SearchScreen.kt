@@ -250,14 +250,7 @@ fun SearchScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .clickable(enabled = !isOcrProcessing) {
-                                    val hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                                    if (hasCameraPermission) {
-                                        val imageUri = createTempCameraImageUri(context)
-                                        pendingCameraUri = imageUri
-                                        cameraLauncher.launch(imageUri)
-                                    } else {
-                                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                                    }
+                                    onOpenOcrRecognition()
                                 }
                                 .padding(horizontal = 6.dp, vertical = 4.dp),
                         )
@@ -268,7 +261,7 @@ fun SearchScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .clickable(enabled = !isOcrProcessing) {
-                                    photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                    onOpenOcrRecognition()
                                 }
                                 .padding(horizontal = 6.dp, vertical = 4.dp),
                         )
