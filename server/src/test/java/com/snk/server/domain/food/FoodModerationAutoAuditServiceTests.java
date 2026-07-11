@@ -127,6 +127,7 @@ class FoodModerationAutoAuditServiceTests {
 		return new FoodModerationService.FoodModerationItem(
 			id,
 			name,
+			name.toLowerCase(),
 			"dish",
 			"snack",
 			null,
@@ -135,6 +136,7 @@ class FoodModerationAutoAuditServiceTests {
 			"user_generated",
 			auditStatus,
 			0,
+			0L,
 			2L,
 			OffsetDateTime.parse("2026-06-13T11:59:59Z"),
 			OffsetDateTime.parse("2026-06-13T11:59:59Z")

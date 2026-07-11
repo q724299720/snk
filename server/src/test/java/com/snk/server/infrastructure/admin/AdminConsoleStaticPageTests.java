@@ -62,6 +62,8 @@ class AdminConsoleStaticPageTests {
 		assertThat(html).contains("async function loadMergeCandidates");
 		assertThat(html).contains("/api/admin/food-items/${id}/merge-candidates");
 		assertThat(html).contains("method: \"PUT\"");
+		assertThat(html).contains("item.normalizedName");
+		assertThat(html).contains("item.recordCount");
 	}
 
 	@Test

@@ -306,10 +306,12 @@
             <tr>
               <th>ID</th>
               <th>名称</th>
+              <th>规范化名称</th>
               <th>分类</th>
               <th>来源</th>
               <th>状态</th>
               <th>报错数</th>
+              <th>记录数</th>
               <th>创建者</th>
               <th>操作</th>
             </tr>
@@ -507,10 +509,12 @@
             <strong>${escapeHtml(item.name)}</strong><br>
             <span class="muted">${escapeHtml(item.brand || "无品牌")}</span>
           </td>
+          <td>${escapeHtml(item.normalizedName || "-")}</td>
           <td>${escapeHtml(item.category)}${item.subcategory ? " / " + escapeHtml(item.subcategory) : ""}</td>
           <td>${escapeHtml(item.source)}</td>
           <td>${statusBadge(item.auditStatus)}</td>
           <td>${escapeHtml(item.reportCount)}</td>
+          <td>${escapeHtml(item.recordCount == null ? 0 : item.recordCount)}</td>
           <td>${escapeHtml(item.createdByUserId || "-")}</td>
           <td class="actions">
             <button data-action="detail" data-id="${escapeHtml(item.id)}">详情</button>
@@ -532,6 +536,7 @@
       const fields = [
         ["ID", item.id],
         ["名称", item.name],
+        ["规范化名称", item.normalizedName || "-"],
         ["类型", item.itemType],
         ["分类", `${item.category || ""}${item.subcategory ? " / " + item.subcategory : ""}`],
         ["品牌", item.brand || "-"],
@@ -539,6 +544,7 @@
         ["来源", item.source],
         ["审核状态", item.auditStatus],
         ["报错数", item.reportCount],
+        ["关联记录数", item.recordCount == null ? 0 : item.recordCount],
         ["创建者", item.createdByUserId || "-"],
         ["创建时间", item.createdAt || "-"],
         ["更新时间", item.updatedAt || "-"],

@@ -2,6 +2,7 @@ package com.snk.server.domain.record;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -59,6 +60,7 @@ class QuickFoodRecordServiceTests {
 		FoodRecordResult result = service.createQuickRecord(command(requestId));
 
 		assertThat(result.id()).isEqualTo(300L);
+		verify(foodRecordRepository).acquireIdempotencyLock(anyLong());
 		verify(foodRecordRepository, never()).save(any(FoodRecordEntity.class));
 		verify(foodItemRepository, never()).save(any(FoodItemEntity.class));
 	}
@@ -88,6 +90,30 @@ class QuickFoodRecordServiceTests {
 
 		assertThat(result.id()).isEqualTo(300L);
 		verify(foodRecordRepository, never()).save(any(FoodRecordEntity.class));
+	}
+
+	@Test
+	void shouldPersistClientRequestIdForNewStandardRecord() throws Exception {
+		UUID requestId = UUID.fromString("b462a65b-b346-4a6d-bd87-c2022897544a");
+		UserEntity user = user(100L);
+		FoodItemEntity foodItem = foodItem(200L, "标准条目", "approved", "dish", "meal");
+		when(foodRecordRepository.findByUser_IdAndClientRequestId(100L, requestId)).thenReturn(Optional.empty());
+		when(userRepository.findById(100L)).thenReturn(Optional.of(user));
+		when(foodItemRepository.findById(200L)).thenReturn(Optional.of(foodItem));
+		when(foodRecordRepository.save(any(FoodRecordEntity.class))).thenAnswer(invocation -> {
+			FoodRecordEntity entity = invocation.getArgument(0);
+			setId(entity, 301L);
+			setCreatedAt(entity, OffsetDateTime.parse("2026-07-11T12:00:00Z"));
+			return entity;
+		});
+
+		service.createRecord(new FoodRecordCreateCommand(
+			100L, 200L, "text_search", false, (short) 4, null, null, List.of(), requestId
+		));
+
+		org.mockito.ArgumentCaptor<FoodRecordEntity> captor = org.mockito.ArgumentCaptor.forClass(FoodRecordEntity.class);
+		verify(foodRecordRepository).save(captor.capture());
+		assertThat(captor.getValue().getClientRequestId()).isEqualTo(requestId);
 	}
 
 	@Test

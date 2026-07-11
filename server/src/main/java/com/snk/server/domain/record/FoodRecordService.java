@@ -47,6 +47,7 @@ public class FoodRecordService {
 	@Transactional
 	public FoodRecordResult createRecord(FoodRecordCreateCommand command) {
 		if (command.clientRequestId() != null) {
+			foodRecordRepository.acquireIdempotencyLock(idempotencyLockKey(command.userId(), command.clientRequestId()));
 			FoodRecordEntity existing = foodRecordRepository
 				.findByUser_IdAndClientRequestId(command.userId(), command.clientRequestId())
 				.orElse(null);
@@ -62,6 +63,7 @@ public class FoodRecordService {
 		FoodRecordEntity entity = new FoodRecordEntity();
 		entity.setUser(user);
 		entity.setFoodItem(foodItem);
+		entity.setClientRequestId(command.clientRequestId());
 		entity.setSourceType(command.sourceType());
 		entity.setPublic(command.isPublic());
 		entity.setRating(command.rating());
@@ -82,6 +84,7 @@ public class FoodRecordService {
 
 	@Transactional
 	public FoodRecordResult createQuickRecord(QuickFoodRecordCreateCommand command) {
+		foodRecordRepository.acquireIdempotencyLock(idempotencyLockKey(command.userId(), command.clientRequestId()));
 		FoodRecordEntity existing = foodRecordRepository
 			.findByUser_IdAndClientRequestId(command.userId(), command.clientRequestId())
 			.orElse(null);
@@ -100,7 +103,6 @@ public class FoodRecordService {
 		FoodRecordEntity entity = new FoodRecordEntity();
 		entity.setUser(user);
 		entity.setFoodItem(foodItem);
-		entity.setClientRequestId(command.clientRequestId());
 		entity.setClientRequestId(command.clientRequestId());
 		entity.setSourceType("manual");
 		entity.setPublic(command.isPublic());
@@ -127,6 +129,10 @@ public class FoodRecordService {
 		entity.setReportCount(0);
 		entity.setCreatedByUser(creator);
 		return foodItemRepository.save(entity);
+	}
+
+	private long idempotencyLockKey(Long userId, java.util.UUID clientRequestId) {
+		return userId ^ clientRequestId.getMostSignificantBits() ^ clientRequestId.getLeastSignificantBits();
 	}
 
 	private String normalizeFoodName(String value) {

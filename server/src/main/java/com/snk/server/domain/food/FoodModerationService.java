@@ -159,6 +159,7 @@ public class FoodModerationService {
 		return new FoodModerationItem(
 			entity.getId(),
 			entity.getName(),
+			entity.getName().trim().replaceAll("\\s+", " ").toLowerCase(java.util.Locale.ROOT),
 			entity.getItemType(),
 			entity.getCategory(),
 			entity.getSubcategory(),
@@ -167,6 +168,7 @@ public class FoodModerationService {
 			entity.getSource(),
 			entity.getAuditStatus(),
 			entity.getReportCount(),
+			foodRecordRepository.countByFoodItem_Id(entity.getId()),
 			createdByUserId,
 			entity.getCreatedAt(),
 			entity.getUpdatedAt()
@@ -206,6 +208,7 @@ public class FoodModerationService {
 	public record FoodModerationItem(
 		Long id,
 		String name,
+		String normalizedName,
 		String itemType,
 		String category,
 		String subcategory,
@@ -214,6 +217,7 @@ public class FoodModerationService {
 		String source,
 		String auditStatus,
 		Integer reportCount,
+		long recordCount,
 		Long createdByUserId,
 		OffsetDateTime createdAt,
 		OffsetDateTime updatedAt

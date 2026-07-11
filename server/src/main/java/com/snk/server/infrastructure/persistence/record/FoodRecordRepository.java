@@ -10,8 +10,12 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface FoodRecordRepository extends JpaRepository<FoodRecordEntity, Long> {
+	@Query(value = "SELECT pg_advisory_xact_lock(:lockKey)", nativeQuery = true)
+	void acquireIdempotencyLock(long lockKey);
 
 	Optional<FoodRecordEntity> findByUser_IdAndClientRequestId(Long userId, UUID clientRequestId);
+
+	long countByFoodItem_Id(Long foodItemId);
 
 	List<FoodRecordEntity> findByUser_IdAndDeletedAtIsNullOrderByRecordTimeDesc(Long userId, Pageable pageable);
 

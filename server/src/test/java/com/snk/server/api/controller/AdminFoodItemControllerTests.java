@@ -245,6 +245,7 @@ class AdminFoodItemControllerTests {
 		return new FoodModerationItem(
 			id,
 			name,
+			name.toLowerCase(),
 			"dish",
 			"snack",
 			null,
@@ -253,6 +254,7 @@ class AdminFoodItemControllerTests {
 			"user_generated",
 			auditStatus,
 			reportCount,
+			0L,
 			2L,
 			OffsetDateTime.parse("2026-06-14T12:00:00Z"),
 			OffsetDateTime.parse("2026-06-14T12:00:00Z")
