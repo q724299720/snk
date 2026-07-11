@@ -5,6 +5,7 @@ import com.snk.server.domain.admin.AdminStatsService.AdminStatsResult;
 public record AdminStatsResponse(
 	long totalFoodItems,
 	long pendingFoodItems,
+	long uncategorizedFoodItems,
 	long approvedFoodItems,
 	long rejectedFoodItems,
 	long reportedFoodItems,
@@ -21,6 +22,7 @@ public record AdminStatsResponse(
 		return new AdminStatsResponse(
 			result.totalFoodItems(),
 			result.pendingFoodItems(),
+			result.uncategorizedFoodItems(),
 			result.approvedFoodItems(),
 			result.rejectedFoodItems(),
 			result.reportedFoodItems(),

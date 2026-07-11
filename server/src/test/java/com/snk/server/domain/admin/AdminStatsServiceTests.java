@@ -33,6 +33,7 @@ class AdminStatsServiceTests {
 		when(foodItemRepository.countByAuditStatus("approved")).thenReturn(12L);
 		when(foodItemRepository.countByAuditStatus("rejected")).thenReturn(2L);
 		when(foodItemRepository.countByReportCountGreaterThanEqual(1)).thenReturn(4L);
+		when(foodItemRepository.countByCategory("uncategorized")).thenReturn(6L);
 		when(recognitionTaskRepository.countByStatus("pending")).thenReturn(2L);
 		when(recognitionTaskRepository.countByStatus("processing")).thenReturn(1L);
 		when(recognitionTaskRepository.countByStatus("completed")).thenReturn(5L);
@@ -45,6 +46,7 @@ class AdminStatsServiceTests {
 		assertThat(result.totalFoodItems()).isEqualTo(17L);
 		assertThat(result.pendingFoodItems()).isEqualTo(3L);
 		assertThat(result.reportedFoodItems()).isEqualTo(4L);
+		assertThat(result.uncategorizedFoodItems()).isEqualTo(6L);
 		assertThat(result.totalRecognitionTasks()).isEqualTo(10L);
 		assertThat(result.pendingRecognitionTasks()).isEqualTo(2L);
 		assertThat(result.enabledReviewWords()).isEqualTo(8L);

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> {
+	long countByCategory(String category);
 
 	@Query(
 		value = """

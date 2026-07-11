@@ -29,6 +29,7 @@ public class AdminStatsService {
 		long approvedFoodItems = foodItemRepository.countByAuditStatus("approved");
 		long rejectedFoodItems = foodItemRepository.countByAuditStatus("rejected");
 		long reportedFoodItems = foodItemRepository.countByReportCountGreaterThanEqual(1);
+		long uncategorizedFoodItems = foodItemRepository.countByCategory("uncategorized");
 		long pendingTasks = recognitionTaskRepository.countByStatus("pending");
 		long processingTasks = recognitionTaskRepository.countByStatus("processing");
 		long completedTasks = recognitionTaskRepository.countByStatus("completed");
@@ -39,6 +40,7 @@ public class AdminStatsService {
 		return new AdminStatsResult(
 			pendingFoodItems + approvedFoodItems + rejectedFoodItems,
 			pendingFoodItems,
+			uncategorizedFoodItems,
 			approvedFoodItems,
 			rejectedFoodItems,
 			reportedFoodItems,
@@ -55,6 +57,7 @@ public class AdminStatsService {
 	public record AdminStatsResult(
 		long totalFoodItems,
 		long pendingFoodItems,
+		long uncategorizedFoodItems,
 		long approvedFoodItems,
 		long rejectedFoodItems,
 		long reportedFoodItems,
