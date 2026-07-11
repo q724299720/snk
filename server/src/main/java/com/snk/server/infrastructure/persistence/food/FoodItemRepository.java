@@ -123,6 +123,34 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 	)
 	List<FoodSearchProjection> searchVisibleToUser(@Param("query") String query, @Param("userId") Long userId);
 
+	@Query(
+		value = """
+			SELECT * FROM food_items
+			WHERE audit_status = 'approved'
+			  AND lower(regexp_replace(btrim(name), '\\s+', ' ', 'g')) = :normalizedName
+			ORDER BY id
+			LIMIT 1
+			""",
+		nativeQuery = true
+	)
+	Optional<FoodItemEntity> findFirstApprovedByNormalizedName(@Param("normalizedName") String normalizedName);
+
+	@Query(
+		value = """
+			SELECT * FROM food_items
+			WHERE audit_status = 'pending'
+			  AND created_by_user_id = :userId
+			  AND lower(regexp_replace(btrim(name), '\\s+', ' ', 'g')) = :normalizedName
+			ORDER BY id
+			LIMIT 1
+			""",
+		nativeQuery = true
+	)
+	Optional<FoodItemEntity> findFirstCreatorPendingByNormalizedName(
+		@Param("userId") Long userId,
+		@Param("normalizedName") String normalizedName
+	);
+
 	Optional<FoodItemEntity> findByAuditStatusAndBarcode(String auditStatus, String barcode);
 
 	Optional<FoodItemEntity> findFirstByItemTypeAndBarcode(String itemType, String barcode);

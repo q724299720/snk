@@ -14,6 +14,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "food_records")
@@ -33,6 +34,9 @@ public class FoodRecordEntity {
 
 	@Column(name = "source_type", nullable = false, length = 32)
 	private String sourceType;
+
+	@Column(name = "client_request_id")
+	private UUID clientRequestId;
 
 	@Column(name = "sync_status", nullable = false, length = 32)
 	private String syncStatus;
@@ -104,6 +108,14 @@ public class FoodRecordEntity {
 
 	public void setSourceType(String sourceType) {
 		this.sourceType = sourceType;
+	}
+
+	public UUID getClientRequestId() {
+		return clientRequestId;
+	}
+
+	public void setClientRequestId(UUID clientRequestId) {
+		this.clientRequestId = clientRequestId;
 	}
 
 	public String getSyncStatus() {

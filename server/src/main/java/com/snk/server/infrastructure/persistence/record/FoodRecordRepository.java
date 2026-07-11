@@ -2,12 +2,16 @@ package com.snk.server.infrastructure.persistence.record;
 
 import com.snk.server.infrastructure.persistence.food.FoodItemEntity;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface FoodRecordRepository extends JpaRepository<FoodRecordEntity, Long> {
+
+	Optional<FoodRecordEntity> findByUser_IdAndClientRequestId(Long userId, UUID clientRequestId);
 
 	List<FoodRecordEntity> findByUser_IdAndDeletedAtIsNullOrderByRecordTimeDesc(Long userId, Pageable pageable);
 

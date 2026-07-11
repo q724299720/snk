@@ -18,6 +18,8 @@ import com.snk.server.domain.record.FoodRecordService;
 import com.snk.server.domain.record.FoodRecordCommentResult;
 import com.snk.server.domain.record.FoodRecordHistoryItem;
 import com.snk.server.domain.record.FoodRecordImageValue;
+import com.snk.server.domain.record.FoodRecordCreateCommand;
+import com.snk.server.domain.record.QuickFoodRecordCreateCommand;
 import com.snk.server.infrastructure.storage.StorageProperties;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -303,6 +305,7 @@ class FoodRecordControllerTests {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 					{
+					  "clientRequestId": "b462a65b-b346-4a6d-bd87-c2022897544a",
 					  "userId": 100,
 					  "foodItemId": 200,
 					  "sourceType": "text_search",
@@ -326,6 +329,46 @@ class FoodRecordControllerTests {
 			.andExpect(jsonPath("$.likeCount").value(0))
 			.andExpect(jsonPath("$.images[0].imageUrl")
 				.value("https://snk.qiuxinmin.cn/uploads/records/noodle.jpg"));
+
+		ArgumentCaptor<FoodRecordCreateCommand> commandCaptor = ArgumentCaptor.forClass(FoodRecordCreateCommand.class);
+		verify(foodRecordService).createRecord(commandCaptor.capture());
+		org.assertj.core.api.Assertions.assertThat(commandCaptor.getValue().clientRequestId())
+			.isEqualTo(java.util.UUID.fromString("b462a65b-b346-4a6d-bd87-c2022897544a"));
+	}
+
+	@Test
+	void shouldCreateQuickRecord() throws Exception {
+		when(foodRecordService.createQuickRecord(any())).thenReturn(
+			new FoodRecordResult(
+				1L, 100L, 200L, "manual", false, (short) 5, "热且脆", 0,
+				OffsetDateTime.parse("2026-07-11T12:00:00Z"),
+				OffsetDateTime.parse("2026-07-11T12:00:00Z"),
+				List.of()
+			)
+		);
+
+		mockMvc.perform(
+			post("/api/records/quick")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "clientRequestId": "c6411e4e-b5f5-43d0-9a34-38d54d071b3f",
+					  "userId": 100,
+					  "name": "麦当劳薯条",
+					  "rating": 5,
+					  "comment": "热且脆"
+					}
+					""")
+		)
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.foodItemId").value(200))
+			.andExpect(jsonPath("$.isPublic").value(false));
+
+		ArgumentCaptor<QuickFoodRecordCreateCommand> captor = ArgumentCaptor.forClass(QuickFoodRecordCreateCommand.class);
+		verify(foodRecordService).createQuickRecord(captor.capture());
+		org.assertj.core.api.Assertions.assertThat(captor.getValue().name()).isEqualTo("麦当劳薯条");
+		org.assertj.core.api.Assertions.assertThat(captor.getValue().clientRequestId())
+			.isEqualTo(java.util.UUID.fromString("c6411e4e-b5f5-43d0-9a34-38d54d071b3f"));
 	}
 
 	@Test

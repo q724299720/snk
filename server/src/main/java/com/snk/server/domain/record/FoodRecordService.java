@@ -46,6 +46,14 @@ public class FoodRecordService {
 
 	@Transactional
 	public FoodRecordResult createRecord(FoodRecordCreateCommand command) {
+		if (command.clientRequestId() != null) {
+			FoodRecordEntity existing = foodRecordRepository
+				.findByUser_IdAndClientRequestId(command.userId(), command.clientRequestId())
+				.orElse(null);
+			if (existing != null) {
+				return toResult(existing);
+			}
+		}
 		UserEntity user = userRepository.findById(command.userId())
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
 		FoodItemEntity foodItem = foodItemRepository.findById(command.foodItemId())
@@ -70,6 +78,63 @@ public class FoodRecordService {
 			}
 		}
 		return toResult(savedRecord, images);
+	}
+
+	@Transactional
+	public FoodRecordResult createQuickRecord(QuickFoodRecordCreateCommand command) {
+		FoodRecordEntity existing = foodRecordRepository
+			.findByUser_IdAndClientRequestId(command.userId(), command.clientRequestId())
+			.orElse(null);
+		if (existing != null) {
+			return toResult(existing);
+		}
+
+		UserEntity user = userRepository.findById(command.userId())
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
+		String displayName = normalizeFoodName(command.name());
+		String normalizedName = displayName.toLowerCase(java.util.Locale.ROOT);
+		FoodItemEntity foodItem = foodItemRepository.findFirstApprovedByNormalizedName(normalizedName)
+			.or(() -> foodItemRepository.findFirstCreatorPendingByNormalizedName(command.userId(), normalizedName))
+			.orElseGet(() -> createUncategorizedFoodItem(user, displayName));
+
+		FoodRecordEntity entity = new FoodRecordEntity();
+		entity.setUser(user);
+		entity.setFoodItem(foodItem);
+		entity.setClientRequestId(command.clientRequestId());
+		entity.setClientRequestId(command.clientRequestId());
+		entity.setSourceType("manual");
+		entity.setPublic(command.isPublic());
+		entity.setRating(command.rating());
+		entity.setComment(command.comment());
+		entity.setRecordTime(command.recordTime());
+
+		FoodRecordEntity savedRecord = foodRecordRepository.save(entity);
+		List<FoodRecordImageValue> images = normalizeImages(command.images());
+		if (!images.isEmpty()) {
+			foodRecordImageRepository.saveAll(toImageEntities(savedRecord, images));
+		}
+		return toResult(savedRecord, images);
+	}
+
+	private FoodItemEntity createUncategorizedFoodItem(UserEntity creator, String name) {
+		FoodItemEntity entity = new FoodItemEntity();
+		entity.setName(name);
+		entity.setItemType("unknown");
+		entity.setCategory("uncategorized");
+		entity.setSource("user_generated");
+		entity.setAuditStatus("pending");
+		entity.setSearchKeywords(name);
+		entity.setReportCount(0);
+		entity.setCreatedByUser(creator);
+		return foodItemRepository.save(entity);
+	}
+
+	private String normalizeFoodName(String value) {
+		String normalized = value == null ? "" : value.trim().replaceAll("\\s+", " ");
+		if (normalized.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "name must not be blank");
+		}
+		return normalized;
 	}
 
 	@Transactional

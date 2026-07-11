@@ -1,6 +1,7 @@
 package com.snk.server.api.controller;
 
 import com.snk.server.api.dto.CreateFoodRecordRequest;
+import com.snk.server.api.dto.CreateQuickFoodRecordRequest;
 import com.snk.server.api.dto.CreateFoodRecordCommentRequest;
 import com.snk.server.api.dto.FoodRecordCommentResponse;
 import com.snk.server.api.dto.FoodRecordHistoryResponse;
@@ -12,6 +13,7 @@ import com.snk.server.domain.record.FoodRecordImageValue;
 import com.snk.server.domain.record.FoodRecordResult;
 import com.snk.server.domain.record.FoodRecordService;
 import com.snk.server.domain.record.FoodRecordUpdateCommand;
+import com.snk.server.domain.record.QuickFoodRecordCreateCommand;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -84,10 +86,32 @@ public class FoodRecordController {
 				request.recordTime(),
 				request.imagesOrEmpty().stream()
 					.map(image -> new FoodRecordImageValue(image.imageUrl(), image.thumbnailUrl()))
-					.toList()
+					.toList(),
+				request.clientRequestId()
 			)
 		);
 		return toResponse(result);
+	}
+
+	@PostMapping("/quick")
+	@ResponseStatus(HttpStatus.CREATED)
+	public FoodRecordResponse createQuickRecord(@Valid @RequestBody CreateQuickFoodRecordRequest request) {
+		return toResponse(
+			foodRecordService.createQuickRecord(
+				new QuickFoodRecordCreateCommand(
+					request.clientRequestId(),
+					request.userId(),
+					request.name(),
+					request.isPublic(),
+					(short) request.rating(),
+					request.comment(),
+					request.recordTime(),
+					request.imagesOrEmpty().stream()
+						.map(image -> new FoodRecordImageValue(image.imageUrl(), image.thumbnailUrl()))
+						.toList()
+				)
+			)
+		);
 	}
 
 	@PutMapping("/{recordId}")
