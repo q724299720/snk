@@ -58,7 +58,7 @@ class RecordCreateScreenTest {
 
         val reset = previous.resetForFoodSwitch()
 
-        assertEquals(DEFAULT_RECORD_RATING, reset.rating)
+        assertNull(reset.rating)
         assertEquals("", reset.comment)
         assertNull(reset.submitState)
         assertEquals(0, reset.likeCount)

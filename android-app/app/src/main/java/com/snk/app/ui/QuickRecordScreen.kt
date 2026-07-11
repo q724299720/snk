@@ -30,6 +30,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -150,7 +153,10 @@ fun QuickRecordScreen(
                 (1..5).forEach { stars ->
                     OutlinedButton(
                         onClick = { rating = stars },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).semantics {
+                            selected = rating == stars
+                            stateDescription = if (rating == stars) "已选择 $stars 星" else "$stars 星未选择"
+                        },
                     ) {
                         Text(if (rating == stars) "★$stars" else "☆$stars")
                     }

@@ -17,9 +17,11 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +43,7 @@ import coil.compose.AsyncImage
 import com.snk.app.SnkApplication
 import com.snk.app.data.record.FoodRecordHistoryItem
 import com.snk.app.data.record.FoodRecordHistoryResult
+import com.snk.app.data.draft.DraftSyncStatus
 import kotlinx.coroutines.launch
 
 private const val PAGE_SIZE = 20
@@ -56,6 +59,8 @@ fun GalleryScreen(
     var hasMore by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    val drafts by application.container.draftRecordRepository.observeDrafts().collectAsState(initial = emptyList())
+    val pendingDrafts = remember(drafts) { drafts.filter { it.syncStatus != DraftSyncStatus.SYNCED } }
 
     fun loadPage(page: Int) {
         if (sessionUserId == null) return
@@ -122,6 +127,40 @@ fun GalleryScreen(
             verticalItemSpacing = 10.dp,
             modifier = Modifier.fillMaxSize(),
         ) {
+            item(span = StaggeredGridItemSpan.FullLine) {
+                Text("记录", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            }
+            item(span = StaggeredGridItemSpan.FullLine) {
+                Text("需要处理", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+            if (pendingDrafts.isEmpty()) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Text("没有待处理草稿。", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF7A6A61))
+                }
+            } else {
+                items(pendingDrafts, key = { "draft-${it.id}" }, span = { StaggeredGridItemSpan.FullLine }) { draft ->
+                    DraftItemCard(
+                        draft = draft,
+                        onRetry = {
+                            coroutineScope.launch {
+                                application.container.draftRecordRepository.requestRetry(draft.id)
+                                application.container.scheduleDraftRetry(draft.id)
+                            }
+                        },
+                        onDelete = {
+                            coroutineScope.launch { application.container.draftRecordRepository.deleteDraft(draft.id) }
+                        },
+                    )
+                }
+            }
+            item(span = StaggeredGridItemSpan.FullLine) {
+                Text("已保存", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+            if (!isLoading && loadError == null && items.isEmpty()) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Text("还没有已保存记录。", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF7A6A61))
+                }
+            }
             items(items, key = { it.id }) { record ->
                 GalleryItemCard(record = record)
             }
@@ -137,12 +176,15 @@ fun GalleryScreen(
             }
             if (loadError != null) {
                 item(span = StaggeredGridItemSpan.FullLine) {
-                    Text(
-                        text = loadError.orEmpty(),
-                        modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF8A2E1C),
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = loadError.orEmpty(),
+                            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF8A2E1C),
+                        )
+                        Button(onClick = { loadPage(0) }) { Text("重试") }
+                    }
                 }
             }
             if (hasMore && !isLoading) {
@@ -207,6 +249,11 @@ private fun GalleryItemCard(record: FoodRecordHistoryItem) {
                     text = "评分 ${record.rating}/5",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF8A5A44),
+                )
+                Text(
+                    text = if (record.isPublic) "已公开" else "仅自己",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (record.isPublic) Color(0xFF2E7D32) else Color(0xFF6D4C41),
                 )
             }
         }

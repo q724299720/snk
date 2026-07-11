@@ -5,126 +5,79 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ProfileScreen(
-    sessionState: SessionUiState,
-    onRetry: () -> Unit,
-) {
+fun ProfileScreen(sessionState: SessionUiState, onRetry: () -> Unit) {
+    var showDiagnostics by remember { mutableStateOf(false) }
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text(
-            text = "游客身份",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Black,
-            color = Color(0xFF2B1E18),
-        )
+        Text("我的", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        ProfileInfoCard("游客模式", "无需注册即可记录；数据使用本机游客身份与服务端同步。")
         Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF2B1E18)),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFFDF8F2)),
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    text = "installationId -> anonymous user_id",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFFFFE6D1),
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = "已接匿名初始化接口，并在本地保存安装级身份，保证同一安装周期内记录可关联。",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFFFFF4EA),
-                )
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("同步状态", fontWeight = FontWeight.SemiBold)
+                when (sessionState) {
+                    SessionUiState.Loading -> Text("正在连接服务端…")
+                    is SessionUiState.Remote -> Text("已连接，记录会自动同步。")
+                    is SessionUiState.Cached -> Text("当前离线，记录会先保存在本机并等待补传。")
+                    is SessionUiState.Failure -> {
+                        Text(sessionState.reason)
+                        Button(onClick = onRetry) { Text("重试") }
+                    }
+                }
             }
         }
-        SessionStatusCard(
-            sessionState = sessionState,
-            onRetry = onRetry,
-        )
+        ProfileInfoCard("隐私说明", "记录默认仅自己可见；只有你主动设为公开的内容才会出现在发现页。")
+        ProfileInfoCard("问题反馈", "遇到识别、同步或内容问题时，请在反馈中附上发生时间和操作步骤。")
+        TextButton(onClick = { showDiagnostics = !showDiagnostics }) {
+            Text(if (showDiagnostics) "收起诊断信息" else "诊断信息")
+        }
+        if (showDiagnostics) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("仅用于排查问题", fontWeight = FontWeight.SemiBold)
+                    Text("user_id: ${sessionState.userIdOrNull() ?: "尚未初始化"}")
+                    Text("installationId 保存在应用私有存储中，不在普通页面展示。")
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun SessionStatusCard(
-    sessionState: SessionUiState,
-    onRetry: () -> Unit,
-) {
+private fun ProfileInfoCard(title: String, body: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7EF)),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFDF8F2)),
     ) {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                text = "会话状态",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF2B1E18),
-            )
-            when (sessionState) {
-                SessionUiState.Loading -> {
-                    Text(
-                        text = "正在向服务端申请或复用匿名 user_id。",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF5B4A42),
-                    )
-                }
-
-                is SessionUiState.Remote -> {
-                    Text(
-                        text = "远程初始化成功，当前游客 user_id: ${sessionState.session.userId}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF5B4A42),
-                    )
-                }
-
-                is SessionUiState.Cached -> {
-                    Text(
-                        text = "网络不可用，已回退到本地缓存游客身份: ${sessionState.session.userId}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF5B4A42),
-                    )
-                    Text(
-                        text = sessionState.reason,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF8A5A44),
-                    )
-                }
-
-                is SessionUiState.Failure -> {
-                    Text(
-                        text = sessionState.reason,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF8A2E1C),
-                    )
-                    Button(onClick = onRetry) {
-                        Text("重试")
-                    }
-                }
-            }
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(body, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

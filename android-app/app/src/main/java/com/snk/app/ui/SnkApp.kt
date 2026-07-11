@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Collections
+import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
@@ -43,14 +43,14 @@ private sealed class SnkDestination(
 ) {
     data object Search : SnkDestination("search", "首页", Icons.Outlined.Home)
     data object Gallery : SnkDestination("gallery", "记录", Icons.Outlined.Collections)
-    data object Drafts : SnkDestination("drafts", "草稿", Icons.Outlined.BookmarkBorder)
+    data object Discover : SnkDestination("discover", "发现", Icons.Outlined.Explore)
     data object Profile : SnkDestination("profile", "我的", Icons.Outlined.Person)
 }
 
 private val destinations = listOf(
     SnkDestination.Search,
     SnkDestination.Gallery,
-    SnkDestination.Drafts,
+    SnkDestination.Discover,
     SnkDestination.Profile,
 )
 
@@ -164,8 +164,8 @@ fun SnkApp() {
                         sessionUserId = sessionState.userIdOrNull(),
                     )
                 }
-                composable(SnkDestination.Drafts.route) {
-                    DraftsScreen()
+                composable(SnkDestination.Discover.route) {
+                    DiscoverScreen()
                 }
                 composable(SnkDestination.Profile.route) {
                     ProfileScreen(
@@ -212,7 +212,7 @@ fun SnkApp() {
                             },
                             onOpenDrafts = {
                                 navController.popBackStack()
-                                navController.navigate(SnkDestination.Drafts.route)
+                                navController.navigate(SnkDestination.Gallery.route)
                             },
                         )
                     }

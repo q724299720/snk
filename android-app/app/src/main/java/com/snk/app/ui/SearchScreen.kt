@@ -88,6 +88,7 @@ fun SearchScreen(
     externalQuerySeed: String? = null,
     externalSuggestedQueries: List<String> = emptyList(),
     recentRefreshToken: Int = 0,
+    showCommunitySections: Boolean = false,
     onExternalQueryConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -110,8 +111,13 @@ fun SearchScreen(
     }
     val publicRecordState by produceState<FoodRecordHistoryResult?>(
         initialValue = null,
+        key1 = showCommunitySections,
     ) {
-        value = application.container.foodRecordRepository.listPublicRecords(HOME_PUBLIC_RECORD_LIMIT)
+        value = if (showCommunitySections) {
+            application.container.foodRecordRepository.listPublicRecords(HOME_PUBLIC_RECORD_LIMIT)
+        } else {
+            FoodRecordHistoryResult.Success(emptyList())
+        }
     }
     val drafts by application.container.draftRecordRepository
         .observeDrafts()
@@ -440,7 +446,7 @@ fun SearchScreen(
                 }
             }
         }
-        if (pendingDrafts.isNotEmpty()) {
+        if (showCommunitySections && pendingDrafts.isNotEmpty()) {
             item {
                 Text(
                     text = "待上传草稿 / 失败重试",
@@ -466,7 +472,7 @@ fun SearchScreen(
                 )
             }
         }
-        item {
+        if (showCommunitySections) item {
             Text(
                 text = "公开分享",
                 style = MaterialTheme.typography.titleSmall,
@@ -474,7 +480,7 @@ fun SearchScreen(
                 color = Color(0xFF5B4A42),
             )
         }
-        when (val publicHistory = publicRecordState) {
+        if (showCommunitySections) when (val publicHistory = publicRecordState) {
             null -> item {
                 Text(
                     text = "正在加载公开记录...",
@@ -938,7 +944,7 @@ private fun RecentRecordCard(
 }
 
 /** 首页最近记录默认展示条数，对齐 PRD「首页最近记录默认展示最近 5 条」。 */
-private const val HOME_RECENT_RECORD_LIMIT = 10
+private const val HOME_RECENT_RECORD_LIMIT = 3
 private const val HOME_PUBLIC_RECORD_LIMIT = 5
 
 private fun sourceTypeLabel(sourceType: String): String = when (sourceType) {

@@ -78,7 +78,7 @@ fun RecordCreateScreen(
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     val clientRequestId = remember { UUID.randomUUID().toString() }
-    var rating by remember { mutableIntStateOf(DEFAULT_RECORD_RATING) }
+    var rating by remember { mutableStateOf<Int?>(null) }
     var comment by remember { mutableStateOf("") }
     var submitState by remember { mutableStateOf<FoodRecordSubmissionResult?>(null) }
     var likeCount by remember { mutableIntStateOf(0) }
@@ -406,6 +406,7 @@ fun RecordCreateScreen(
                     is SessionUiState.Cached -> sessionState.session.userId
                     else -> null
                 } ?: return@Button
+                val selectedRating = rating ?: return@Button
 
                 coroutineScope.launch {
                     isSubmitting = true
@@ -413,7 +414,7 @@ fun RecordCreateScreen(
                         clientRequestId = clientRequestId,
                         userId = userId,
                         selectedFood = selectedFood,
-                        rating = rating,
+                        rating = selectedRating,
                         comment = comment,
                         sourceType = sourceType,
                         isPublic = isPublic,
@@ -430,6 +431,7 @@ fun RecordCreateScreen(
             enabled = !isSubmitting &&
                 !isUploadingImage &&
                 imageSaveValidation.canSave &&
+                rating != null &&
                 !commentValidation.hasError &&
                 sessionState !is SessionUiState.Loading &&
                 sessionState !is SessionUiState.Failure,
@@ -492,7 +494,7 @@ fun RecordCreateScreen(
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                         type = "text/plain"
                                         putExtra(Intent.EXTRA_SUBJECT, "SNK 记录分享")
-                                        putExtra(Intent.EXTRA_TEXT, buildRecordShareText(foodName = selectedFood.name, rating = rating, comment = comment, recordId = result.recordId, recordTime = result.recordTime))
+                                        putExtra(Intent.EXTRA_TEXT, buildRecordShareText(foodName = selectedFood.name, rating = rating ?: DEFAULT_RECORD_RATING, comment = comment, recordId = result.recordId, recordTime = result.recordTime))
                                     }
                                     context.startActivity(Intent.createChooser(shareIntent, "分享"))
                                 },
@@ -622,7 +624,7 @@ internal fun buildRecordSubmitFeedback(
 }
 
 internal data class RecordCreateTransientState(
-    val rating: Int = DEFAULT_RECORD_RATING,
+    val rating: Int? = null,
     val comment: String = "",
     val submitState: FoodRecordSubmissionResult? = null,
     val likeCount: Int = 0,

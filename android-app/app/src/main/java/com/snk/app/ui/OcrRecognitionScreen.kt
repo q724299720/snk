@@ -45,6 +45,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -199,6 +202,10 @@ fun OcrRecognitionScreen(
                     currentResult.blocks.firstOrNull { it.id == id }?.let { block ->
                         AssistChip(
                             onClick = { selectedIds.remove(id) },
+                            modifier = Modifier.semantics {
+                                selected = true
+                                stateDescription = "已选中，点击删除"
+                            },
                             label = { Text("✓ ${block.text}  ×") },
                         )
                     }
