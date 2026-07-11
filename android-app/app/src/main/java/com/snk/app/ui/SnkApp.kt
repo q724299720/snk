@@ -54,6 +54,16 @@ private val destinations = listOf(
     SnkDestination.Profile,
 )
 
+internal data class TopLevelNavigationStatePolicy(
+    val saveState: Boolean,
+    val restoreState: Boolean,
+)
+
+internal val flatTopLevelNavigationStatePolicy = TopLevelNavigationStatePolicy(
+    saveState = false,
+    restoreState = false,
+)
+
 @Composable
 fun SnkApp() {
     val application = LocalContext.current.applicationContext as SnkApplication
@@ -104,10 +114,10 @@ fun SnkApp() {
                             onClick = {
                                 navController.navigate(destination.route) {
                                     popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                                        saveState = flatTopLevelNavigationStatePolicy.saveState
                                     }
                                     launchSingleTop = true
-                                    restoreState = true
+                                    restoreState = flatTopLevelNavigationStatePolicy.restoreState
                                 }
                             },
                             icon = { Icon(destination.icon, contentDescription = destination.label) },

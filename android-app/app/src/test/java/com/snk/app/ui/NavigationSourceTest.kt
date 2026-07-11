@@ -7,6 +7,12 @@ import org.junit.Test
 
 class NavigationSourceTest {
     @Test
+    fun `flat top level navigation never restores a saved child route`() {
+        assertFalse(flatTopLevelNavigationStatePolicy.saveState)
+        assertFalse(flatTopLevelNavigationStatePolicy.restoreState)
+    }
+
+    @Test
     fun `primary navigation is home records discover and profile`() {
         val source = File("src/main/java/com/snk/app/ui/SnkApp.kt").readText()
 
