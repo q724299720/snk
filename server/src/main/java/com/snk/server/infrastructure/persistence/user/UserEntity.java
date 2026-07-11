@@ -2,9 +2,14 @@ package com.snk.server.infrastructure.persistence.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -29,6 +34,43 @@ public class UserEntity {
 
 	@Column(length = 255)
 	private String email;
+
+	@Column(length = 64)
+	private String username;
+
+	@Column(name = "password_hash", length = 255)
+	private String passwordHash;
+
+	@Enumerated(EnumType.STRING)
+	@Column(length = 16)
+	private AccountRole role;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "account_status", length = 16)
+	private AccountStatus accountStatus;
+
+	@Column(name = "token_version", nullable = false)
+	private long tokenVersion;
+
+	@Column(name = "must_change_password", nullable = false)
+	private boolean mustChangePassword;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "approved_by_user_id")
+	private UserEntity approvedByUser;
+
+	@Column(name = "approved_at")
+	private OffsetDateTime approvedAt;
+
+	@Column(name = "last_login_at")
+	private OffsetDateTime lastLoginAt;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "claimed_by_user_id")
+	private UserEntity claimedByUser;
+
+	@Column(name = "claimed_at")
+	private OffsetDateTime claimedAt;
 
 	@Column(name = "auth_provider", nullable = false, length = 32)
 	private String authProvider;
@@ -101,6 +143,94 @@ public class UserEntity {
 
 	public void setEmail(String email) {
 		this.email = email;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public String getPasswordHash() {
+		return passwordHash;
+	}
+
+	public void setPasswordHash(String passwordHash) {
+		this.passwordHash = passwordHash;
+	}
+
+	public AccountRole getRole() {
+		return role;
+	}
+
+	public void setRole(AccountRole role) {
+		this.role = role;
+	}
+
+	public AccountStatus getAccountStatus() {
+		return accountStatus;
+	}
+
+	public void setAccountStatus(AccountStatus accountStatus) {
+		this.accountStatus = accountStatus;
+	}
+
+	public long getTokenVersion() {
+		return tokenVersion;
+	}
+
+	public void setTokenVersion(long tokenVersion) {
+		this.tokenVersion = tokenVersion;
+	}
+
+	public boolean isMustChangePassword() {
+		return mustChangePassword;
+	}
+
+	public void setMustChangePassword(boolean mustChangePassword) {
+		this.mustChangePassword = mustChangePassword;
+	}
+
+	public UserEntity getApprovedByUser() {
+		return approvedByUser;
+	}
+
+	public void setApprovedByUser(UserEntity approvedByUser) {
+		this.approvedByUser = approvedByUser;
+	}
+
+	public OffsetDateTime getApprovedAt() {
+		return approvedAt;
+	}
+
+	public void setApprovedAt(OffsetDateTime approvedAt) {
+		this.approvedAt = approvedAt;
+	}
+
+	public OffsetDateTime getLastLoginAt() {
+		return lastLoginAt;
+	}
+
+	public void setLastLoginAt(OffsetDateTime lastLoginAt) {
+		this.lastLoginAt = lastLoginAt;
+	}
+
+	public UserEntity getClaimedByUser() {
+		return claimedByUser;
+	}
+
+	public void setClaimedByUser(UserEntity claimedByUser) {
+		this.claimedByUser = claimedByUser;
+	}
+
+	public OffsetDateTime getClaimedAt() {
+		return claimedAt;
+	}
+
+	public void setClaimedAt(OffsetDateTime claimedAt) {
+		this.claimedAt = claimedAt;
 	}
 
 	public String getAuthProvider() {

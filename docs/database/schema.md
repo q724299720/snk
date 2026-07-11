@@ -365,14 +365,18 @@
 ### users
 
 - 正式账号新增 `username VARCHAR(64)`（`lower(username)` 唯一）、`password_hash VARCHAR(255)`、`role OWNER/USER`、`account_status PENDING/ACTIVE/REJECTED/DISABLED`。
-- 增加 `token_version`、`must_change_password`、`approved_by_user_id`、`approved_at`；修改密码、禁用或强制退出时递增 tokenVersion。
+- 增加 `token_version`、`must_change_password`、`approved_by_user_id`、`approved_at`、`last_login_at`；修改密码、禁用或强制退出时递增 tokenVersion。
 - 旧匿名用户允许正式账号字段为空；`anonymous_installation_id` 继续唯一，但只能用于一次性历史认领，不能继续创建新游客会话。
+- 旧匿名用户通过 `claimed_by_user_id/claimed_at` 固化认领目标；两列必须同时为空或同时非空。
 
-### refresh_tokens 与 legacy_identity_claims
+### refresh_tokens、审批票据、历史认领与账号审计
 
 - Refresh Token 保存 `token_hash`、`family_id`、`device_id`、`rotated_at`、`replacement_ciphertext`、`replacement_expires_at`、`revoked_at` 和时间戳，不保存长期可用的原文。
 - `token_hash` 唯一；轮换使用行锁。替代密文只保留 60 秒，AAD 绑定 refresh row、family 和 device。
 - `legacy_identity_claims` 对匿名 installationId 建唯一约束，记录目标正式 userId 和认领时间，确保永久不可二次认领。
+- `registration_approval_tickets` 只保存 64 字符票据哈希；每个注册账号最多一个查询票据，终态保留截止时间使用部分索引支持清理。
+- `account_audit_logs` 记录操作者、目标账号、动作、JSONB 前后快照、备注和时间；目标账号与操作者外键均有对应查询索引。
+- V12/V13 分别落地账号字段与账号会话表；用户名使用 `LOWER(username)` 非空部分唯一索引，活跃 OWNER、活跃设备会话和活跃会话族使用部分索引。
 
 ### 产品、上传与记录
 
@@ -385,3 +389,4 @@
 | 日期 | 修改人 | 变更范围 | 原因 |
 | --- | --- | --- | --- |
 | 2026-07-11 | Codex | 增加正式账号、Refresh 会话、一次性认领和多账号草稿模型 | 为必须登录、弱网长期会话和账号间数据隔离提供持久化契约 |
+| 2026-07-11 | Codex | 落地 V12/V13 账号、审批票据、Refresh 会话、认领和审计模型 | Task 2 实现数据库约束、索引、实体映射和悲观锁查询 |

@@ -38,14 +38,18 @@
 - Create: `server/src/main/java/com/snk/server/infrastructure/persistence/auth/RefreshTokenRepository.java`
 - Create: `server/src/main/java/com/snk/server/infrastructure/persistence/auth/LegacyIdentityClaimEntity.java`
 - Create: `server/src/main/java/com/snk/server/infrastructure/persistence/auth/LegacyIdentityClaimRepository.java`
+- Create: `server/src/main/java/com/snk/server/infrastructure/persistence/auth/RegistrationApprovalTicketEntity.java`
+- Create: `server/src/main/java/com/snk/server/infrastructure/persistence/auth/RegistrationApprovalTicketRepository.java`
+- Create: `server/src/main/java/com/snk/server/infrastructure/persistence/auth/AccountAuditLogEntity.java`
+- Create: `server/src/main/java/com/snk/server/infrastructure/persistence/auth/AccountAuditLogRepository.java`
 - Create: `server/src/test/java/com/snk/server/infrastructure/persistence/auth/AccountMigrationTests.java`
 
-- [ ] 先写 Testcontainers 测试：用户名大小写不敏感唯一、角色/状态约束、Refresh Token 哈希唯一、匿名身份只能认领一次、最后 OWNER 查询可加锁；运行 `./gradlew test --tests '*AccountMigrationTests'`，预期因迁移和实体不存在而失败。
-- [ ] V12 为 `users` 增加 `username`、`password_hash`、`role`、`account_status`、`token_version`、`must_change_password`、`approved_by_user_id`、`approved_at`；保留旧匿名用户字段并允许正式账号字段对匿名旧行为空。
-- [ ] V13 建立 `refresh_tokens` 与 `legacy_identity_claims`；Refresh Token 包含 `token_hash`、`family_id`、`device_id`、`rotated_at`、`replacement_ciphertext`、`replacement_expires_at`、`revoked_at`，并创建必要唯一索引与外键。
-- [ ] 实体使用枚举 `AccountRole { OWNER, USER }`、`AccountStatus { PENDING, ACTIVE, REJECTED, DISABLED }`；仓库增加 `findByUsernameIgnoreCase`、锁定会话、统计 ACTIVE OWNER 和查找匿名 installationId 的方法。
-- [ ] 运行 `./gradlew test --tests '*AccountMigrationTests'` 和 `./gradlew test`，确认真实 PostgreSQL 迁移与既有测试通过。
-- [ ] 提交并推送：`feat: add account and refresh session schema`
+- [x] 先写 Testcontainers 测试：用户名大小写不敏感唯一、角色/状态约束、Refresh Token 哈希唯一、匿名身份只能认领一次、最后 OWNER 查询可加锁；运行 `./gradlew test --tests '*AccountMigrationTests'`，预期因迁移和实体不存在而失败。
+- [x] V12 为 `users` 增加 `username`、`password_hash`、`role`、`account_status`、`token_version`、`must_change_password`、`approved_by_user_id`、`approved_at`；保留旧匿名用户字段并允许正式账号字段对匿名旧行为空。
+- [x] V13 建立 `refresh_tokens`、`legacy_identity_claims`、`registration_approval_tickets` 与 `account_audit_logs`；Refresh Token 包含 `token_hash`、`family_id`、`device_id`、`rotated_at`、`replacement_ciphertext`、`replacement_expires_at`、`revoked_at`，并创建必要唯一索引与外键。
+- [x] 实体使用枚举 `AccountRole { OWNER, USER }`、`AccountStatus { PENDING, ACTIVE, REJECTED, DISABLED }`；仓库增加 `findByUsernameIgnoreCase`、锁定会话、统计 ACTIVE OWNER 和查找匿名 installationId 的方法。
+- [x] 运行 `./gradlew test --tests '*AccountMigrationTests'` 和 `./gradlew test`，确认真实 PostgreSQL 迁移与既有测试通过。
+- [x] 提交并推送：`feat: add account and refresh session schema`
 
 ## Task 3: 注册、审核状态、OWNER 初始化与密码管理
 
@@ -168,3 +172,4 @@
 | --- | --- | --- | --- |
 | 2026-07-11 | Codex | 新建后端账号、鉴权与治理实施计划 | 把账号安全设计拆成可测试、可独立提交的服务端任务 |
 | 2026-07-11 | Codex | 完成 Task 1 文档契约、认证依赖与配置绑定 | 正式启动必须登录与 OWNER 审核方案的服务端实施 |
+| 2026-07-11 | Codex | 完成 Task 2 V12/V13 迁移与认证持久化模型 | 建立账号、审批票据、Refresh 会话、认领和审计的数据约束与仓库 |
