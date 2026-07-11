@@ -7,6 +7,13 @@ import com.snk.app.BuildConfig
 import com.snk.app.data.auth.AnonymousAuthApi
 import com.snk.app.data.auth.AnonymousSessionRepository
 import com.snk.app.data.auth.InstallationIdStore
+import com.snk.app.data.auth.AuthApi
+import com.snk.app.data.auth.AuthRepository
+import com.snk.app.data.auth.AuthenticatedSessionManager
+import com.snk.app.data.auth.BearerTokenInterceptor
+import com.snk.app.data.auth.PersistentDeviceIdProvider
+import com.snk.app.data.auth.RefreshTokenAuthenticator
+import com.snk.app.data.auth.SecureTokenStore
 import com.snk.app.data.draft.DraftRecordRepository
 import com.snk.app.data.food.FoodSearchApi
 import com.snk.app.data.food.FoodSearchRepository
@@ -28,23 +35,41 @@ class AppContainer(context: Context) {
         explicitNulls = false
     }
 
-    private val okHttpClient = OkHttpClient.Builder()
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BASIC
+        redactHeader("Authorization")
+    }
+
+    private val publicOkHttpClient = OkHttpClient.Builder()
         .addInterceptor(
-            HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BASIC
-            },
+            loggingInterceptor,
         )
         .build()
 
-    private val retrofit = Retrofit.Builder()
+    private val publicRetrofit = Retrofit.Builder()
         .baseUrl(BuildConfig.API_BASE_URL)
-        .client(okHttpClient)
+        .client(publicOkHttpClient)
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
 
-    private val anonymousAuthApi = retrofit.create(AnonymousAuthApi::class.java)
-    private val foodSearchApi = retrofit.create(FoodSearchApi::class.java)
-    private val foodRecordApi = retrofit.create(FoodRecordApi::class.java)
+    private val authApi = publicRetrofit.create(AuthApi::class.java)
+    private val secureTokenStore = SecureTokenStore(context)
+    val authenticatedSessionManager = AuthenticatedSessionManager(authApi, secureTokenStore)
+
+    private val businessOkHttpClient = publicOkHttpClient.newBuilder()
+        .addInterceptor(BearerTokenInterceptor(authenticatedSessionManager))
+        .authenticator(RefreshTokenAuthenticator(authenticatedSessionManager))
+        .build()
+
+    private val businessRetrofit = Retrofit.Builder()
+        .baseUrl(BuildConfig.API_BASE_URL)
+        .client(businessOkHttpClient)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+
+    private val anonymousAuthApi = publicRetrofit.create(AnonymousAuthApi::class.java)
+    private val foodSearchApi = businessRetrofit.create(FoodSearchApi::class.java)
+    private val foodRecordApi = businessRetrofit.create(FoodRecordApi::class.java)
     private val installationIdStore = InstallationIdStore(context)
     private val database = Room.databaseBuilder(
         context,
@@ -58,6 +83,13 @@ class AppContainer(context: Context) {
     val anonymousSessionRepository = AnonymousSessionRepository(
         api = anonymousAuthApi,
         installationIdStore = installationIdStore,
+    )
+
+    val authRepository = AuthRepository(
+        api = authApi,
+        tokenStore = secureTokenStore,
+        deviceIdProvider = PersistentDeviceIdProvider(context),
+        sessionManager = authenticatedSessionManager,
     )
 
     val foodSearchRepository = FoodSearchRepository(

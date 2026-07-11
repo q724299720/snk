@@ -8,11 +8,12 @@ class AuthRepository(
     private val api: AuthApi,
     private val tokenStore: SecureTokenStoreContract,
     private val deviceIdProvider: DeviceIdProvider,
+    private val sessionManager: AuthenticatedSessionManager? = null,
     private val json: Json = Json { ignoreUnknownKeys = true },
 ) {
     @Volatile private var accessToken: String? = null
 
-    fun currentAccessToken(): String? = accessToken
+    fun currentAccessToken(): String? = sessionManager?.currentAccessToken() ?: accessToken
 
     suspend fun register(username: String, password: String): AuthResult<RegistrationResponse> = call {
         api.register(RegisterRequest(username.trim(), password)).also {
@@ -31,6 +32,7 @@ class AuthRepository(
         val account = accountResponse.toAccount()
         tokenStore.save(StoredAuthenticatedSession(account, deviceId, pair.refreshToken))
         accessToken = pair.accessToken
+        sessionManager?.publishAccessToken(pair.accessToken, account)
         account
     }
 
@@ -41,6 +43,7 @@ class AuthRepository(
         val account = accountResponse.toAccount()
         tokenStore.save(StoredAuthenticatedSession(account, stored.deviceId, pair.refreshToken))
         accessToken = pair.accessToken
+        sessionManager?.publishAccessToken(pair.accessToken, account)
         account
     }
 
@@ -54,7 +57,7 @@ class AuthRepository(
             failure(exception)
         } finally {
             accessToken = null
-            tokenStore.clear()
+            if (sessionManager != null) sessionManager.clearSession() else tokenStore.clear()
         }
     }
 
@@ -67,7 +70,7 @@ class AuthRepository(
     }
 
     private suspend fun authorizedCall(block: suspend (String) -> Unit): AuthResult<Unit> {
-        val token = accessToken ?: return AuthResult.Failure(AuthErrorCode.AUTH_REQUIRED)
+        val token = currentAccessToken() ?: return AuthResult.Failure(AuthErrorCode.AUTH_REQUIRED)
         return call { block("Bearer $token") }
     }
 

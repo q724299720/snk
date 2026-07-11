@@ -412,6 +412,14 @@
 - Backend update replaces the complete image list for the record after owner validation.
 - Record create and edit must normalize selected device media to `image/jpeg` before calling `POST /api/upload/image`, so HEIC/WEBP/PNG gallery formats do not fail server-side thumbnail generation.
 
+### 2026-07-11 Android 认证 Task 2 实施状态
+
+Android 已建立 public/business 双网络客户端、自动 Bearer、并发安全 Refresh、替代令牌先持久化后发布和明确的会话异常状态。当前尚未提供登录/注册/审核等待界面，必须继续完成 Android Task 3 后才能让用户进入正式账号流程。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | 标记 Android 自动鉴权 Task 2 完成 | 固定弱网轮换、并发 401 和认证日志的客户端安全边界 |
+
 ### 2026-07-11 Android 认证 Task 1 实施状态
 
 Android 已完成认证 API/DTO、错误映射、稳定设备 ID、内存 Access Token 与 Keystore 加密 Refresh Token/审批票据。当前尚未把认证仓库接入全局网络客户端或页面，必须继续完成 Android Task 2 自动 Bearer/刷新和 Task 3 登录界面后才能发布强制鉴权版本。

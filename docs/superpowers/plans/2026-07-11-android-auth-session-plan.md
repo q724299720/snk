@@ -51,6 +51,14 @@
 - [ ] 运行新增测试和 `./gradlew testDebugUnitTest`。
 - [ ] 提交并推送：`feat(android): add persistent authenticated sessions`
 
+### Task 2 实施状态（2026-07-11）
+
+已完成 public/business 双 OkHttp/Retrofit 客户端、自动 Bearer、基于 `Mutex` 双重检查的并发 Refresh 和单次请求重放。刷新成功严格先持久化替代 Refresh Token，再发布内存 Access Token；刷新失败清除持久会话并映射为 `PENDING / REJECTED / DISABLED / MUST_CHANGE_PASSWORD / SIGNED_OUT`。认证客户端不安装 Authenticator，避免 refresh 自递归；日志固定为 BASIC 并显式脱敏 Authorization。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-11 | Codex | 标记 Android 认证计划 Task 2 完成 | 建立长期默认登录所需的并发安全自动刷新与业务请求鉴权基础 |
+
 ## Task 3: 登录、注册与审核等待界面
 
 **Files:**
