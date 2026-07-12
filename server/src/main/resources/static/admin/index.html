@@ -517,8 +517,8 @@
             <span class="muted">${escapeHtml(item.brand || "无品牌")}</span>
           </td>
           <td>${escapeHtml(item.normalizedName || "-")}</td>
-          <td>${escapeHtml(item.source)}</td>
           <td>${item.auditStatus === "approved" ? "可搜索（可隐藏）" : "不可搜索"}</td>
+          <td>${escapeHtml(item.source)}</td>
           <td>${statusBadge(item.auditStatus)}</td>
           <td>${escapeHtml(item.reportCount)}</td>
           <td>${escapeHtml(item.recordCount == null ? 0 : item.recordCount)}</td>
