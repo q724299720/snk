@@ -9,6 +9,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.snk.server.infrastructure.storage.StorageProperties;
 import com.snk.server.infrastructure.storage.ObjectStorageService;
 import com.snk.server.infrastructure.storage.StoredObject;
+import com.snk.server.infrastructure.persistence.auth.UploadedObjectRepository;
+import com.snk.server.infrastructure.persistence.user.UserRepository;
+import com.snk.server.infrastructure.security.CurrentUser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -30,6 +33,12 @@ class UploadControllerTests {
 
 	@MockBean
 	private ObjectStorageService objectStorageService;
+	@MockBean private UploadedObjectRepository uploadedObjects;
+	@MockBean private UserRepository users;
+	@MockBean private CurrentUser currentUser;
+
+	@org.junit.jupiter.api.BeforeEach
+	void useTrustedAccountIdentity() { when(currentUser.requiredUserId()).thenReturn(2L); }
 
 	@TestConfiguration
 	static class ControllerTestConfiguration {
