@@ -12,8 +12,6 @@ import java.util.UUID;
 
 public record CreateFoodRecordRequest(
 	UUID clientRequestId,
-	@NotNull(message = "userId is required")
-	Long userId,
 	@NotNull(message = "foodItemId is required")
 	Long foodItemId,
 	@NotBlank(message = "sourceType is required")

@@ -8,8 +8,6 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 public record UpdateFoodRecordRequest(
-	@NotNull(message = "userId is required")
-	Long userId,
 	@Min(value = 1, message = "rating must be between 1 and 5")
 	@Max(value = 5, message = "rating must be between 1 and 5")
 	int rating,

@@ -91,22 +91,4 @@ class FoodFeedbackControllerTests {
 		verify(foodFeedbackService, never()).reportFoodItem(anyLong(), anyLong(), anyString());
 	}
 
-	@Test
-	void shouldRejectReportWhenUserIdIsNotPositive() throws Exception {
-		mockMvc.perform(
-			post("/api/foods/18/report")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(
-					"""
-					{
-					  "userId": 0,
-					  "reason": null
-					}
-					"""
-				)
-		)
-			.andExpect(status().isBadRequest());
-
-		verify(foodFeedbackService, never()).reportFoodItem(anyLong(), anyLong(), isNull());
-	}
 }

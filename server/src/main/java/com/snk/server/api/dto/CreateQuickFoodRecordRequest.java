@@ -13,8 +13,6 @@ import java.util.UUID;
 public record CreateQuickFoodRecordRequest(
 	@NotNull(message = "clientRequestId is required")
 	UUID clientRequestId,
-	@NotNull(message = "userId is required")
-	Long userId,
 	@NotBlank(message = "name is required")
 	@Size(max = 255, message = "name must be at most 255 characters")
 	String name,

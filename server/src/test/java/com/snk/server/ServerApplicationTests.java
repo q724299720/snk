@@ -9,6 +9,7 @@ import com.snk.server.infrastructure.persistence.record.FoodRecordImageRepositor
 import com.snk.server.infrastructure.persistence.record.FoodRecordRepository;
 import com.snk.server.infrastructure.persistence.recognition.RecognitionTaskRepository;
 import com.snk.server.infrastructure.persistence.user.UserRepository;
+import com.snk.server.infrastructure.persistence.auth.UploadedObjectRepository;
 import com.snk.server.infrastructure.persistence.auth.AccountAuditLogRepository;
 import com.snk.server.infrastructure.persistence.auth.RefreshTokenRepository;
 import com.snk.server.infrastructure.persistence.auth.RegistrationApprovalTicketRepository;
@@ -52,6 +53,9 @@ class ServerApplicationTests {
 
 	@MockBean
 	private UserRepository userRepository;
+
+	@MockBean
+	private UploadedObjectRepository uploadedObjectRepository;
 
 	@MockBean
 	private RegistrationApprovalTicketRepository registrationApprovalTicketRepository;
