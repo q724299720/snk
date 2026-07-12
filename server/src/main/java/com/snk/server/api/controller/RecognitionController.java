@@ -8,6 +8,7 @@ import com.snk.server.domain.recognition.ImageRecognitionTaskCommand;
 import com.snk.server.domain.recognition.RecognitionTaskService;
 import com.snk.server.domain.recognition.ServerOcrRecognitionResult;
 import com.snk.server.domain.recognition.ServerOcrRecognitionService;
+import com.snk.server.infrastructure.security.CurrentUser;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -28,13 +29,16 @@ public class RecognitionController {
 
 	private final ServerOcrRecognitionService serverOcrRecognitionService;
 	private final RecognitionTaskService recognitionTaskService;
+	private final CurrentUser currentUser;
 
 	public RecognitionController(
 		ServerOcrRecognitionService serverOcrRecognitionService,
-		RecognitionTaskService recognitionTaskService
+		RecognitionTaskService recognitionTaskService,
+		CurrentUser currentUser
 	) {
 		this.serverOcrRecognitionService = serverOcrRecognitionService;
 		this.recognitionTaskService = recognitionTaskService;
+		this.currentUser = currentUser;
 	}
 
 	@PostMapping(
@@ -65,7 +69,7 @@ public class RecognitionController {
 		return RecognitionTaskResponse.from(
 			recognitionTaskService.createTask(
 				new ImageRecognitionTaskCommand(
-					request.userId(),
+					currentUser.requiredUserId(),
 					request.inputImageUrl(),
 					request.hintQuery()
 				)

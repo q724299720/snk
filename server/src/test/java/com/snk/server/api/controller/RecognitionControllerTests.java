@@ -13,6 +13,7 @@ import com.snk.server.domain.recognition.RecognitionTaskService;
 import com.snk.server.domain.recognition.ServerOcrRecognitionResult;
 import com.snk.server.domain.recognition.ServerOcrRecognitionService;
 import com.snk.server.infrastructure.storage.StorageProperties;
+import com.snk.server.infrastructure.security.CurrentUser;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,12 @@ class RecognitionControllerTests {
 
 	@MockBean
 	private RecognitionTaskService recognitionTaskService;
+
+	@MockBean
+	private CurrentUser currentUser;
+
+	@org.junit.jupiter.api.BeforeEach
+	void useTrustedAccountIdentity() { when(currentUser.requiredUserId()).thenReturn(2L); }
 
 	@TestConfiguration
 	static class ControllerTestConfiguration {
@@ -148,7 +155,7 @@ class RecognitionControllerTests {
 				.content(
 					"""
 					{
-					  "userId": 2,
+					  "userId": 999,
 					  "inputImageUrl": "/uploads/images/demo.png",
 					  "hintQuery": "乐事 薯片 黄瓜味"
 					}
