@@ -25,6 +25,11 @@ interface FoodRecordApi {
         @Query("limit") limit: Int = 10,
     ): List<FoodRecordHistoryResponse>
 
+    @GET("/api/records/{recordId}")
+    suspend fun getRecord(
+        @Path("recordId") recordId: Long,
+    ): FoodRecordResponse
+
     @POST("/api/records")
     suspend fun createRecord(
         @Body request: CreateFoodRecordRequest,

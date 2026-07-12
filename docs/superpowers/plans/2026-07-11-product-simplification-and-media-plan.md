@@ -46,6 +46,10 @@ Android 搜索、记录历史和手动创建 DTO 已移除分类字段；手动�
 
 新增统一 `ProductImage` 组件，搜索与发现页均使用一致的裁剪、加载/失败回退和无障碍描述。发现页按记录缩略图、记录原图、产品主图的顺序取图；无图或加载失败时显示不重复朗读的“暂无图片”占位。已覆盖优先级单元测试、Compose 测试和真机仪器测试。
 
+### Task 5 实施状态（2026-07-12）
+
+记录卡片的产品名称和已有图片已成为独立的编辑入口，导航使用稳定的 `record/{recordId}/edit` 路由。进入编辑页后会调用记录详情接口刷新评分、备注、公开状态和图片；保存继续立即 PUT，并在成功后刷新首页记录。已覆盖详情刷新和点击名称的测试。设备侧导航仪器测试因系统休眠导致 64 秒超时，构建、单元测试及此前仪器测试正常。
+
 **Files:**
 - Modify: `server/src/main/java/com/snk/server/api/dto/FoodSearchItemResponse.java`
 - Modify: `server/src/main/java/com/snk/server/api/dto/FoodRecordHistoryResponse.java`
@@ -154,3 +158,4 @@ Android 搜索、记录历史和手动创建 DTO 已移除分类字段；手动�
 | 2026-07-12 | Codex | 完成 Task 2 API 去分类字段与默认公开 | 将 App API 契约收敛为无分类，记录创建默认公开 |
 | 2026-07-12 | Codex | 完成 Task 3 Android 去分类模型与界面 | 移除客户端分类输入、展示与 DTO 字段，保留草稿迁移兼容 |
 | 2026-07-12 | Codex | 完成 Task 4 搜索与发现图片展示 | 统一产品图片回退、发现页图片展示与无障碍描述 |
+| 2026-07-12 | Codex | 完成 Task 5 记录卡片编辑与详情刷新 | 用记录 ID 路由连接名称/图片编辑入口，并在编辑前刷新服务端详情 |

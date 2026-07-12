@@ -93,6 +93,36 @@ class FoodRecordRepository(
         }
     }
 
+    suspend fun getRecordForEdit(record: FoodRecordHistoryItem): FoodRecordDetailResult {
+        return try {
+            val response = api.getRecord(record.id)
+            FoodRecordDetailResult.Success(
+                record.copy(
+                    userId = response.userId,
+                    foodItemId = response.foodItemId,
+                    sourceType = response.sourceType,
+                    isPublic = response.isPublic,
+                    rating = response.rating,
+                    comment = response.comment,
+                    likeCount = response.likeCount,
+                    recordTime = response.recordTime,
+                    createdAt = response.createdAt,
+                    images = response.images.map { FoodRecordImageAttachment(it.imageUrl, it.thumbnailUrl) },
+                ),
+            )
+        } catch (exception: HttpException) {
+            FoodRecordDetailResult.Failure(
+                when (exception.code()) {
+                    403 -> "无权编辑这条记录。"
+                    404 -> "记录不存在或已删除。"
+                    else -> "无法加载记录详情，请稍后重试。"
+                },
+            )
+        } catch (exception: Exception) {
+            FoodRecordDetailResult.Failure("无法加载记录详情，请稍后重试。")
+        }
+    }
+
     override suspend fun createRecord(
         clientRequestId: String,
         userId: Long,
@@ -363,6 +393,11 @@ sealed interface RecordImageUploadResult {
         val message: String,
         val isAuthenticationFailure: Boolean = false,
     ) : RecordImageUploadResult
+}
+
+sealed interface FoodRecordDetailResult {
+    data class Success(val record: FoodRecordHistoryItem) : FoodRecordDetailResult
+    data class Failure(val message: String) : FoodRecordDetailResult
 }
 
 enum class FoodRecordCreateFailureReason {

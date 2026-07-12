@@ -49,6 +49,20 @@ class FoodRecordRepositoryTest {
     }
 
     @Test
+    fun `getRecordForEdit refreshes editable fields from the server`() = runTest {
+        server.enqueue(
+            MockResponse().setHeader("Content-Type", "application/json").setResponseCode(200)
+                .setBody("""{"id":58,"userId":100,"foodItemId":202,"sourceType":"manual","isPublic":true,"rating":4,"comment":"更新后","likeCount":2,"recordTime":"2026-07-11T10:00:00Z","createdAt":"2026-07-11T10:00:00Z","images":[]}"""),
+        )
+
+        val result = repository.getRecordForEdit(sampleHistoryRecord())
+
+        assertTrue(result is FoodRecordDetailResult.Success)
+        assertEquals(4, (result as FoodRecordDetailResult.Success).record.rating)
+        assertEquals("/api/records/58", server.takeRequest().path)
+    }
+
+    @Test
     fun `createQuickRecord defaults to a public record`() = runTest {
         server.enqueue(
             MockResponse()
@@ -77,6 +91,14 @@ class FoodRecordRepositoryTest {
         assertTrue(body.contains("\"isPublic\":true"))
         assertFalse("business identity must come from the bearer token", body.contains("\"userId\""))
     }
+
+    private fun sampleHistoryRecord() = FoodRecordHistoryItem(
+        id = 58L, userId = 100L, foodItemId = 202L, foodName = "麦当劳薯条",
+        foodItemType = "dish", foodBrand = "麦当劳", foodCoverImageUrl = null,
+        sourceType = "manual", isPublic = false, rating = 5, comment = null,
+        likeCount = 0, recordTime = "2026-07-11T10:00:00Z", createdAt = "2026-07-11T10:00:00Z",
+        images = emptyList(),
+    )
 
     @Test
     fun `createRecord sends images and returns success when backend accepts request`() = runTest {

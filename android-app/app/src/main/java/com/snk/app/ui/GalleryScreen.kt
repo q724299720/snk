@@ -1,6 +1,7 @@
 package com.snk.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -51,6 +53,7 @@ private const val PAGE_SIZE = 20
 @Composable
 fun GalleryScreen(
     sessionUserId: Long?,
+    onEditRecord: (FoodRecordHistoryItem) -> Unit,
 ) {
     val application = LocalContext.current.applicationContext as SnkApplication
     val coroutineScope = rememberCoroutineScope()
@@ -162,7 +165,7 @@ fun GalleryScreen(
                 }
             }
             items(items, key = { it.id }) { record ->
-                GalleryItemCard(record = record)
+                GalleryItemCard(record = record, onEditRecord = { onEditRecord(record) })
             }
             if (isLoading) {
                 item(span = StaggeredGridItemSpan.FullLine) {
@@ -206,7 +209,7 @@ fun GalleryScreen(
 }
 
 @Composable
-private fun GalleryItemCard(record: FoodRecordHistoryItem) {
+internal fun GalleryItemCard(record: FoodRecordHistoryItem, onEditRecord: () -> Unit) {
     val displayImageUrl = record.images.firstOrNull()?.thumbnailUrl
         ?: record.images.firstOrNull()?.imageUrl
         ?: record.foodCoverImageUrl
@@ -223,7 +226,8 @@ private fun GalleryItemCard(record: FoodRecordHistoryItem) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f)
-                        .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)),
+                        .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
+                        .clickable(role = Role.Button, onClickLabel = "编辑记录", onClick = onEditRecord),
                     contentScale = ContentScale.Crop,
                 )
             } else {
@@ -244,6 +248,7 @@ private fun GalleryItemCard(record: FoodRecordHistoryItem) {
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.clickable(role = Role.Button, onClickLabel = "编辑记录", onClick = onEditRecord),
                 )
                 Text(
                     text = "评分 ${record.rating}/5",

@@ -37,6 +37,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -45,6 +47,7 @@ import com.snk.app.SnkApplication
 import com.snk.app.data.auth.AuthenticatedAccount
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.record.FoodRecordHistoryItem
+import com.snk.app.data.record.FoodRecordDetailResult
 import com.snk.app.ui.auth.AuthUiState
 import com.snk.app.ui.auth.AuthViewModel
 import com.snk.app.ui.auth.LoginScreen
@@ -155,7 +158,7 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute != "record_create" &&
-        currentRoute != "record_edit" &&
+        currentRoute != "record/{recordId}/edit" &&
         currentRoute != "ocr_recognition" &&
         currentRoute != "manual_food_create"
         && currentRoute != "change_password"
@@ -169,6 +172,11 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
     fun openManualCreate(seedName: String) {
         manualCreateSeedName = seedName
         navController.navigate("manual_food_create")
+    }
+
+    fun openRecordEdit(record: FoodRecordHistoryItem) {
+        selectedEditRecord = record
+        navController.navigate("record/${record.id}/edit")
     }
 
     Scaffold(
@@ -220,8 +228,7 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                             openRecordCreate(item, "text_search")
                         },
                         onEditRecord = { record ->
-                            selectedEditRecord = record
-                            navController.navigate("record_edit")
+                            openRecordEdit(record)
                         },
                         onOpenManualCreate = ::openManualCreate,
                         onOpenOcrRecognition = {
@@ -239,6 +246,7 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                 composable(SnkDestination.Gallery.route) {
                     GalleryScreen(
                         sessionUserId = sessionState.userIdOrNull(),
+                        onEditRecord = ::openRecordEdit,
                     )
                 }
                 composable(SnkDestination.Discover.route) {
@@ -267,8 +275,7 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                                 openRecordCreate(item, "text_search")
                             },
                             onEditRecord = { record ->
-                                selectedEditRecord = record
-                                navController.navigate("record_edit")
+                                openRecordEdit(record)
                             },
                             onOpenManualCreate = ::openManualCreate,
                             onOpenOcrRecognition = {
@@ -302,17 +309,29 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                         )
                     }
                 }
-                composable("record_edit") {
+                composable(
+                    route = "record/{recordId}/edit",
+                    arguments = listOf(navArgument("recordId") { type = NavType.LongType }),
+                ) { backStackEntry ->
+                    val recordId = backStackEntry.arguments?.getLong("recordId")
                     val record = selectedEditRecord
-                    if (record == null) {
+                    var detailRecord by remember(recordId) { mutableStateOf<FoodRecordHistoryItem?>(record?.takeIf { it.id == recordId }) }
+                    var detailError by remember(recordId) { mutableStateOf<String?>(null) }
+                    LaunchedEffect(recordId) {
+                        val selected = record?.takeIf { it.id == recordId } ?: return@LaunchedEffect
+                        when (val result = application.container.foodRecordRepository.getRecordForEdit(selected)) {
+                            is FoodRecordDetailResult.Success -> detailRecord = result.record
+                            is FoodRecordDetailResult.Failure -> detailError = result.message
+                        }
+                    }
+                    if (record == null || record.id != recordId) {
                         SearchScreen(
                             sessionState = sessionState,
                             onCreateRecord = { item ->
                                 openRecordCreate(item, "text_search")
                             },
                             onEditRecord = { item ->
-                                selectedEditRecord = item
-                                navController.navigate("record_edit")
+                                openRecordEdit(item)
                             },
                             onOpenManualCreate = ::openManualCreate,
                             onOpenOcrRecognition = {
@@ -326,9 +345,11 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                                 searchSuggestedQueries = emptyList()
                             },
                         )
+                    } else if (detailError != null) {
+                        AuthStatusScreen("无法打开记录", detailError.orEmpty(), onBack = { navController.popBackStack() })
                     } else {
                         RecordEditScreen(
-                            record = record,
+                            record = detailRecord ?: record,
                             onBack = {
                                 navController.popBackStack()
                             },

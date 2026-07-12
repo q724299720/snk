@@ -83,7 +83,21 @@ class RecordEditScreenTest {
         ).first(Files::exists)
         val source = String(Files.readAllBytes(sourcePath))
 
-        assertTrue(source.contains("record_edit"))
+        assertTrue(source.contains("record/{recordId}/edit"))
+        assertTrue(source.contains("navArgument(\"recordId\")"))
         assertTrue(source.contains("RecordEditScreen"))
+    }
+
+    @Test
+    fun `gallery only makes the record image and name open editing`() {
+        val sourcePath = listOf(
+            Path.of("src/main/java/com/snk/app/ui/GalleryScreen.kt"),
+            Path.of("app/src/main/java/com/snk/app/ui/GalleryScreen.kt"),
+        ).first(Files::exists)
+        val source = String(Files.readAllBytes(sourcePath))
+
+        assertTrue(source.contains("onEditRecord"))
+        assertTrue(source.contains("onClick = onEditRecord"))
+        assertTrue(source.contains("Role.Button"))
     }
 }
