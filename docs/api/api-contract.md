@@ -64,14 +64,13 @@
 
 文本搜索当前约束：
 
-- `GET /api/foods/search?q=` 默认返回已审核通过的基础食物条目
-- `userId` 为可选参数；传入当前游客 / 用户 id 时，搜索结果可额外包含该用户自己创建且仍为 `pending` 的条目
-- 未传 `userId` 或 `userId` 非法时，不返回任何 `pending` 条目
+- `GET /api/foods/search?q=` 只返回已审核且未隐藏的全局食物条目
+- 业务身份由 Bearer Token 提供；搜索请求不再接收或依赖 `userId`
 - 空白 `q` 直接返回 `400`
 - `q` 去除首尾空格后最长 `128` 字符，超过长度直接返回 `400`，避免高并发下超长模糊搜索放大数据库压力
 - 服务端会先按原始 `q` 搜索；当原始词组未命中时，会继续尝试去空格后的紧凑查询，并按食物条目 ID 去重
 - 当前响应包含 `items` 与 `qualitySignal`
-- `items[*]` 当前最小字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`、`averageRating`、`auditStatus`
+- `items[*]` 当前最小字段包含：`id`、`name`、`itemType`、`brand`、`barcode`、`coverImageUrl`、`averageRating`、`auditStatus`；不再返回 `category` 或 `subcategory`
 - `qualitySignal` 当前最小取值：`strong / weak`
 
 相似推荐当前约束：
@@ -84,13 +83,13 @@
 
 手动创建条目当前约束：
 
-- `POST /api/foods/manual` 当前最小请求字段包含：`userId`、`name`、`itemType`、`category`
-- `subcategory`、`brand`、`barcode` 当前为可选字段
+- `POST /api/foods/manual` 当前最小请求字段包含：`name`、`itemType`
+- `brand`、`barcode`、`coverImageUrl` 当前为可选字段；不再接收 `userId`、`category` 或 `subcategory`
 - `itemType` 当前仅允许：`packaged_product / dish / fruit`
 - `barcode` 当前仅建议用于 `packaged_product`
 - 服务端成功后直接返回新建的 `FoodItem` 响应体
-- 当前新建条目固定写入：`source = user_generated`、`auditStatus = pending`
-- 当前响应体字段包含：`id`、`name`、`itemType`、`category`、`subcategory`、`brand`、`barcode`、`coverImageUrl`、`auditStatus`
+- 当前新建条目固定写入：`source = user_generated`、`category = none`、`subcategory = null`、`auditStatus = approved`、`is_searchable = true`
+- 当前响应体字段包含：`id`、`name`、`itemType`、`brand`、`barcode`、`coverImageUrl`、`auditStatus`；不返回分类字段
 - 当前客户端在创建成功后直接进入“记录创建”页，不要求用户重新搜索
 - MVP 当前不提供扫码入口，`barcode` 仅作为包装食品的可选资料字段保留
 
@@ -137,11 +136,11 @@ Public record feed contract:
 - `limit` is optional, defaults to `10`, must be positive, and is capped by the service layer.
 - The response shape matches `GET /api/records?userId=&limit=`, including `images`.
 - Mobile public-feed cards must prefer `images[0].thumbnailUrl`, then `images[0].imageUrl`, then `foodCoverImageUrl`.
-- `POST /api/records` keeps `isPublic` opt-in. Clients must not default new records to public without explicit user action.
+- 新建记录省略 `isPublic` 时服务端按 `true` 处理；客户端默认发送 `true`，显式 `false` 仍为仅自己可见。
 
 记录创建当前约束：
 
-- `POST /api/records` 当前最小请求字段包含：`userId`、`foodItemId`、`sourceType`、`isPublic`、`rating`
+- `POST /api/records` 当前最小请求字段包含：`foodItemId`、`sourceType`、`rating`；`isPublic` 可省略并默认 `true`
 - `comment`、`recordTime` 当前为可选字段
 - `comment` 最长 `500` 字符；Android 客户端应在本地拦截超长备注，服务端也必须返回 `400`
 - 当前 `rating` 允许范围为 `1-5`
@@ -433,21 +432,22 @@ Public record feed contract:
 
 - `POST /api/records` 新增可选 `clientRequestId`；新版 Android 必须发送 UUID。
 - 当同一 `userId + clientRequestId` 已存在记录时，服务端返回原记录，不重复写入。
-- 新增 `POST /api/records/quick`，请求字段为 `clientRequestId`、`userId`、`name`、`rating`、可选 `comment`、`isPublic`、`recordTime` 与 `images`。
-- 快速记录默认 `isPublic=false`，`rating` 必须为 `1-5`，`name` 不能为空且最长 `255` 字符。
-- 快速记录依次复用已审核精确同名条目、当前用户精确同名 `pending` 条目，否则创建 `unknown / uncategorized / pending` 条目。
+- 新增 `POST /api/records/quick`，请求字段为 `clientRequestId`、`name`、`rating`、可选 `comment`、`isPublic`、`recordTime` 与 `images`。
+- 快速记录省略 `isPublic` 时默认 `true`，`rating` 必须为 `1-5`，`name` 不能为空且最长 `255` 字符。
+- 快速记录先复用已审核精确同名条目，否则创建 `unknown / none / approved / searchable` 条目。
 - 匹配或创建食物条目与创建记录必须在同一数据库事务中完成，响应复用 `FoodRecordResponse`。
 
-### 后台待分类治理
+### 后台产品治理
 
-- `GET /api/admin/food-items` 新增可选 `itemType` 与 `category` 过滤。
-- 新增 `PUT /api/admin/food-items/{foodItemId}`，允许更新名称、类型、分类、二级分类、品牌、别名和搜索关键词。
+- `GET /api/admin/food-items` 新增可选 `itemType` 过滤；不再提供分类过滤。
+- 新增 `PUT /api/admin/food-items/{foodItemId}`，允许更新名称、类型、品牌、别名和搜索关键词；分类在服务端固定归一为 `none/null`。
 - 新增 `GET /api/admin/food-items/{foodItemId}/merge-candidates?limit=`，使用 PostgreSQL 相似度返回最多 `10` 个候选。
 - 合并目标仍必须为 `approved`；合并事务迁移全部历史记录并保留记录图片、评论、公开状态、点赞与删除状态。
 
 | 日期 | 修改人 | 变更范围 | 原因 |
 | --- | --- | --- | --- |
 | 2026-07-11 | Codex | 增加幂等快速记录与待分类治理接口契约 | 支持名称加评分快速保存并防止重复提交和待分类条目失控 |
+| 2026-07-12 | Codex | 收敛搜索、手动创建和记录接口的分类与公开状态契约 | 产品简化后客户端不再传递或显示分类，新产品自动审核可搜索，记录默认公开 |
 
 ## 2026-07-11 正式账号鉴权接口契约
 

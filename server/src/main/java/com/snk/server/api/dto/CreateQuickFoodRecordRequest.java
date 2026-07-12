@@ -16,7 +16,7 @@ public record CreateQuickFoodRecordRequest(
 	@NotBlank(message = "name is required")
 	@Size(max = 255, message = "name must be at most 255 characters")
 	String name,
-	boolean isPublic,
+	Boolean isPublic,
 	@Min(value = 1, message = "rating must be between 1 and 5")
 	@Max(value = 5, message = "rating must be between 1 and 5")
 	int rating,
@@ -28,4 +28,6 @@ public record CreateQuickFoodRecordRequest(
 	public List<CreateFoodRecordImageRequest> imagesOrEmpty() {
 		return images == null ? List.of() : images;
 	}
+
+	public boolean isPublicOrDefault() { return isPublic == null || isPublic; }
 }

@@ -7,9 +7,6 @@ public record CreateManualFoodItemRequest(
 	String name,
 	@NotBlank(message = "itemType is required")
 	String itemType,
-	@NotBlank(message = "category is required")
-	String category,
-	String subcategory,
 	String brand,
 	String barcode,
 	String coverImageUrl

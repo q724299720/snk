@@ -86,8 +86,8 @@ public class FoodSearchController {
 				currentUser.requiredUserId(),
 				request.name(),
 				request.itemType(),
-				request.category(),
-				request.subcategory(),
+				"none",
+				null,
 				request.brand(),
 				request.barcode(),
 				request.coverImageUrl()

@@ -89,7 +89,9 @@ class FoodSearchControllerTests {
 			.andExpect(jsonPath("$.items[0].barcode").value("6900000000011"))
 			.andExpect(jsonPath("$.items[0].coverImageUrl").value("https://snk.qiuxinmin.cn/images/1.png"))
 			.andExpect(jsonPath("$.items[0].averageRating").value(4.6))
-			.andExpect(jsonPath("$.items[0].auditStatus").value("approved"));
+			.andExpect(jsonPath("$.items[0].auditStatus").value("approved"))
+			.andExpect(jsonPath("$.items[0].category").doesNotExist())
+			.andExpect(jsonPath("$.items[0].subcategory").doesNotExist());
 	}
 
 	@Test
@@ -213,23 +215,23 @@ class FoodSearchControllerTests {
 	}
 
 	@Test
-	void shouldCreatePendingFoodItem() throws Exception {
+	void shouldCreateApprovedFoodItemWithoutCategoryFields() throws Exception {
 		when(
 			manualFoodItemService.createPendingItem(
-				eq(new CreateManualFoodItemCommand(2L, "Mango Cake", "packaged_product", "snack", "chips", "SNK Bakery", "6900000000099", null))
+				eq(new CreateManualFoodItemCommand(2L, "Mango Cake", "packaged_product", "none", null, "SNK Bakery", "6900000000099", null))
 			)
 		).thenReturn(
 			new FoodSearchItem(
 				9L,
 				"Mango Cake",
 				"packaged_product",
-				"snack",
-				"chips",
+				"none",
+				null,
 				"SNK Bakery",
 				"6900000000099",
 				null,
 				null,
-				"pending"
+				"approved"
 			)
 		);
 
@@ -242,8 +244,6 @@ class FoodSearchControllerTests {
 					  "userId": 999,
 					  "name": "Mango Cake",
 					  "itemType": "packaged_product",
-					  "category": "snack",
-					  "subcategory": "chips",
 					  "brand": "SNK Bakery",
 					  "barcode": "6900000000099"
 					}
@@ -253,6 +253,8 @@ class FoodSearchControllerTests {
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.name").value("Mango Cake"))
 			.andExpect(jsonPath("$.barcode").value("6900000000099"))
-			.andExpect(jsonPath("$.auditStatus").value("pending"));
+			.andExpect(jsonPath("$.auditStatus").value("approved"))
+			.andExpect(jsonPath("$.category").doesNotExist())
+			.andExpect(jsonPath("$.subcategory").doesNotExist());
 	}
 }

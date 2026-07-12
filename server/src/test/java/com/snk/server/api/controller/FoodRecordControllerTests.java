@@ -230,6 +230,8 @@ class FoodRecordControllerTests {
 			.andExpect(jsonPath("$[0].foodName").value("Lays Cucumber Chips"))
 			.andExpect(jsonPath("$[0].foodCoverImageUrl").value("https://snk.qiuxinmin.cn/images/1.png"))
 			.andExpect(jsonPath("$[0].rating").value(5))
+			.andExpect(jsonPath("$[0].foodCategory").doesNotExist())
+			.andExpect(jsonPath("$[0].foodSubcategory").doesNotExist())
 			.andExpect(jsonPath("$[0].images[0].thumbnailUrl")
 				.value("https://snk.qiuxinmin.cn/uploads/records/chips-thumb.jpg"));
 	}
@@ -379,6 +381,23 @@ class FoodRecordControllerTests {
 		org.assertj.core.api.Assertions.assertThat(captor.getValue().name()).isEqualTo("麦当劳薯条");
 		org.assertj.core.api.Assertions.assertThat(captor.getValue().clientRequestId())
 			.isEqualTo(java.util.UUID.fromString("c6411e4e-b5f5-43d0-9a34-38d54d071b3f"));
+	}
+
+	@Test
+	void shouldDefaultQuickRecordToPublicWhenVisibilityIsOmitted() throws Exception {
+		when(foodRecordService.createQuickRecord(any())).thenReturn(
+			new FoodRecordResult(55L, 100L, 200L, "manual", true, (short) 5, null, 0,
+				OffsetDateTime.parse("2026-07-12T12:00:00Z"), OffsetDateTime.parse("2026-07-12T12:00:00Z"), List.of())
+		);
+
+		mockMvc.perform(post("/api/records/quick")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"clientRequestId\":\"b462a65b-b346-4a6d-bd87-c2022897544a\",\"name\":\"Public by default\",\"rating\":5}"))
+			.andExpect(status().isCreated());
+
+		ArgumentCaptor<QuickFoodRecordCreateCommand> captor = ArgumentCaptor.forClass(QuickFoodRecordCreateCommand.class);
+		verify(foodRecordService).createQuickRecord(captor.capture());
+		org.assertj.core.api.Assertions.assertThat(captor.getValue().isPublic()).isTrue();
 	}
 
 	@Test

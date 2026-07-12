@@ -16,7 +16,7 @@ public record CreateFoodRecordRequest(
 	Long foodItemId,
 	@NotBlank(message = "sourceType is required")
 	String sourceType,
-	boolean isPublic,
+	Boolean isPublic,
 	@Min(value = 1, message = "rating must be between 1 and 5")
 	@Max(value = 5, message = "rating must be between 1 and 5")
 	int rating,
@@ -29,4 +29,6 @@ public record CreateFoodRecordRequest(
 	public List<CreateFoodRecordImageRequest> imagesOrEmpty() {
 		return images == null ? List.of() : images;
 	}
+
+	public boolean isPublicOrDefault() { return isPublic == null || isPublic; }
 }

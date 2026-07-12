@@ -29,8 +29,6 @@ public record RecognitionTaskResponse(
 					candidate.foodItemId(),
 					candidate.name(),
 					candidate.itemType(),
-					candidate.category(),
-					candidate.subcategory(),
 					candidate.brand(),
 					candidate.barcode(),
 					candidate.coverImageUrl(),
