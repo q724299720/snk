@@ -49,6 +49,9 @@ public class FoodItemEntity {
 	@Column(name = "audit_status", nullable = false, length = 32)
 	private String auditStatus;
 
+	@Column(name = "is_searchable", nullable = false)
+	private boolean searchable = true;
+
 	@Column(name = "search_keywords", nullable = false)
 	private String searchKeywords;
 
@@ -142,6 +145,10 @@ public class FoodItemEntity {
 	public void setAuditStatus(String auditStatus) {
 		this.auditStatus = auditStatus;
 	}
+
+	public boolean isSearchable() { return searchable; }
+
+	public void setSearchable(boolean searchable) { this.searchable = searchable; }
 
 	public String getSearchKeywords() {
 		return searchKeywords;

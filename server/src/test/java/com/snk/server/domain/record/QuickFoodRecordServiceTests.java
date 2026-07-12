@@ -117,7 +117,7 @@ class QuickFoodRecordServiceTests {
 	}
 
 	@Test
-	void shouldCreatePendingUncategorizedItemAndPrivateRecord() throws Exception {
+	void shouldCreateApprovedSearchableItemAndPrivateRecord() throws Exception {
 		UUID requestId = UUID.fromString("c6411e4e-b5f5-43d0-9a34-38d54d071b3f");
 		UserEntity user = user(100L);
 		when(foodRecordRepository.findByUser_IdAndClientRequestId(100L, requestId))
@@ -147,8 +147,9 @@ class QuickFoodRecordServiceTests {
 		verify(foodItemRepository).save(foodCaptor.capture());
 		assertThat(foodCaptor.getValue().getName()).isEqualTo("麦当劳 薯条");
 		assertThat(foodCaptor.getValue().getItemType()).isEqualTo("unknown");
-		assertThat(foodCaptor.getValue().getCategory()).isEqualTo("uncategorized");
-		assertThat(foodCaptor.getValue().getAuditStatus()).isEqualTo("pending");
+		assertThat(foodCaptor.getValue().getCategory()).isEqualTo("none");
+		assertThat(foodCaptor.getValue().getAuditStatus()).isEqualTo("approved");
+		assertThat(foodCaptor.getValue().isSearchable()).isTrue();
 		org.mockito.ArgumentCaptor<FoodRecordEntity> recordCaptor = org.mockito.ArgumentCaptor.forClass(FoodRecordEntity.class);
 		verify(foodRecordRepository).save(recordCaptor.capture());
 		assertThat(recordCaptor.getValue().getClientRequestId()).isEqualTo(requestId);

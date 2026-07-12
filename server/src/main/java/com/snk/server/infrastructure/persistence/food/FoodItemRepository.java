@@ -34,6 +34,7 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 			  ON fr.food_item_id = fi.id
 			 AND fr.deleted_at IS NULL
 			WHERE fi.audit_status = 'approved'
+			  AND fi.is_searchable = TRUE
 			  AND (
 			    lower(fi.name) LIKE lower(concat('%', :query, '%'))
 			    OR lower(coalesce(fi.alias, '')) LIKE lower(concat('%', :query, '%'))
@@ -88,10 +89,8 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 			LEFT JOIN food_records fr
 			  ON fr.food_item_id = fi.id
 			 AND fr.deleted_at IS NULL
-			WHERE (
-			    fi.audit_status = 'approved'
-			    OR (fi.audit_status = 'pending' AND fi.created_by_user_id = :userId)
-			  )
+			WHERE fi.audit_status = 'approved'
+			  AND fi.is_searchable = TRUE
 			  AND (
 			    lower(fi.name) LIKE lower(concat('%', :query, '%'))
 			    OR lower(coalesce(fi.alias, '')) LIKE lower(concat('%', :query, '%'))
@@ -119,7 +118,6 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 			    WHEN lower(coalesce(fi.brand, '')) LIKE lower(concat(:query, '%')) THEN 1
 			    ELSE 2
 			  END,
-			  CASE WHEN fi.audit_status = 'pending' THEN 0 ELSE 1 END,
 			  similarity(fi.name, :query) DESC,
 			  coalesce(avg(fr.rating), 0) DESC,
 			  count(fr.id) DESC,
@@ -134,6 +132,7 @@ public interface FoodItemRepository extends JpaRepository<FoodItemEntity, Long> 
 		value = """
 			SELECT * FROM food_items
 			WHERE audit_status = 'approved'
+			  AND is_searchable = TRUE
 			  AND lower(regexp_replace(btrim(name), '\\s+', ' ', 'g')) = :normalizedName
 			ORDER BY id
 			LIMIT 1

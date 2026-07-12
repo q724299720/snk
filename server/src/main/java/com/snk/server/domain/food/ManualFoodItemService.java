@@ -45,12 +45,13 @@ public class ManualFoodItemService {
 		FoodItemEntity entity = new FoodItemEntity();
 		entity.setName(normalizeRequired(command.name(), "name"));
 		entity.setItemType(itemType);
-		entity.setCategory(normalizeRequired(command.category(), "category"));
-		entity.setSubcategory(normalizeOptional(command.subcategory()));
+		entity.setCategory("none");
+		entity.setSubcategory(null);
 		entity.setBrand(normalizeOptional(command.brand()));
 		entity.setBarcode(barcode);
 		entity.setSource("user_generated");
-		entity.setAuditStatus("pending");
+		entity.setAuditStatus("approved");
+		entity.setSearchable(true);
 		entity.setSearchKeywords(buildSearchKeywords(entity));
 		entity.setReportCount(0);
 		entity.setCoverImageUrl(command.coverImageUrl());

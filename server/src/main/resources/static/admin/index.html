@@ -303,7 +303,6 @@
         <input id="foodLimit" type="number" min="1" max="100" value="20">
         <button id="loadFoodItems" class="primary">查询条目</button>
         <button id="loadPending">待审核</button>
-        <button id="loadUncategorized">待分类</button>
         <button id="loadReported">报错条目</button>
         <input id="mergeTargetFoodItemId" type="number" min="1" placeholder="合并目标条目 ID">
         <button id="previewMergeTarget">预览合并目标</button>
@@ -336,8 +335,6 @@
           <option value="dish">菜品/饮品</option>
           <option value="fruit">水果</option>
         </select>
-        <input id="foodEditCategory" placeholder="分类">
-        <input id="foodEditSubcategory" placeholder="二级分类">
         <input id="foodEditBrand" placeholder="品牌">
         <input id="foodEditAlias" placeholder="别名">
         <input id="foodEditKeywords" placeholder="搜索关键词">
@@ -492,7 +489,6 @@
       const fields = [
         ["totalFoodItems", "全部条目"],
         ["pendingFoodItems", "待审核"],
-        ["uncategorizedFoodItems", "待分类"],
         ["approvedFoodItems", "已通过"],
         ["rejectedFoodItems", "已拒绝"],
         ["reportedFoodItems", "报错条目"],
@@ -521,7 +517,6 @@
             <span class="muted">${escapeHtml(item.brand || "无品牌")}</span>
           </td>
           <td>${escapeHtml(item.normalizedName || "-")}</td>
-          <td>${escapeHtml(item.category)}${item.subcategory ? " / " + escapeHtml(item.subcategory) : ""}</td>
           <td>${escapeHtml(item.source)}</td>
           <td>${statusBadge(item.auditStatus)}</td>
           <td>${escapeHtml(item.reportCount)}</td>
@@ -532,6 +527,10 @@
             <button data-action="approve" data-id="${escapeHtml(item.id)}">通过</button>
             <button class="danger" data-action="reject" data-id="${escapeHtml(item.id)}">拒绝</button>
             <button data-action="clear" data-id="${escapeHtml(item.id)}">清报错</button>
+            <button data-action="hide" data-id="${escapeHtml(item.id)}">隐藏</button>
+            <button data-action="restore" data-id="${escapeHtml(item.id)}">恢复</button>
+            <button data-action="hide" data-id="${escapeHtml(item.id)}">隐藏</button>
+            <button data-action="restore" data-id="${escapeHtml(item.id)}">恢复</button>
             <button data-action="merge" data-id="${escapeHtml(item.id)}">合并</button>
           </td>
         </tr>
@@ -541,15 +540,12 @@
     function renderFoodItemDetail(item) {
       document.querySelector("#foodEditName").value = item.name || "";
       document.querySelector("#foodEditItemType").value = item.itemType || "unknown";
-      document.querySelector("#foodEditCategory").value = item.category || "";
-      document.querySelector("#foodEditSubcategory").value = item.subcategory || "";
       document.querySelector("#foodEditBrand").value = item.brand || "";
       const fields = [
         ["ID", item.id],
         ["名称", item.name],
         ["规范化名称", item.normalizedName || "-"],
         ["类型", item.itemType],
-        ["分类", `${item.category || ""}${item.subcategory ? " / " + item.subcategory : ""}`],
         ["品牌", item.brand || "-"],
         ["条码", item.barcode || "-"],
         ["来源", item.source],
@@ -576,8 +572,8 @@
       const body = {
         name: document.querySelector("#foodEditName").value.trim(),
         itemType: document.querySelector("#foodEditItemType").value,
-        category: document.querySelector("#foodEditCategory").value.trim(),
-        subcategory: document.querySelector("#foodEditSubcategory").value.trim() || null,
+        category: "none",
+        subcategory: null,
         brand: document.querySelector("#foodEditBrand").value.trim() || null,
         alias: document.querySelector("#foodEditAlias").value.trim() || null,
         searchKeywords: document.querySelector("#foodEditKeywords").value.trim() || null,
@@ -956,10 +952,6 @@
     document.querySelector("#runAutoAudit").addEventListener("click", () => runAutoAudit().catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadFoodItems").addEventListener("click", () => loadFoodItems().catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadPending").addEventListener("click", () => loadFoodItems("pending").catch((error) => setMessage(error.message, true)));
-    document.querySelector("#loadUncategorized").addEventListener("click", async () => {
-      const items = await requestJson("/api/admin/food-items?itemType=unknown&category=uncategorized&limit=100");
-      renderFoodItems(items);
-    });
     document.querySelector("#loadReported").addEventListener("click", () => loadFoodItems("reported").catch((error) => setMessage(error.message, true)));
     document.querySelector("#saveFoodItem").addEventListener("click", () => updateFoodItem().catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadMergeCandidates").addEventListener("click", () => loadMergeCandidates().catch((error) => setMessage(error.message, true)));

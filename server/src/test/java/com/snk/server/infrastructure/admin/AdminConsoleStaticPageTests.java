@@ -52,10 +52,13 @@ class AdminConsoleStaticPageTests {
 	}
 
 	@Test
-	void adminConsoleExposesUncategorizedEditAndCandidateFlow() throws Exception {
+	void adminConsoleExposesVisibilityAndCandidateFlowWithoutCategoryControls() throws Exception {
 		String html = readAdminConsoleHtml();
 
-		assertThat(html).contains("id=\"loadUncategorized\"");
+		assertThat(html).doesNotContain("id=\"loadUncategorized\"");
+		assertThat(html).doesNotContain("id=\"foodEditCategory\"");
+		assertThat(html).contains("data-action=\"hide\"");
+		assertThat(html).contains("data-action=\"restore\"");
 		assertThat(html).contains("id=\"foodEditName\"");
 		assertThat(html).contains("id=\"saveFoodItem\"");
 		assertThat(html).contains("async function updateFoodItem");

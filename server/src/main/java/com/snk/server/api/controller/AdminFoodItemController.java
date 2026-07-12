@@ -127,6 +127,16 @@ public class AdminFoodItemController {
 		return AdminFoodItemResponse.from(foodModerationService.rejectFoodItem(foodItemId));
 	}
 
+	@PostMapping("/{foodItemId}/hide")
+	public AdminFoodItemResponse hideFoodItem(@PathVariable("foodItemId") @Positive Long foodItemId) {
+		return AdminFoodItemResponse.from(foodModerationService.hideFoodItem(foodItemId));
+	}
+
+	@PostMapping("/{foodItemId}/restore")
+	public AdminFoodItemResponse restoreFoodItem(@PathVariable("foodItemId") @Positive Long foodItemId) {
+		return AdminFoodItemResponse.from(foodModerationService.restoreFoodItem(foodItemId));
+	}
+
 	@PostMapping("/{foodItemId}/clear-reports")
 	@ResponseStatus(HttpStatus.OK)
 	public AdminFoodItemResponse clearReportCount(@PathVariable("foodItemId") @Positive Long foodItemId) {

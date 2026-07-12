@@ -30,6 +30,10 @@
 
 ## Task 2: API 移除分类展示并默认公开
 
+### Task 1 实施状态（2026-07-12）
+
+已新增 V15：历史产品归一为 `category=none/subcategory=NULL`，并增加 `is_searchable`。手动创建、快速记录创建和后台编辑均自动写入无分类、`approved` 与可搜索；后台提供隐藏/恢复操作，隐藏不修改审核状态或历史记录关联。全局搜索和精确匹配均要求 `approved && is_searchable`；后台页面已移除待分类和分类编辑控件。
+
 **Files:**
 - Modify: `server/src/main/java/com/snk/server/api/dto/FoodSearchItemResponse.java`
 - Modify: `server/src/main/java/com/snk/server/api/dto/FoodRecordHistoryResponse.java`
@@ -134,3 +138,4 @@
 | 日期 | 修改人 | 变更范围 | 原因 |
 | --- | --- | --- | --- |
 | 2026-07-11 | Codex | 新建产品简化、图片与记录编辑实施计划 | 把无分类、自动审核、默认公开和媒体体验拆成可验证任务 |
+| 2026-07-12 | Codex | 完成 Task 1 无分类、自动审核与搜索可见性 | 落实所有产品不分类、新产品自动审核和后台隐藏恢复 |

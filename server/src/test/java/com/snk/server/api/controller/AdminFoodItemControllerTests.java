@@ -203,6 +203,20 @@ class AdminFoodItemControllerTests {
 	}
 
 	@Test
+	void shouldHideAndRestoreFoodItemWithoutChangingAuditStatus() throws Exception {
+		when(foodModerationService.hideFoodItem(4L))
+			.thenReturn(moderationItem(4L, "Hidden Item", 2, "approved"));
+		when(foodModerationService.restoreFoodItem(4L))
+			.thenReturn(moderationItem(4L, "Visible Item", 2, "approved"));
+
+		mockMvc.perform(post("/api/admin/food-items/4/hide")).andExpect(status().isOk());
+		mockMvc.perform(post("/api/admin/food-items/4/restore")).andExpect(status().isOk());
+
+		verify(foodModerationService).hideFoodItem(4L);
+		verify(foodModerationService).restoreFoodItem(4L);
+	}
+
+	@Test
 	void shouldClearReportCount() throws Exception {
 		when(foodModerationService.clearReportCount(5L))
 			.thenReturn(moderationItem(5L, "Cleared Item", 0, "approved"));

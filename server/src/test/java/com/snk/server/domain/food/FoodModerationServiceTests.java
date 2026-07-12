@@ -141,7 +141,8 @@ class FoodModerationServiceTests {
 
 		assertThat(result.name()).isEqualTo("麦当劳薯条");
 		assertThat(result.itemType()).isEqualTo("dish");
-		assertThat(result.category()).isEqualTo("meal");
+		assertThat(result.category()).isEqualTo("none");
+		assertThat(result.subcategory()).isNull();
 		verify(foodItemRepository).save(entity);
 	}
 

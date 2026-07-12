@@ -88,8 +88,8 @@ public class FoodModerationService {
 		}
 		entity.setName(name);
 		entity.setItemType(itemType);
-		entity.setCategory(normalizeRequired(command.category(), "category"));
-		entity.setSubcategory(normalizeOptional(command.subcategory()));
+		entity.setCategory("none");
+		entity.setSubcategory(null);
 		entity.setBrand(normalizeOptional(command.brand()));
 		entity.setAlias(normalizeOptional(command.alias()));
 		entity.setSearchKeywords(normalizeOptional(command.searchKeywords()) == null ? name : normalizeOptional(command.searchKeywords()));
@@ -195,6 +195,22 @@ public class FoodModerationService {
 		}
 		String normalized = value.trim();
 		return normalized.isBlank() ? null : normalized;
+	}
+
+	@Transactional
+	public FoodModerationItem hideFoodItem(Long foodItemId) {
+		FoodItemEntity entity = foodItemRepository.findById(foodItemId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food item not found."));
+		entity.setSearchable(false);
+		return toModerationItem(foodItemRepository.save(entity));
+	}
+
+	@Transactional
+	public FoodModerationItem restoreFoodItem(Long foodItemId) {
+		FoodItemEntity entity = foodItemRepository.findById(foodItemId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Food item not found."));
+		entity.setSearchable(true);
+		return toModerationItem(foodItemRepository.save(entity));
 	}
 
 	private String normalizeRequired(String value, String fieldName) {

@@ -122,9 +122,11 @@ public class FoodRecordService {
 		FoodItemEntity entity = new FoodItemEntity();
 		entity.setName(name);
 		entity.setItemType("unknown");
-		entity.setCategory("uncategorized");
+		entity.setCategory("none");
+		entity.setSubcategory(null);
 		entity.setSource("user_generated");
-		entity.setAuditStatus("pending");
+		entity.setAuditStatus("approved");
+		entity.setSearchable(true);
 		entity.setSearchKeywords(name);
 		entity.setReportCount(0);
 		entity.setCreatedByUser(creator);

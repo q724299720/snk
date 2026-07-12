@@ -31,7 +31,7 @@ class ManualFoodItemServiceTests {
 	private ManualFoodItemService manualFoodItemService;
 
 	@Test
-	void shouldCreatePendingFoodItemForUserGeneratedFallback() {
+	void shouldCreateApprovedSearchableFoodItemWithoutCategory() {
 		UserEntity creator = new UserEntity();
 		creator.setNickname("guest");
 		when(userRepository.findById(eq(2L))).thenReturn(Optional.of(creator));
@@ -57,9 +57,9 @@ class ManualFoodItemServiceTests {
 		);
 
 		assertThat(result.id()).isEqualTo(21L);
-		assertThat(result.auditStatus()).isEqualTo("pending");
+		assertThat(result.auditStatus()).isEqualTo("approved");
 		assertThat(result.brand()).isEqualTo("乐事");
-		assertThat(result.category()).isEqualTo("snack");
+		assertThat(result.category()).isEqualTo("none");
 		assertThat(result.barcode()).isEqualTo("6900000000011");
 	}
 
