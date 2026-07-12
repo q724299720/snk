@@ -54,6 +54,10 @@ Android 搜索、记录历史和手动创建 DTO 已移除分类字段；手动�
 
 后台产品列表不再显示分类列或分类编辑控件，改为可搜索状态说明。隐藏和恢复保留现有接口，操作前会明确提示影响：隐藏不删除历史记录，恢复后重新进入全局搜索；已清理重复操作按钮。
 
+### Task 7 实施状态（2026-07-12）
+
+服务端 `clean test`、Android `clean testDebugUnitTest assembleDebug` 和服务端 `bootJar` 均通过；调试 APK 已安装到真机。正式域名健康检查与后台静态页均返回 200。分类残留仅限草稿数据库兼容字段和服务端归一化写入 `none/null`，不再面向用户展示。生产服务器尚未部署本分支，部署后需按运行手册复测新产品可搜索、隐藏/恢复和记录图片。
+
 **Files:**
 - Modify: `server/src/main/java/com/snk/server/api/dto/FoodSearchItemResponse.java`
 - Modify: `server/src/main/java/com/snk/server/api/dto/FoodRecordHistoryResponse.java`
@@ -164,3 +168,4 @@ Android 搜索、记录历史和手动创建 DTO 已移除分类字段；手动�
 | 2026-07-12 | Codex | 完成 Task 4 搜索与发现图片展示 | 统一产品图片回退、发现页图片展示与无障碍描述 |
 | 2026-07-12 | Codex | 完成 Task 5 记录卡片编辑与详情刷新 | 用记录 ID 路由连接名称/图片编辑入口，并在编辑前刷新服务端详情 |
 | 2026-07-12 | Codex | 完成 Task 6 后台产品页面简化 | 移除分类列，强化隐藏/恢复的产品影响提示 |
+| 2026-07-12 | Codex | 完成 Task 7 全量构建与部署前回归 | 固化全量测试、APK 安装、JAR 产物与公网连通性证据 |

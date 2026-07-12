@@ -56,6 +56,7 @@ class AdminConsoleStaticPageTests {
 		String html = readAdminConsoleHtml();
 
 		assertThat(html).doesNotContain("id=\"loadUncategorized\"");
+		assertThat(html).doesNotContain("待分类");
 		assertThat(html).doesNotContain("id=\"foodEditCategory\"");
 		assertThat(html).contains("data-action=\"hide\"");
 		assertThat(html).contains("data-action=\"restore\"");
