@@ -412,6 +412,16 @@
 - Backend update replaces the complete image list for the record after owner validation.
 - Record create and edit must normalize selected device media to `image/jpeg` before calling `POST /api/upload/image`, so HEIC/WEBP/PNG gallery formats do not fail server-side thumbnail generation.
 
+### 2026-07-12 Android 认证 Task 4 实施状态
+
+我的页已展示正式账号与角色，支持修改密码和主动退出；两条路径都以清除本地凭据为最终保证，不触碰其他账号草稿。生产认证服务尚未发布，本增量只执行本地契约、Compose 与真机页面验证。
+
+验证备注：Android 单元测试、测试 APK 编译和 APK 构建通过；2026-07-12 本轮新增账号设置测试在华为 CET-AL00 上因设备进程持续卡住而未取得 runner 完成结果，后续设备恢复后需补跑 `connectedDebugAndroidTest`。此前 Task 3 的同一测试套件已在该设备取得 4/4 通过。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-12 | Codex | 标记 Android 账号设置 Task 4 完成 | 为后续多账号草稿隔离提供可靠的账号切换入口 |
+
 ### 2026-07-12 Android 认证 Task 3 实施状态
 
 Android 顶层入口已切换为正式账号状态机：冷启动恢复、登录、注册、前台每 10 秒审核轮询、拒绝和禁用状态均有独立界面，游客初始化不再执行。生产服务尚未发布新鉴权配置，因此本增量只做本地/真机界面与状态验证，不执行正式域名注册审批写操作。

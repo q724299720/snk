@@ -110,4 +110,18 @@ class AuthViewModel(
     }
 
     fun backToLogin(message: String? = null) { mutableState.value = AuthUiState.SignedOut(message) }
+
+    fun logout() { viewModelScope.launch {
+        val result = repository.logout()
+        mutableState.value = AuthUiState.SignedOut(if (result is AuthResult.Failure) "本机已退出，服务器会话将在下次鉴权时失效。" else "已退出登录。")
+    } }
+
+    fun changePassword(oldPassword: String, newPassword: String) { viewModelScope.launch {
+        when (repository.changePassword(oldPassword, newPassword)) {
+            is AuthResult.Success -> { repository.logout(); mutableState.value = AuthUiState.SignedOut("密码已修改，请重新登录。") }
+            is AuthResult.Failure -> mutableState.value = sessions.currentAccount()?.let {
+                if (it.mustChangePassword) AuthUiState.MustChangePassword(it) else AuthUiState.Authenticated(it)
+            } ?: AuthUiState.SignedOut("修改密码失败，请重新登录。")
+        }
+    } }
 }

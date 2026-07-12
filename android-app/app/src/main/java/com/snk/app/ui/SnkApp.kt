@@ -49,6 +49,7 @@ import com.snk.app.ui.auth.AuthViewModel
 import com.snk.app.ui.auth.LoginScreen
 import com.snk.app.ui.auth.PendingApprovalScreen
 import com.snk.app.ui.auth.RegisterScreen
+import com.snk.app.ui.auth.ChangePasswordScreen
 
 private sealed class SnkDestination(
     val route: String,
@@ -112,8 +113,8 @@ fun SnkApp() {
         AuthUiState.Disabled -> AuthStatusScreen("账号已停用", "请联系主账户恢复账号。") {
             authViewModel.backToLogin()
         }
-        is AuthUiState.MustChangePassword -> AuthStatusScreen("需要修改密码", "请在下一步账号设置中完成密码修改。", null)
-        is AuthUiState.Authenticated -> AuthenticatedSnkApp(state.account)
+        is AuthUiState.MustChangePassword -> ChangePasswordScreen(onSubmit = authViewModel::changePassword)
+        is AuthUiState.Authenticated -> AuthenticatedSnkApp(state.account, authViewModel)
     }
 }
 
@@ -131,7 +132,7 @@ private fun AuthStatusScreen(title: String, message: String, onBack: (() -> Unit
 }
 
 @Composable
-private fun AuthenticatedSnkApp(account: AuthenticatedAccount) {
+private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: AuthViewModel) {
     val application = LocalContext.current.applicationContext as SnkApplication
     var selectedFood: FoodSearchItem? by remember { mutableStateOf(null) }
     var selectedEditRecord: FoodRecordHistoryItem? by remember { mutableStateOf(null) }
@@ -148,6 +149,7 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount) {
         currentRoute != "record_edit" &&
         currentRoute != "ocr_recognition" &&
         currentRoute != "manual_food_create"
+        && currentRoute != "change_password"
 
     fun openRecordCreate(item: FoodSearchItem, sourceType: String) {
         selectedFood = item
@@ -235,10 +237,13 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount) {
                 }
                 composable(SnkDestination.Profile.route) {
                     ProfileScreen(
+                        account = account,
                         sessionState = sessionState,
-                        onRetry = {},
+                        onChangePassword = { navController.navigate("change_password") },
+                        onLogout = authViewModel::logout,
                     )
                 }
+                composable("change_password") { ChangePasswordScreen(onSubmit = authViewModel::changePassword, onBack = { navController.popBackStack() }) }
                 composable("record_create") {
                     val food = selectedFood
                     if (food == null) {
