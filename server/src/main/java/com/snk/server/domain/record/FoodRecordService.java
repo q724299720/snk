@@ -74,7 +74,7 @@ public class FoodRecordService {
 		List<FoodRecordImageValue> images = normalizeImages(command.images());
 		if (!images.isEmpty()) {
 			foodRecordImageRepository.saveAll(toImageEntities(savedRecord, images));
-			if (foodItem.getCoverImageUrl() == null) {
+			if (command.isPublic() && foodItem.getCoverImageUrl() == null) {
 				foodItem.setCoverImageUrl(images.getFirst().imageUrl());
 				foodItemRepository.save(foodItem);
 			}
@@ -114,6 +114,10 @@ public class FoodRecordService {
 		List<FoodRecordImageValue> images = normalizeImages(command.images());
 		if (!images.isEmpty()) {
 			foodRecordImageRepository.saveAll(toImageEntities(savedRecord, images));
+			if (command.isPublic() && foodItem.getCoverImageUrl() == null) {
+				foodItem.setCoverImageUrl(images.getFirst().imageUrl());
+				foodItemRepository.save(foodItem);
+			}
 		}
 		return toResult(savedRecord, images);
 	}

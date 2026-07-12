@@ -155,6 +155,86 @@ class QuickFoodRecordServiceTests {
 		assertThat(recordCaptor.getValue().getClientRequestId()).isEqualTo(requestId);
 	}
 
+	@Test
+	void shouldPromoteFirstQuickRecordImageToMissingFoodCover() throws Exception {
+		UUID requestId = UUID.fromString("66c0eb2b-d939-403c-8603-c884a87ea335");
+		UserEntity user = user(100L);
+		FoodItemEntity foodItem = foodItem(200L, "photo snack", "approved", "unknown", "none");
+		when(foodRecordRepository.findByUser_IdAndClientRequestId(100L, requestId))
+			.thenReturn(Optional.empty());
+		when(userRepository.findById(100L)).thenReturn(Optional.of(user));
+		when(foodItemRepository.findFirstApprovedByNormalizedName("photo snack"))
+			.thenReturn(Optional.of(foodItem));
+		when(foodRecordRepository.save(any(FoodRecordEntity.class))).thenAnswer(invocation -> {
+			FoodRecordEntity entity = invocation.getArgument(0);
+			setId(entity, 300L);
+			setCreatedAt(entity, OffsetDateTime.parse("2026-07-12T12:00:00Z"));
+			return entity;
+		});
+
+		service.createQuickRecord(new QuickFoodRecordCreateCommand(
+			requestId,
+			100L,
+			"photo snack",
+			true,
+			(short) 5,
+			null,
+			null,
+			List.of(new FoodRecordImageValue("https://snk.example/photo.jpg", "https://snk.example/photo-thumb.jpg"))
+		));
+
+		assertThat(foodItem.getCoverImageUrl()).isEqualTo("https://snk.example/photo.jpg");
+		verify(foodItemRepository).save(foodItem);
+	}
+
+	@Test
+	void shouldNotPromotePrivateQuickRecordImageToFoodCover() throws Exception {
+		UUID requestId = UUID.fromString("f048e519-b8d6-4b01-94fb-7f697c3a8517");
+		UserEntity user = user(100L);
+		FoodItemEntity foodItem = foodItem(200L, "private snack", "approved", "unknown", "none");
+		when(foodRecordRepository.findByUser_IdAndClientRequestId(100L, requestId)).thenReturn(Optional.empty());
+		when(userRepository.findById(100L)).thenReturn(Optional.of(user));
+		when(foodItemRepository.findFirstApprovedByNormalizedName("private snack")).thenReturn(Optional.of(foodItem));
+		when(foodRecordRepository.save(any(FoodRecordEntity.class))).thenAnswer(invocation -> {
+			FoodRecordEntity entity = invocation.getArgument(0);
+			setId(entity, 300L);
+			setCreatedAt(entity, OffsetDateTime.parse("2026-07-12T12:00:00Z"));
+			return entity;
+		});
+
+		service.createQuickRecord(new QuickFoodRecordCreateCommand(
+			requestId, 100L, "private snack", false, (short) 5, null, null,
+			List.of(new FoodRecordImageValue("https://snk.example/private.jpg", null))
+		));
+
+		assertThat(foodItem.getCoverImageUrl()).isNull();
+		verify(foodItemRepository, never()).save(foodItem);
+	}
+
+	@Test
+	void shouldNotPromotePrivateStandardRecordImageToFoodCover() throws Exception {
+		UUID requestId = UUID.fromString("94968c03-8a23-4dcb-aa03-9b5fb9a60827");
+		UserEntity user = user(100L);
+		FoodItemEntity foodItem = foodItem(200L, "private standard snack", "approved", "unknown", "none");
+		when(foodRecordRepository.findByUser_IdAndClientRequestId(100L, requestId)).thenReturn(Optional.empty());
+		when(userRepository.findById(100L)).thenReturn(Optional.of(user));
+		when(foodItemRepository.findById(200L)).thenReturn(Optional.of(foodItem));
+		when(foodRecordRepository.save(any(FoodRecordEntity.class))).thenAnswer(invocation -> {
+			FoodRecordEntity entity = invocation.getArgument(0);
+			setId(entity, 300L);
+			setCreatedAt(entity, OffsetDateTime.parse("2026-07-12T12:00:00Z"));
+			return entity;
+		});
+
+		service.createRecord(new FoodRecordCreateCommand(
+			100L, 200L, "text_search", false, (short) 5, null, null,
+			List.of(new FoodRecordImageValue("https://snk.example/private-standard.jpg", null)), requestId
+		));
+
+		assertThat(foodItem.getCoverImageUrl()).isNull();
+		verify(foodItemRepository, never()).save(foodItem);
+	}
+
 	private QuickFoodRecordCreateCommand command(UUID requestId) {
 		return new QuickFoodRecordCreateCommand(
 			requestId,
