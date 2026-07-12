@@ -59,6 +59,9 @@ class AdminConsoleStaticPageTests {
 		assertThat(html).doesNotContain("id=\"foodEditCategory\"");
 		assertThat(html).contains("data-action=\"hide\"");
 		assertThat(html).contains("data-action=\"restore\"");
+		assertThat(html).contains("可搜索状态");
+		assertThat(html).contains("不删除历史记录");
+		assertThat(html).contains("重新进入全局搜索");
 		assertThat(html).contains("id=\"foodEditName\"");
 		assertThat(html).contains("id=\"saveFoodItem\"");
 		assertThat(html).contains("async function updateFoodItem");

@@ -314,7 +314,7 @@
               <th>ID</th>
               <th>名称</th>
               <th>规范化名称</th>
-              <th>分类</th>
+              <th>可搜索状态</th>
               <th>来源</th>
               <th>状态</th>
               <th>报错数</th>
@@ -518,6 +518,7 @@
           </td>
           <td>${escapeHtml(item.normalizedName || "-")}</td>
           <td>${escapeHtml(item.source)}</td>
+          <td>${item.auditStatus === "approved" ? "可搜索（可隐藏）" : "不可搜索"}</td>
           <td>${statusBadge(item.auditStatus)}</td>
           <td>${escapeHtml(item.reportCount)}</td>
           <td>${escapeHtml(item.recordCount == null ? 0 : item.recordCount)}</td>
@@ -527,8 +528,6 @@
             <button data-action="approve" data-id="${escapeHtml(item.id)}">通过</button>
             <button class="danger" data-action="reject" data-id="${escapeHtml(item.id)}">拒绝</button>
             <button data-action="clear" data-id="${escapeHtml(item.id)}">清报错</button>
-            <button data-action="hide" data-id="${escapeHtml(item.id)}">隐藏</button>
-            <button data-action="restore" data-id="${escapeHtml(item.id)}">恢复</button>
             <button data-action="hide" data-id="${escapeHtml(item.id)}">隐藏</button>
             <button data-action="restore" data-id="${escapeHtml(item.id)}">恢复</button>
             <button data-action="merge" data-id="${escapeHtml(item.id)}">合并</button>
@@ -755,10 +754,17 @@
     }
 
     async function mutateFoodItem(id, action) {
+      if (action === "hide" && !window.confirm(`确认隐藏条目 ${id}？此操作不删除历史记录。`)) return;
+      if (action === "restore" && !window.confirm(`确认恢复条目 ${id}？恢复后将重新进入全局搜索。`)) return;
       const endpoint = action === "clear" ? "clear-reports" : action;
       await requestJson(`/api/admin/food-items/${id}/${endpoint}`, { method: "POST" });
       await Promise.all([loadStats(), loadFoodItems(), loadFoodItemDetail(id)]);
-      setMessage(`条目 ${id} 已处理。`);
+      const message = action === "hide"
+        ? `条目 ${id} 已隐藏，不删除历史记录。`
+        : action === "restore"
+          ? `条目 ${id} 已恢复，重新进入全局搜索。`
+          : `条目 ${id} 已处理。`;
+      setMessage(message);
     }
 
     async function mergeFoodItem(id) {
