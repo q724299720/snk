@@ -20,6 +20,10 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
 	Optional<UserEntity> findByUsernameIgnoreCase(String username);
 
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("SELECT account FROM UserEntity account WHERE account.id = :userId")
+	Optional<UserEntity> findByIdForUpdate(@Param("userId") Long userId);
+
 	long countByRoleAndAccountStatus(AccountRole role, AccountStatus accountStatus);
 
 	boolean existsByRole(AccountRole role);

@@ -17,6 +17,10 @@ public class AdminApiTokenInterceptor implements HandlerInterceptor {
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 		if (!adminProperties.isApiTokenEnabled()) {
+			if (request.getRequestURI().startsWith("/api/admin/accounts")) {
+				response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "admin api token is not configured");
+				return false;
+			}
 			return true;
 		}
 

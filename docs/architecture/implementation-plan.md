@@ -488,6 +488,14 @@ App 已支持旧匿名安装的一次性历史认领：不认领时不删除原�
 
 ## Phase 5 Addendum: Quick Personal Record UX Overhaul
 
+### 2026-07-12 后端认证 Task 7 实施状态
+
+OWNER 后台账户治理已提供列表、批准、拒绝、启停、升降级、会话撤销和临时密码重置。最后一个 ACTIVE OWNER 不可禁用或降级，所有敏感操作会撤销会话并写审计。后台页面使用内存态 OWNER Access Token，账户管理 API 同时要求 OWNER Bearer Token 和已配置的 Admin Token；未配置 Admin Token 时账户管理能力返回 503。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-12 | Codex | 标记 OWNER 后台账户治理 Task 7 完成 | 落实新注册账号必须由主账户审核与双重保护约束 |
+
 Implementation order is fixed:
 
 1. Update product, API, database, recognition, and architecture contracts.

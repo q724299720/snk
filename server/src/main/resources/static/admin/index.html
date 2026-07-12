@@ -265,7 +265,9 @@
       <h1>SNK 后台治理</h1>
       <div class="token-box">
         <input id="adminToken" type="password" placeholder="X-SNK-ADMIN-TOKEN">
-        <button id="saveToken">保存 Token</button>
+        <input id="ownerUsername" placeholder="OWNER 用户名">
+        <input id="ownerPassword" type="password" placeholder="OWNER 密码">
+        <button id="ownerLogin" class="primary">OWNER 登录</button>
         <button id="reloadAll" class="primary">刷新</button>
       </div>
     </div>
@@ -280,6 +282,12 @@
         <button id="runAutoAudit" class="primary">执行自动审核</button>
       </div>
       <div id="stats" class="stats-grid"></div>
+    </section>
+
+    <section>
+      <h2>账户审核</h2>
+      <div class="toolbar"><button id="loadAccounts">刷新账户</button></div>
+      <div class="table-wrap"><table><thead><tr><th>用户名</th><th>角色</th><th>状态</th><th>操作</th></tr></thead><tbody id="accounts"></tbody></table></div>
     </section>
 
     <section>
@@ -436,7 +444,8 @@
   <script>
     const tokenInput = document.querySelector("#adminToken");
     const message = document.querySelector("#message");
-    const savedToken = sessionStorage.getItem("snkAdminToken") || "";
+    const savedToken = "";
+    let ownerAccessToken = "";
     let reviewWordCache = [];
     let mergeTargetPreviewItem = null;
     let currentFoodItemId = null;
@@ -463,6 +472,7 @@
       if (token) {
         headers.set("X-SNK-ADMIN-TOKEN", token);
       }
+      if (ownerAccessToken) headers.set("Authorization", `Bearer ${ownerAccessToken}`);
       if (options.body && !headers.has("Content-Type")) {
         headers.set("Content-Type", "application/json");
       }
@@ -920,17 +930,28 @@
 
     async function reloadAll() {
       try {
-        await Promise.all([loadStats(), loadFoodItems(), loadWords(), loadRecognitionTasks()]);
+        await Promise.all([loadStats(), loadFoodItems(), loadWords(), loadRecognitionTasks(), loadAccounts()]);
         setMessage("后台数据已刷新。");
       } catch (error) {
         setMessage(`加载失败：${error.message}`, true);
       }
     }
 
-    document.querySelector("#saveToken").addEventListener("click", () => {
-      sessionStorage.setItem("snkAdminToken", tokenInput.value.trim());
-      setMessage("Token 已保存到当前浏览器会话。");
-    });
+    async function ownerLogin() {
+      const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: document.querySelector("#ownerUsername").value.trim(), password: document.querySelector("#ownerPassword").value, deviceId: "snk-admin-console" }) });
+      if (!response.ok) throw new Error("OWNER 登录失败");
+      const tokenPair = await response.json();
+      ownerAccessToken = tokenPair.accessToken;
+      document.querySelector("#ownerPassword").value = "";
+      setMessage("OWNER 登录成功；刷新页面后需重新登录。");
+      await reloadAll();
+    }
+    function renderAccounts(items) { document.querySelector("#accounts").innerHTML = items.map(account => `<tr><td>${escapeHtml(account.username)}</td><td>${escapeHtml(account.role)}</td><td>${escapeHtml(account.accountStatus)}</td><td class="actions"><button data-account-action="approve" data-id="${account.id}">通过</button><button data-account-action="reject" data-id="${account.id}">拒绝</button><button data-account-action="disable" data-id="${account.id}">禁用</button><button data-account-action="enable" data-id="${account.id}">启用</button><button data-account-action="promote" data-id="${account.id}">设主账户</button><button data-account-action="demote" data-id="${account.id}">降级</button><button data-account-action="revoke-sessions" data-id="${account.id}">退出会话</button><button data-account-action="reset-password" data-id="${account.id}">重置密码</button></td></tr>`).join(""); }
+    async function loadAccounts() { renderAccounts(await requestJson("/api/admin/accounts")); }
+    async function mutateAccount(id, action) { const result = await requestJson(`/api/admin/accounts/${id}/${action}`, { method: "POST" }); if (action === "reset-password") window.alert(`临时密码（仅显示一次）：${result.temporaryPassword}`); await loadAccounts(); }
+    document.querySelector("#ownerLogin").addEventListener("click", () => ownerLogin().catch(error => setMessage(error.message, true)));
+    document.querySelector("#loadAccounts").addEventListener("click", () => loadAccounts().catch(error => setMessage(error.message, true)));
+    document.querySelector("#accounts").addEventListener("click", event => { const button = event.target.closest("button[data-account-action]"); if (button) mutateAccount(button.dataset.id, button.dataset.accountAction).catch(error => setMessage(error.message, true)); });
     document.querySelector("#reloadAll").addEventListener("click", reloadAll);
     document.querySelector("#runAutoAudit").addEventListener("click", () => runAutoAudit().catch((error) => setMessage(error.message, true)));
     document.querySelector("#loadFoodItems").addEventListener("click", () => loadFoodItems().catch((error) => setMessage(error.message, true)));

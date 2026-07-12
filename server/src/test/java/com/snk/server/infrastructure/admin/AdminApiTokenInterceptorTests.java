@@ -9,13 +9,16 @@ import org.springframework.mock.web.MockHttpServletResponse;
 class AdminApiTokenInterceptorTests {
 
 	@Test
-	void preHandleAllowsRequestsWhenTokenIsNotConfigured() throws Exception {
+	void preHandleRejectsRequestsWhenTokenIsNotConfigured() throws Exception {
 		AdminProperties properties = new AdminProperties();
 		AdminApiTokenInterceptor interceptor = new AdminApiTokenInterceptor(properties);
+		MockHttpServletResponse response = new MockHttpServletResponse();
 
-		boolean allowed = interceptor.preHandle(new MockHttpServletRequest(), new MockHttpServletResponse(), new Object());
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/admin/accounts");
+		boolean allowed = interceptor.preHandle(request, response, new Object());
 
-		assertThat(allowed).isTrue();
+		assertThat(allowed).isFalse();
+		assertThat(response.getStatus()).isEqualTo(503);
 	}
 
 	@Test
