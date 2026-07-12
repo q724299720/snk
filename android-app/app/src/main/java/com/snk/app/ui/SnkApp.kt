@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -50,6 +51,9 @@ import com.snk.app.ui.auth.LoginScreen
 import com.snk.app.ui.auth.PendingApprovalScreen
 import com.snk.app.ui.auth.RegisterScreen
 import com.snk.app.ui.auth.ChangePasswordScreen
+import com.snk.app.ui.auth.LegacyClaimDialog
+import com.snk.app.data.auth.LegacyClaimAvailability
+import kotlinx.coroutines.launch
 
 private sealed class SnkDestination(
     val route: String,
@@ -141,6 +145,11 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
     var manualCreateSeedName by remember { mutableStateOf("") }
     var searchQuerySeed by remember { mutableStateOf<String?>(null) }
     var searchSuggestedQueries by remember { mutableStateOf<List<String>>(emptyList()) }
+    var showLegacyClaim by remember(account.userId) { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(account.userId) {
+        showLegacyClaim = application.container.legacyClaimCoordinator.availability() == LegacyClaimAvailability.AVAILABLE
+    }
     val sessionState = remember(account.userId) { SessionUiState.Authenticated(account.userId) }
     val navController = rememberNavController()
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
@@ -240,6 +249,11 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                         account = account,
                         sessionState = sessionState,
                         onChangePassword = { navController.navigate("change_password") },
+                        onClaimLegacyHistory = {
+                            coroutineScope.launch {
+                                showLegacyClaim = application.container.legacyClaimCoordinator.availability() == LegacyClaimAvailability.AVAILABLE
+                            }
+                        },
                         onLogout = authViewModel::logout,
                     )
                 }
@@ -364,5 +378,8 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                 }
             }
         }
+    }
+    if (showLegacyClaim) {
+        LegacyClaimDialog(application.container.legacyClaimCoordinator) { showLegacyClaim = false }
     }
 }

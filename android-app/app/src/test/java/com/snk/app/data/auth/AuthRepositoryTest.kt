@@ -79,6 +79,21 @@ class AuthRepositoryTest {
     }
 
     @Test
+    fun `legacy claim conflict is distinguishable so the prompt is not shown again`() = runTest {
+        server.enqueue(json(200, """{"accessToken":"access-secret","refreshToken":"refresh-secret","tokenType":"Bearer","expiresIn":900}"""))
+        server.enqueue(json(200, """{"userId":7,"username":"alice","role":"USER","mustChangePassword":false}"""))
+        server.enqueue(json(409, """{"status":409,"code":"LEGACY_IDENTITY_ALREADY_CLAIMED"}"""))
+        repository.login("alice", "correct-horse-12")
+
+        val result = repository.claimLegacyIdentity("legacy-installation")
+
+        assertEquals(
+            AuthErrorCode.LEGACY_IDENTITY_ALREADY_CLAIMED,
+            (result as AuthResult.Failure).code,
+        )
+    }
+
+    @Test
     fun `remaining auth endpoints keep their headers paths and json contracts`() = runTest {
         server.enqueue(json(200, """{"accountStatus":"ACTIVE"}"""))
         api.registrationStatus("approval-ticket")

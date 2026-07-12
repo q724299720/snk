@@ -470,6 +470,14 @@ Android 本地草稿数据库已升级为 Room v5。所有草稿的读取、状�
 | --- | --- | --- | --- |
 | 2026-07-12 | Codex | 标记 Android 多账号草稿隔离 Task 5 完成 | 为账号切换与历史认领建立本地数据边界 |
 
+### 2026-07-12 Android 认证 Task 6 实施状态
+
+App 已支持旧匿名安装的一次性历史认领：不认领时不删除原标识；服务端认领成功后，Room 草稿 owner 在受控更新后才落本地完成标记。网络异常可重试，已被认领的身份不再重复提示，且不会暴露任何其他身份的数据。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-12 | Codex | 标记 Android 历史数据认领 Task 6 完成 | 为正式账号制保留升级用户的本机历史数据迁移路径 |
+
 ## Phase 5 Addendum: Quick Personal Record UX Overhaul
 
 Implementation order is fixed:

@@ -10,7 +10,7 @@ class AuthRepository(
     private val deviceIdProvider: DeviceIdProvider,
     private val sessionManager: AuthenticatedSessionManager? = null,
     private val json: Json = Json { ignoreUnknownKeys = true },
-) {
+) : LegacyIdentityClaimer {
     @Volatile private var accessToken: String? = null
 
     fun currentAccessToken(): String? = sessionManager?.currentAccessToken() ?: accessToken
@@ -67,7 +67,7 @@ class AuthRepository(
         api.changePassword(it, PasswordChangeRequest(oldPassword, newPassword))
     }
 
-    suspend fun claimLegacyIdentity(installationId: String): AuthResult<Unit> = authorizedCall {
+    override suspend fun claimLegacyIdentity(installationId: String): AuthResult<Unit> = authorizedCall {
         api.legacyClaim(it, LegacyIdentityClaimRequest(installationId))
     }
 
@@ -104,6 +104,7 @@ class AuthRepository(
             "TOKEN_EXPIRED", "TOKEN_INVALID" -> AuthErrorCode.TOKEN_EXPIRED
             "AUTH_REQUIRED" -> AuthErrorCode.AUTH_REQUIRED
             "AUTH_RATE_LIMITED" -> AuthErrorCode.RATE_LIMITED
+            "LEGACY_IDENTITY_ALREADY_CLAIMED" -> AuthErrorCode.LEGACY_IDENTITY_ALREADY_CLAIMED
             else -> if (exception.code() == 400) AuthErrorCode.VALIDATION else AuthErrorCode.UNKNOWN
         }
     }

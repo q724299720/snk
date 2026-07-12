@@ -13,7 +13,7 @@ class AuthenticatedSessionManager(
     private val authApi: AuthApi,
     private val tokenStore: SecureTokenStoreContract,
     private val json: Json = Json { ignoreUnknownKeys = true },
-) {
+) : CurrentUserIdProvider {
     private val refreshMutex = Mutex()
     @Volatile private var accessToken: String? = null
     @Volatile private var account: AuthenticatedAccount? = null
@@ -22,7 +22,7 @@ class AuthenticatedSessionManager(
     fun currentAccessToken(): String? = accessToken
     fun currentAccount(): AuthenticatedAccount? = account
     fun currentState(): SessionState = state
-    fun currentUserId(): Long? = account?.userId
+    override fun currentUserId(): Long? = account?.userId
     fun requireUserId(): Long = requireNotNull(currentUserId()) { "A signed-in account is required." }
 
     suspend fun restoreSession(): SessionState {

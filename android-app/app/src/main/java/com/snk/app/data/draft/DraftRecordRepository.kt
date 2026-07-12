@@ -7,10 +7,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
+interface LegacyDraftOwnerMigrator {
+    suspend fun reassignLegacyDrafts(legacyOwnerUserId: Long, targetOwnerUserId: Long): Int
+}
+
 class DraftRecordRepository(
     private val draftDao: FoodRecordDraftDao,
     private val sessionManager: AuthenticatedSessionManager,
-) : DraftRecordSaver {
+) : DraftRecordSaver, LegacyDraftOwnerMigrator {
     fun observeDrafts(): Flow<List<FoodRecordDraft>> {
         val ownerUserId = sessionManager.currentUserId() ?: return flowOf(emptyList())
         return draftDao.observeAll(ownerUserId).map { drafts -> drafts.map { it.toModel() } }
@@ -127,7 +131,7 @@ class DraftRecordRepository(
         )
     }
 
-    suspend fun reassignLegacyDrafts(legacyOwnerUserId: Long, targetOwnerUserId: Long): Int =
+    override suspend fun reassignLegacyDrafts(legacyOwnerUserId: Long, targetOwnerUserId: Long): Int =
         draftDao.reassignOwner(legacyOwnerUserId, targetOwnerUserId)
 
     private suspend fun updateState(

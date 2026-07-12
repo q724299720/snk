@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.snk.app.data.auth.AuthenticatedAccount
 
 @Composable
-fun ProfileScreen(account: AuthenticatedAccount, sessionState: SessionUiState, onChangePassword: () -> Unit, onLogout: () -> Unit) {
+fun ProfileScreen(account: AuthenticatedAccount, sessionState: SessionUiState, onChangePassword: () -> Unit, onClaimLegacyHistory: () -> Unit, onLogout: () -> Unit) {
     var showDiagnostics by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -54,6 +54,7 @@ fun ProfileScreen(account: AuthenticatedAccount, sessionState: SessionUiState, o
         ProfileInfoCard("隐私说明", "记录默认仅自己可见；只有你主动设为公开的内容才会出现在发现页。")
         ProfileInfoCard("问题反馈", "遇到识别、同步或内容问题时，请在反馈中附上发生时间和操作步骤。")
         Button(onClick = onChangePassword, modifier = Modifier.fillMaxWidth()) { Text("修改密码") }
+        TextButton(onClick = onClaimLegacyHistory, modifier = Modifier.fillMaxWidth()) { Text("认领本机历史数据") }
         OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) { Text("退出登录") }
         TextButton(onClick = { showDiagnostics = !showDiagnostics }) {
             Text(if (showDiagnostics) "收起诊断信息" else "诊断信息")

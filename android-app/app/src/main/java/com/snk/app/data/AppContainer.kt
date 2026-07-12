@@ -7,6 +7,7 @@ import com.snk.app.BuildConfig
 import com.snk.app.data.auth.AnonymousAuthApi
 import com.snk.app.data.auth.AnonymousSessionRepository
 import com.snk.app.data.auth.InstallationIdStore
+import com.snk.app.data.auth.LegacyClaimCoordinator
 import com.snk.app.data.auth.AuthApi
 import com.snk.app.data.auth.AuthRepository
 import com.snk.app.data.auth.AuthenticatedSessionManager
@@ -110,6 +111,13 @@ class AppContainer(context: Context) {
     val draftRecordRepository = DraftRecordRepository(
         draftDao = database.foodRecordDraftDao(),
         sessionManager = authenticatedSessionManager,
+    )
+
+    val legacyClaimCoordinator = LegacyClaimCoordinator(
+        remote = authRepository,
+        installationStore = installationIdStore,
+        draftMigrator = draftRecordRepository,
+        currentUserId = authenticatedSessionManager,
     )
 
     val foodRecordSubmissionCoordinator = FoodRecordSubmissionCoordinator(
