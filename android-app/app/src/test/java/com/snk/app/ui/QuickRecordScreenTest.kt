@@ -12,6 +12,6 @@ class QuickRecordScreenTest {
         assertTrue(source.contains("var rating by remember { mutableStateOf<Int?>(null) }"))
         assertTrue(source.contains("val clientRequestId = remember { UUID.randomUUID().toString() }"))
         assertTrue(source.contains("enabled = name.isNotBlank() && rating != null"))
-        assertTrue(source.contains("isPublic = false"))
+        assertTrue(source.contains("isPublic = true"))
     }
 }

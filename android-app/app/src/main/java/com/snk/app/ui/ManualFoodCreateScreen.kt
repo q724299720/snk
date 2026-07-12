@@ -64,14 +64,6 @@ private val manualItemTypeOptions = listOf(
     ManualOption("fruit", "水果"),
 )
 
-private val manualCategoryOptions = listOf(
-    ManualOption("snack", "零食"),
-    ManualOption("dessert", "甜品"),
-    ManualOption("drink", "饮品"),
-    ManualOption("meal", "主食"),
-    ManualOption("fruit", "水果"),
-)
-
 @Composable
 fun ManualFoodCreateScreen(
     sessionState: SessionUiState,
@@ -86,8 +78,6 @@ fun ManualFoodCreateScreen(
     var name by remember(initialName) { mutableStateOf(initialName) }
     var barcode by remember(initialBarcode) { mutableStateOf(initialBarcode) }
     var itemType by remember { mutableStateOf("packaged_product") }
-    var category by remember { mutableStateOf("snack") }
-    var subcategory by remember { mutableStateOf("") }
     var brand by remember { mutableStateOf("") }
     var submitMessage by remember { mutableStateOf<String?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
@@ -200,33 +190,6 @@ fun ManualFoodCreateScreen(
                         )
                     }
                 }
-                Text(
-                    text = "一级分类",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                )
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    manualCategoryOptions.forEach { option ->
-                        FilterChip(
-                            selected = category == option.value,
-                            onClick = { category = option.value },
-                            enabled = !isSubmitting,
-                            label = { Text(option.label, style = MaterialTheme.typography.bodySmall) },
-                        )
-                    }
-                }
-                OutlinedTextField(
-                    value = subcategory,
-                    onValueChange = { subcategory = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("二级分类（可选）") },
-                    singleLine = true,
-                    enabled = !isSubmitting,
-                    shape = RoundedCornerShape(14.dp),
-                )
                 OutlinedTextField(
                     value = brand,
                     onValueChange = { brand = it },
@@ -337,8 +300,6 @@ fun ManualFoodCreateScreen(
                             userId = userId,
                             name = name,
                             itemType = itemType,
-                            category = category,
-                            subcategory = subcategory,
                             brand = brand,
                             barcode = barcode,
                             coverImageUrl = uploadedCoverImageUrl,

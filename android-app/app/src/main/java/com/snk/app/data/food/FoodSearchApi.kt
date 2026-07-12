@@ -56,10 +56,6 @@ data class CreateManualFoodItemRequest(
     val name: String,
     @SerialName("itemType")
     val itemType: String,
-    @SerialName("category")
-    val category: String,
-    @SerialName("subcategory")
-    val subcategory: String? = null,
     @SerialName("brand")
     val brand: String? = null,
     @SerialName("barcode")
@@ -76,10 +72,6 @@ data class FoodSearchItemResponse(
     val name: String,
     @SerialName("itemType")
     val itemType: String,
-    @SerialName("category")
-    val category: String,
-    @SerialName("subcategory")
-    val subcategory: String? = null,
     @SerialName("brand")
     val brand: String? = null,
     @SerialName("barcode")

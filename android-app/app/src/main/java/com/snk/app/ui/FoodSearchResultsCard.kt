@@ -75,7 +75,7 @@ fun FoodSearchResultsCard(
 
                 searchState is FoodSearchResult.Success && searchState.items.isEmpty() -> {
                     Text(
-                        text = "没有命中结果，可以手动创建一个待审核条目继续记录。",
+                        text = "没有命中结果，可以手动创建一个条目继续记录。",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     if (noResultActionLabel != null && onNoResultAction != null) {
@@ -130,31 +130,13 @@ private fun ItemCard(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
-                    if (item.auditStatus != "approved") {
-                        Text(
-                            text = "待审核条目",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
                     Text(
                         text = item.averageRating.toRatingLabel(),
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    Text(
-                        text = buildString {
-                            append(item.category)
-                            item.subcategory?.takeIf { it.isNotBlank() }?.let {
-                                append(" / ")
-                                append(it)
-                            }
-                            item.brand?.takeIf { it.isNotBlank() }?.let {
-                                append(" / ")
-                                append(it)
-                            }
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
+                    item.brand?.takeIf { it.isNotBlank() }?.let { brand ->
+                        Text(text = brand, style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             }
             Row(

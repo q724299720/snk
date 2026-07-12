@@ -137,7 +137,7 @@ class FoodSearchRepositoryTest {
     }
 
     @Test
-    fun `createManualFoodItem returns pending item when backend succeeds`() = runTest {
+    fun `createManualFoodItem omits category fields and returns approved item`() = runTest {
         server.enqueue(
             MockResponse()
                 .setHeader("Content-Type", "application/json")
@@ -148,12 +148,10 @@ class FoodSearchRepositoryTest {
                       "id": 9,
                       "name": "Mango Cake",
                       "itemType": "dish",
-                      "category": "dessert",
-                      "subcategory": "cake",
                       "brand": "SNK Bakery",
                       "barcode": null,
                       "coverImageUrl": null,
-                      "auditStatus": "pending"
+                      "auditStatus": "approved"
                     }
                     """.trimIndent(),
                 ),
@@ -163,19 +161,19 @@ class FoodSearchRepositoryTest {
             userId = 2L,
             name = "Mango Cake",
             itemType = "packaged_product",
-            category = "snack",
-            subcategory = "chips",
             brand = "SNK Bakery",
             barcode = "6900000000099",
         )
 
         assertTrue(result is ManualFoodCreateResult.Success)
         val success = result as ManualFoodCreateResult.Success
-        assertEquals("pending", success.item.auditStatus)
+        assertEquals("approved", success.item.auditStatus)
         val request = server.takeRequest()
         assertEquals("/api/foods/manual", request.path)
         val body = Buffer().write(request.body.readByteArray()).readUtf8()
         assertTrue(body.contains("\"barcode\":\"6900000000099\""))
+        assertFalse("manual creation must not send removed category fields", body.contains("\"category\""))
+        assertFalse("manual creation must not send removed subcategory fields", body.contains("\"subcategory\""))
         assertFalse("business identity must come from the bearer token", body.contains("\"userId\""))
     }
 

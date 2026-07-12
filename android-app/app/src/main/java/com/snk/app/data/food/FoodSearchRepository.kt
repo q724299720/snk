@@ -33,8 +33,6 @@ class FoodSearchRepository(
         userId: Long,
         name: String,
         itemType: String,
-        category: String,
-        subcategory: String,
         brand: String,
         barcode: String,
         coverImageUrl: String? = null,
@@ -50,8 +48,6 @@ class FoodSearchRepository(
                     CreateManualFoodItemRequest(
                         name = normalizedName,
                         itemType = itemType.trim(),
-                        category = category.trim(),
-                        subcategory = subcategory.trim().ifBlank { null },
                         brand = brand.trim().ifBlank { null },
                         barcode = barcode.trim().ifBlank { null },
                         coverImageUrl = coverImageUrl,
@@ -202,8 +198,6 @@ data class FoodSearchItem(
     val id: Long,
     val name: String,
     val itemType: String,
-    val category: String,
-    val subcategory: String?,
     val brand: String?,
     val barcode: String?,
     val coverImageUrl: String?,
@@ -266,8 +260,6 @@ private fun FoodSearchItemResponse.toModel(): FoodSearchItem = FoodSearchItem(
     id = id,
     name = name,
     itemType = itemType,
-    category = category,
-    subcategory = subcategory,
     brand = brand,
     barcode = barcode,
     coverImageUrl = coverImageUrl,
@@ -276,9 +268,9 @@ private fun FoodSearchItemResponse.toModel(): FoodSearchItem = FoodSearchItem(
 )
 
 private fun Exception.asManualCreateMessage(): String = when (this) {
-    is IOException -> "无法连接服务端，暂时不能创建待审核条目。"
-    is HttpException -> "服务端拒绝了这次待审核条目创建。"
-    else -> "创建待审核条目失败，请稍后重试。"
+    is IOException -> "无法连接服务端，暂时不能创建条目。"
+    is HttpException -> "服务端拒绝了这次条目创建。"
+    else -> "创建条目失败，请稍后重试。"
 }
 
 private fun Exception.asFoodReportMessage(): String = when (this) {

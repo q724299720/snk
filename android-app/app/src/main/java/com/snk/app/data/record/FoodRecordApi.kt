@@ -164,10 +164,6 @@ data class FoodRecordHistoryResponse(
     val foodName: String,
     @SerialName("foodItemType")
     val foodItemType: String,
-    @SerialName("foodCategory")
-    val foodCategory: String,
-    @SerialName("foodSubcategory")
-    val foodSubcategory: String? = null,
     @SerialName("foodBrand")
     val foodBrand: String? = null,
     @SerialName("foodCoverImageUrl")

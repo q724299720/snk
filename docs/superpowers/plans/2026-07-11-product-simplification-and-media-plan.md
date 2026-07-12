@@ -34,6 +34,14 @@
 
 已新增 V15：历史产品归一为 `category=none/subcategory=NULL`，并增加 `is_searchable`。手动创建、快速记录创建和后台编辑均自动写入无分类、`approved` 与可搜索；后台提供隐藏/恢复操作，隐藏不修改审核状态或历史记录关联。全局搜索和精确匹配均要求 `approved && is_searchable`；后台页面已移除待分类和分类编辑控件。
 
+### Task 2 实施状态（2026-07-12）
+
+App 搜索、历史记录和手动创建 API 已移除分类字段；手动创建请求不再接收分类，服务端统一写入 `none/null`。普通和快速记录省略 `isPublic` 时统一默认公开，显式 `false` 仍保留私密语义。接口契约已同步更新，并为搜索、历史记录和快速创建补充无分类/默认公开测试。
+
+### Task 3 实施状态（2026-07-12）
+
+Android 搜索、记录历史和手动创建 DTO 已移除分类字段；手动创建、搜索候选、创建记录、编辑记录、首页记录和草稿卡片均不展示分类。Room 草稿兼容列仅供历史迁移与补传使用，新草稿写入 `none/null`。新增 Compose 仪器测试，确保手动创建页无分类输入。
+
 **Files:**
 - Modify: `server/src/main/java/com/snk/server/api/dto/FoodSearchItemResponse.java`
 - Modify: `server/src/main/java/com/snk/server/api/dto/FoodRecordHistoryResponse.java`
@@ -139,3 +147,5 @@
 | --- | --- | --- | --- |
 | 2026-07-11 | Codex | 新建产品简化、图片与记录编辑实施计划 | 把无分类、自动审核、默认公开和媒体体验拆成可验证任务 |
 | 2026-07-12 | Codex | 完成 Task 1 无分类、自动审核与搜索可见性 | 落实所有产品不分类、新产品自动审核和后台隐藏恢复 |
+| 2026-07-12 | Codex | 完成 Task 2 API 去分类字段与默认公开 | 将 App API 契约收敛为无分类，记录创建默认公开 |
+| 2026-07-12 | Codex | 完成 Task 3 Android 去分类模型与界面 | 移除客户端分类输入、展示与 DTO 字段，保留草稿迁移兼容 |

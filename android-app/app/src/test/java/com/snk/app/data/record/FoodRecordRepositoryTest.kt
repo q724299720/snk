@@ -49,13 +49,13 @@ class FoodRecordRepositoryTest {
     }
 
     @Test
-    fun `createQuickRecord posts only the minimum private record fields`() = runTest {
+    fun `createQuickRecord defaults to a public record`() = runTest {
         server.enqueue(
             MockResponse()
                 .setHeader("Content-Type", "application/json")
                 .setResponseCode(201)
                 .setBody(
-                    """{"id":58,"userId":100,"foodItemId":202,"sourceType":"manual","isPublic":false,"rating":5,"likeCount":0,"recordTime":"2026-07-11T10:00:00Z","createdAt":"2026-07-11T10:00:00Z"}""",
+                    """{"id":58,"userId":100,"foodItemId":202,"sourceType":"manual","isPublic":true,"rating":5,"likeCount":0,"recordTime":"2026-07-11T10:00:00Z","createdAt":"2026-07-11T10:00:00Z"}""",
                 ),
         )
 
@@ -74,7 +74,7 @@ class FoodRecordRepositoryTest {
         assertTrue(body.contains("\"clientRequestId\":\"7e93a069-8fe9-45cc-a8ca-498a515b06cf\""))
         assertTrue(body.contains("\"name\":\"麦当劳薯条\""))
         assertTrue(body.contains("\"rating\":5"))
-        assertTrue(body.contains("\"isPublic\":false"))
+        assertTrue(body.contains("\"isPublic\":true"))
         assertFalse("business identity must come from the bearer token", body.contains("\"userId\""))
     }
 

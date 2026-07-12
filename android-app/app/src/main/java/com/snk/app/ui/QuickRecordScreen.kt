@@ -139,7 +139,7 @@ fun QuickRecordScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text("快速记录", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("只需名称和评分，记录默认仅自己可见。", style = MaterialTheme.typography.bodyMedium)
+        Text("只需名称和评分，记录默认公开。", style = MaterialTheme.typography.bodyMedium)
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
@@ -212,7 +212,7 @@ fun QuickRecordScreen(
                         name = name,
                         rating = selectedRating,
                         comment = comment,
-                        isPublic = false,
+                        isPublic = true,
                         images = listOfNotNull(uploadedImage),
                     )) {
                         is FoodRecordCreateResult.Success -> {
@@ -226,14 +226,14 @@ fun QuickRecordScreen(
                                         userId = userId,
                                         foodItemId = null,
                                         foodName = name.trim(),
-                                        category = "uncategorized",
+                                        category = "none",
                                         subcategory = null,
                                         brand = null,
                                         barcode = null,
                                         rating = selectedRating,
                                         comment = comment,
                                         sourceType = "quick_record",
-                                        isPublic = false,
+                                        isPublic = true,
                                         clientRequestId = clientRequestId,
                                         localImagePath = localImagePath,
                                     ),
@@ -252,7 +252,7 @@ fun QuickRecordScreen(
             modifier = Modifier.fillMaxWidth(),
             enabled = name.isNotBlank() && rating != null && sessionState.userIdOrNull() != null && !isBusy,
         ) {
-            Text(if (isBusy) "保存中…" else "保存为私密记录")
+            Text(if (isBusy) "保存中…" else "保存公开记录")
         }
         OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("返回") }
     }

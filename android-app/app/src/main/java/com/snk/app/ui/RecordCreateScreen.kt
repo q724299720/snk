@@ -221,33 +221,8 @@ fun RecordCreateScreen(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
-                if (selectedFood.auditStatus != "approved") {
-                    Text(
-                        text = "该条目仍在审核中，当前记录会先绑定到待审核条目。",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFB53A1A),
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = selectedFood.category,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF5B4A42),
-                    )
-                    selectedFood.subcategory?.takeIf { it.isNotBlank() }?.let {
-                        Text(
-                            text = "/ $it",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF5B4A42),
-                        )
-                    }
-                    selectedFood.brand?.takeIf { it.isNotBlank() }?.let {
-                        Text(
-                            text = "/ $it",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF5B4A42),
-                        )
-                    }
+                selectedFood.brand?.takeIf { it.isNotBlank() }?.let { brand ->
+                    Text(text = brand, style = MaterialTheme.typography.bodySmall, color = Color(0xFF5B4A42))
                 }
             }
         }

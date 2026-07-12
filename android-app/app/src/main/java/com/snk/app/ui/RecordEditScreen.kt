@@ -410,17 +410,7 @@ internal fun buildRecordEditFeedback(result: FoodRecordUpdateResult?): String? =
     is FoodRecordUpdateResult.Failure -> result.message
 }
 
-private fun formatRecordEditMeta(record: FoodRecordHistoryItem): String = buildString {
-    append(record.foodCategory)
-    record.foodSubcategory?.takeIf { it.isNotBlank() }?.let {
-        append(" / ")
-        append(it)
-    }
-    record.foodBrand?.takeIf { it.isNotBlank() }?.let {
-        append(" / ")
-        append(it)
-    }
-}
+private fun formatRecordEditMeta(record: FoodRecordHistoryItem): String = record.foodBrand.orEmpty()
 
 private data class EditableRecordImagePayload(
     val bytes: ByteArray,

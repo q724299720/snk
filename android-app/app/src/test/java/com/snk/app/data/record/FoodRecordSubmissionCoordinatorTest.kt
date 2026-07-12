@@ -74,8 +74,6 @@ class FoodRecordSubmissionCoordinatorTest {
         id = 7L,
         name = "Lays Cucumber Chips",
         itemType = "packaged_product",
-        category = "snack",
-        subcategory = "chips",
         brand = "Lays",
         barcode = "6900000000011",
         coverImageUrl = "https://snk.qiuxinmin.cn/images/7.png",

@@ -76,20 +76,11 @@ fun DraftItemCard(
                     color = statusColor,
                 )
             }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "${draft.category}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF7A6A61),
-                )
-                draft.brand?.takeIf { it.isNotBlank() }?.let {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                draft.brand?.takeIf { it.isNotBlank() }?.let { brand ->
+                    Text(text = brand, style = MaterialTheme.typography.bodySmall, color = Color(0xFF7A6A61))
                     Text(text = "·", style = MaterialTheme.typography.bodySmall, color = Color(0xFF7A6A61))
-                    Text(text = it, style = MaterialTheme.typography.bodySmall, color = Color(0xFF7A6A61))
                 }
-                Text(text = "·", style = MaterialTheme.typography.bodySmall, color = Color(0xFF7A6A61))
                 Text(
                     text = draft.rating?.let { "$it/5" } ?: "待评分",
                     style = MaterialTheme.typography.bodySmall,

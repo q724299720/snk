@@ -697,26 +697,8 @@ private fun RecentRecordCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF8A5A44),
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = record.foodCategory,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF5B4A42),
-                        )
-                        record.foodSubcategory?.takeIf { it.isNotBlank() }?.let {
-                            Text(
-                                text = "/ $it",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF5B4A42),
-                            )
-                        }
-                        record.foodBrand?.takeIf { it.isNotBlank() }?.let {
-                            Text(
-                                text = "/ $it",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF8A5A44),
-                            )
-                        }
+                    record.foodBrand?.takeIf { it.isNotBlank() }?.let { brand ->
+                        Text(text = brand, style = MaterialTheme.typography.bodySmall, color = Color(0xFF8A5A44))
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
