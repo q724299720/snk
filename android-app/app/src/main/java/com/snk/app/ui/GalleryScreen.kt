@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,11 +43,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.snk.app.SnkApplication
 import com.snk.app.data.record.FoodRecordHistoryItem
 import com.snk.app.data.record.FoodRecordHistoryResult
 import com.snk.app.data.draft.DraftSyncStatus
+import com.snk.app.ui.theme.ChiliRed
+import com.snk.app.ui.theme.MutedText
+import com.snk.app.ui.theme.Paper
+import com.snk.app.ui.theme.PeachSurface
 import kotlinx.coroutines.launch
 
 private const val PAGE_SIZE = 20
@@ -63,6 +68,7 @@ fun GalleryScreen(
     var hasMore by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    var selectedFilter by remember { mutableStateOf("全部") }
     val drafts by application.container.draftRecordRepository.observeDrafts().collectAsState(initial = emptyList())
     val pendingDrafts = remember(drafts) { drafts.filter { it.syncStatus != DraftSyncStatus.SYNCED } }
 
@@ -124,47 +130,69 @@ fun GalleryScreen(
         LazyVerticalStaggeredGrid(
             state = gridState,
             columns = StaggeredGridCells.Fixed(2),
-            contentPadding = PaddingValues(12.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalItemSpacing = 10.dp,
             modifier = Modifier.fillMaxSize(),
         ) {
             item(span = StaggeredGridItemSpan.FullLine) {
-                Text("记录", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            }
-            item(span = StaggeredGridItemSpan.FullLine) {
-                Text("需要处理", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            }
-            if (pendingDrafts.isEmpty()) {
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    Text("没有待处理草稿。", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF7A6A61))
-                }
-            } else {
-                items(pendingDrafts, key = { "draft-${it.id}" }, span = { StaggeredGridItemSpan.FullLine }) { draft ->
-                    DraftItemCard(
-                        draft = draft,
-                        onRetry = {
-                            coroutineScope.launch {
-                                application.container.draftRecordRepository.requestRetry(draft.id)
-                                application.container.scheduleDraftRetry(draft.id)
-                            }
-                        },
-                        onDelete = {
-                            coroutineScope.launch { application.container.draftRecordRepository.deleteDraft(draft.id) }
-                        },
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("我的记录", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text("每一餐，都是生活的注脚", style = MaterialTheme.typography.bodyMedium, color = MutedText)
                 }
             }
             item(span = StaggeredGridItemSpan.FullLine) {
-                Text("已保存", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            }
-            if (!isLoading && loadError == null && items.isEmpty()) {
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    Text("还没有已保存记录。", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF7A6A61))
+                androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    listOf("全部", "待处理").forEach { filter ->
+                        FilterChip(
+                            selected = selectedFilter == filter,
+                            onClick = { selectedFilter = filter },
+                            label = { Text(filter) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = PeachSurface,
+                                selectedLabelColor = ChiliRed,
+                            ),
+                        )
+                    }
                 }
             }
-            items(items, key = { it.id }) { record ->
-                GalleryItemCard(record = record, onEditRecord = { onEditRecord(record) })
+            if (selectedFilter == "待处理" || pendingDrafts.isNotEmpty()) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Text("需要处理 · ${pendingDrafts.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+                if (pendingDrafts.isEmpty()) {
+                    item(span = StaggeredGridItemSpan.FullLine) {
+                        Card(colors = CardDefaults.cardColors(containerColor = PeachSurface), shape = RoundedCornerShape(16.dp)) {
+                            Text("当前没有需要处理的记录", modifier = Modifier.padding(14.dp), color = MutedText)
+                        }
+                    }
+                } else {
+                    items(pendingDrafts, key = { "draft-${it.id}" }, span = { StaggeredGridItemSpan.FullLine }) { draft ->
+                        DraftItemCard(
+                            draft = draft,
+                            onRetry = {
+                                coroutineScope.launch {
+                                    application.container.draftRecordRepository.requestRetry(draft.id)
+                                    application.container.scheduleDraftRetry(draft.id)
+                                }
+                            },
+                            onDelete = { coroutineScope.launch { application.container.draftRecordRepository.deleteDraft(draft.id) } },
+                        )
+                    }
+                }
+            }
+            if (selectedFilter == "全部") {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Text("已保存 · ${items.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+                if (!isLoading && loadError == null && items.isEmpty()) {
+                    item(span = StaggeredGridItemSpan.FullLine) {
+                        Text("还没有已保存记录。", style = MaterialTheme.typography.bodyMedium, color = MutedText)
+                    }
+                }
+                items(items, key = { it.id }) { record ->
+                    GalleryItemCard(record = record, onEditRecord = { onEditRecord(record) })
+                }
             }
             if (isLoading) {
                 item(span = StaggeredGridItemSpan.FullLine) {
@@ -214,20 +242,21 @@ internal fun GalleryItemCard(record: FoodRecordHistoryItem, onEditRecord: () -> 
         ?: record.foodCoverImageUrl
 
     Card(
+        modifier = Modifier.clickable(role = Role.Button, onClickLabel = "编辑记录", onClick = onEditRecord),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFDF8F2)),
+        colors = CardDefaults.cardColors(containerColor = Paper),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column {
             if (!displayImageUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = displayImageUrl,
-                    contentDescription = record.foodName,
+                ProductImageFill(
+                    imageUrl = displayImageUrl,
+                    productName = record.foodName,
+                    imageKind = ProductImageKind.RECORD,
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f)
-                        .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
-                        .clickable(role = Role.Button, onClickLabel = "编辑记录", onClick = onEditRecord),
-                    contentScale = ContentScale.Crop,
+                        .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)),
                 )
             } else {
                 Box(
@@ -237,7 +266,7 @@ internal fun GalleryItemCard(record: FoodRecordHistoryItem, onEditRecord: () -> 
                         .background(Color(0xFFF2E3D3)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("无图", style = MaterialTheme.typography.bodySmall, color = Color(0xFF8A5A44))
+                    Text("暂无图片", style = MaterialTheme.typography.bodySmall, color = MutedText)
                 }
             }
             Column(modifier = Modifier.padding(10.dp)) {
@@ -247,12 +276,11 @@ internal fun GalleryItemCard(record: FoodRecordHistoryItem, onEditRecord: () -> 
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.clickable(role = Role.Button, onClickLabel = "编辑记录", onClick = onEditRecord),
                 )
                 Text(
-                    text = "评分 ${record.rating}/5",
+                    text = "${"★".repeat(record.rating.coerceIn(0, 5))}${"☆".repeat((5 - record.rating).coerceIn(0, 5))}  ${record.rating}/5",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF8A5A44),
+                    color = ChiliRed,
                 )
                 Text(
                     text = if (record.isPublic) "已公开" else "仅自己",

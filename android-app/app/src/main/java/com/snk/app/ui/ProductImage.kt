@@ -55,6 +55,30 @@ fun ProductImage(
 }
 
 @Composable
+fun ProductImageFill(
+    imageUrl: String?,
+    productName: String,
+    imageKind: ProductImageKind,
+    modifier: Modifier,
+) {
+    val imageModifier = modifier.semantics {
+        contentDescription = imageKind.descriptionFor(productName)
+    }
+    if (imageUrl.isNullOrBlank()) {
+        ProductImagePlaceholder(imageModifier)
+        return
+    }
+    SubcomposeAsyncImage(
+        model = imageUrl,
+        contentDescription = null,
+        modifier = imageModifier,
+        contentScale = ContentScale.Crop,
+        loading = { ProductImagePlaceholder(Modifier.fillMaxSize()) },
+        error = { ProductImagePlaceholder(Modifier.fillMaxSize()) },
+    )
+}
+
+@Composable
 private fun ProductImagePlaceholder(modifier: Modifier) {
     Box(
         modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),

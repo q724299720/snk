@@ -24,6 +24,9 @@ private val LightColorScheme = lightColorScheme(
     onBackground = Espresso,
     surface = Paper,
     onSurface = Espresso,
+    surfaceVariant = SoftSurface,
+    onSurfaceVariant = MutedText,
+    outline = Divider,
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -39,7 +42,7 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun SnkTheme(
     darkTheme: Boolean = false,
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = when {

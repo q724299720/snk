@@ -9,9 +9,12 @@ import androidx.compose.material.icons.outlined.Collections
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -26,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -35,6 +37,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.unit.dp
+import com.snk.app.ui.theme.ChiliRed
+import com.snk.app.ui.theme.Paper
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -182,8 +186,37 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar {
-                    destinations.forEach { destination ->
+                NavigationBar(
+                    containerColor = Paper,
+                    tonalElevation = 3.dp,
+                ) {
+                    destinations.take(2).forEach { destination ->
+                        NavigationBarItem(
+                            selected = currentRoute == destination.route,
+                            onClick = {
+                                navController.navigate(destination.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = flatTopLevelNavigationStatePolicy.saveState
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = flatTopLevelNavigationStatePolicy.restoreState
+                                }
+                            },
+                            icon = { Icon(destination.icon, contentDescription = destination.label) },
+                            label = { Text(destination.label) },
+                        )
+                    }
+                    FloatingActionButton(
+                        onClick = { openManualCreate("") },
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        containerColor = ChiliRed,
+                        contentColor = Color.White,
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp),
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = "记录美食")
+                    }
+                    destinations.drop(2).forEach { destination ->
                         NavigationBarItem(
                             selected = currentRoute == destination.route,
                             onClick = {
@@ -206,15 +239,7 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFFFFF4E8),
-                            Color(0xFFFFFBF7),
-                            Color(0xFFF7F4EF),
-                        ),
-                    ),
-                )
+                .background(Paper)
                 .padding(innerPadding),
         ) {
             NavHost(
@@ -224,6 +249,7 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                 composable(SnkDestination.Search.route) {
                     SearchScreen(
                         sessionState = sessionState,
+                        username = account.username,
                         onCreateRecord = { item ->
                             openRecordCreate(item, "text_search")
                         },
@@ -264,6 +290,7 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                             }
                         },
                         onLogout = authViewModel::logout,
+                        recordHistoryLoader = application.container.foodRecordRepository::listRecentRecords,
                     )
                 }
                 composable("change_password") { ChangePasswordScreen(onSubmit = authViewModel::changePassword, onBack = { navController.popBackStack() }) }
@@ -272,6 +299,7 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                     if (food == null) {
                         SearchScreen(
                             sessionState = sessionState,
+                            username = account.username,
                             onCreateRecord = { item ->
                                 openRecordCreate(item, "text_search")
                             },
@@ -329,6 +357,7 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                     if (record == null || record.id != recordId) {
                         SearchScreen(
                             sessionState = sessionState,
+                            username = account.username,
                             onCreateRecord = { item ->
                                 openRecordCreate(item, "text_search")
                             },

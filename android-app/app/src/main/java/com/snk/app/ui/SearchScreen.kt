@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -32,6 +34,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -69,6 +75,10 @@ import com.snk.app.data.record.FoodRecordDeleteResult
 import com.snk.app.data.record.FoodRecordHistoryResult
 import com.snk.app.data.record.FoodRecordLikeResult
 import com.snk.app.data.record.toFoodSearchItem
+import com.snk.app.ui.theme.ChiliRed
+import com.snk.app.ui.theme.MutedText
+import com.snk.app.ui.theme.Paper
+import com.snk.app.ui.theme.PeachSurface
 import java.io.File
 import java.io.IOException
 import java.util.UUID
@@ -81,6 +91,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @Composable
 fun SearchScreen(
     sessionState: SessionUiState,
+    username: String = "",
     onCreateRecord: (FoodSearchItem) -> Unit,
     onEditRecord: (FoodRecordHistoryItem) -> Unit = {},
     onOpenManualCreate: (String) -> Unit,
@@ -236,44 +247,42 @@ fun SearchScreen(
     }
 
     LazyColumn(
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier.background(Paper).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("搜索食物名称、品牌或口味") },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                trailingIcon = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = if (isOcrProcessing) "..." else "拍照",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (isOcrProcessing) Color(0xFFBDBDBD) else Color(0xFF8A5A44),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable(enabled = !isOcrProcessing) {
-                                    onOpenOcrRecognition()
-                                }
-                                .padding(horizontal = 6.dp, vertical = 4.dp),
-                        )
-                        Text(
-                            text = if (isOcrProcessing) "..." else "相册",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (isOcrProcessing) Color(0xFFBDBDBD) else Color(0xFF8A5A44),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable(enabled = !isOcrProcessing) {
-                                    onOpenOcrRecognition()
-                                }
-                                .padding(horizontal = 6.dp, vertical = 4.dp),
-                        )
-                    }
-                },
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = if (username.isBlank()) "晚上好" else "晚上好，$username",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text("记录每一餐，遇见更好的自己", style = MaterialTheme.typography.bodyMedium, color = MutedText)
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("搜索美食") },
+                    leadingIcon = { Icon(Icons.Outlined.Search, null, tint = MutedText) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                )
+                Button(
+                    onClick = onOpenOcrRecognition,
+                    enabled = !isOcrProcessing,
+                    modifier = Modifier.height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PeachSurface, contentColor = ChiliRed),
+                    contentPadding = PaddingValues(horizontal = 14.dp),
+                ) {
+                    Icon(Icons.Outlined.CameraAlt, "拍照识别")
+                    Text("拍照识别", modifier = Modifier.padding(start = 5.dp), style = MaterialTheme.typography.labelSmall)
+                }
+            }
         }
         if (isOcrProcessing || ocrStatusMessage != null) {
             item {
@@ -292,12 +301,8 @@ fun SearchScreen(
         }
         if (recentQueries.isNotEmpty()) {
             item {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8EEE2)),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
+                Column(
+                        modifier = Modifier.padding(vertical = 2.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         Row(
@@ -318,7 +323,7 @@ fun SearchScreen(
                                     }
                                 },
                             ) {
-                                Text("清空", style = MaterialTheme.typography.bodySmall)
+                                    Text("清空", style = MaterialTheme.typography.bodySmall, color = ChiliRed)
                             }
                         }
                         FlowRow(
@@ -332,7 +337,6 @@ fun SearchScreen(
                                 )
                             }
                         }
-                    }
                 }
             }
         }
@@ -370,7 +374,6 @@ fun SearchScreen(
             FoodSearchResultsCard(
                 searchState = searchState,
                 isSearching = isSearching,
-                emptyHint = "输入名称后即可自动联想已审核的基础食物条目。",
                 onCreateRecord = onCreateRecord,
                 onReportItem = { item ->
                     val userId = sessionUserId
@@ -568,35 +571,70 @@ fun SearchScreen(
             is FoodRecordHistoryResult.Success -> {
                 if (history.items.isEmpty()) {
                     item {
-                        Text(
-                            text = "还没有历史记录，先从上面的搜索开始记一笔。",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF5B4A42),
-                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(
+                                text = "还没有历史记录，先记录第一份美味吧。",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MutedText,
+                            )
+                            Button(
+                                onClick = { onOpenManualCreate("") },
+                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                shape = RoundedCornerShape(15.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = ChiliRed),
+                            ) { Text("＋  记录美食", fontWeight = FontWeight.Bold) }
+                        }
                     }
                 } else {
-                    items(history.items, key = { it.id }) { record ->
-                        RecentRecordCard(
-                            record = record,
-                            onReuseFood = {
-                                onCreateRecord(record.toFoodSearchItem())
-                            },
-                            onEditRecord = {
-                                onEditRecord(record)
-                            },
-                            onDeleteRecord = {
-                                val result = application.container.foodRecordRepository.deleteRecord(
-                                    recordId = record.id,
-                                    userId = record.userId,
-                                )
-                                if (result is FoodRecordDeleteResult.Success) {
-                                    localRefreshToken++
-                                }
-                                result
-                            },
-                        )
+                    item {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            items(history.items, key = { it.id }) { record ->
+                                HomeRecentRecordCard(record = record, onClick = { onEditRecord(record) })
+                            }
+                        }
+                    }
+                    item {
+                        Button(
+                            onClick = { onOpenManualCreate("") },
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            shape = RoundedCornerShape(15.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = ChiliRed),
+                        ) {
+                            Text("＋  记录美食", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeRecentRecordCard(record: FoodRecordHistoryItem, onClick: () -> Unit) {
+    val displayImageUrl = record.images.firstOrNull()?.thumbnailUrl
+        ?: record.images.firstOrNull()?.imageUrl
+        ?: record.foodCoverImageUrl
+    Card(
+        modifier = Modifier.width(132.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Paper),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Column {
+            ProductImageFill(
+                imageUrl = displayImageUrl,
+                productName = record.foodName,
+                imageKind = ProductImageKind.RECORD,
+                modifier = Modifier.fillMaxWidth().height(112.dp).clip(RoundedCornerShape(16.dp)),
+            )
+            Column(Modifier.padding(9.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(record.foodName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(
+                    "${"★".repeat(record.rating.coerceIn(0, 5))} ${record.rating}/5",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = ChiliRed,
+                )
+                Text(formatRecordTime(record.recordTime), style = MaterialTheme.typography.labelSmall, color = MutedText)
             }
         }
     }
