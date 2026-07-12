@@ -16,6 +16,7 @@ import com.snk.server.domain.food.FoodSearchResult;
 import com.snk.server.domain.food.FoodSearchService;
 import com.snk.server.domain.food.ManualFoodItemService;
 import com.snk.server.infrastructure.storage.StorageProperties;
+import com.snk.server.infrastructure.security.CurrentUser;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +43,12 @@ class FoodSearchControllerTests {
 
 	@MockBean
 	private ManualFoodItemService manualFoodItemService;
+
+	@MockBean
+	private CurrentUser currentUser;
+
+	@org.junit.jupiter.api.BeforeEach
+	void useTrustedAccountIdentity() { when(currentUser.requiredUserId()).thenReturn(2L); }
 
 	@TestConfiguration
 	static class ControllerTestConfiguration {
@@ -86,8 +93,8 @@ class FoodSearchControllerTests {
 	}
 
 	@Test
-	void shouldReturnCreatorPendingFoodWhenUserIdIsProvided() throws Exception {
-		when(foodSearchService.search(eq("mango cake"), eq(2L)))
+	void shouldIgnoreUserIdQueryAndOnlyReturnGlobalSearchResults() throws Exception {
+		when(foodSearchService.search(eq("mango cake")))
 			.thenReturn(
 				new FoodSearchResult(
 					List.of(
@@ -101,18 +108,18 @@ class FoodSearchControllerTests {
 							null,
 							null,
 							null,
-							"pending"
+							"approved"
 						)
 					),
 					"strong"
 				)
 			);
 
-		mockMvc.perform(get("/api/foods/search").param("q", "mango cake").param("userId", "2"))
+		mockMvc.perform(get("/api/foods/search").param("q", "mango cake").param("userId", "999"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.qualitySignal").value("strong"))
 			.andExpect(jsonPath("$.items[0].name").value("Mango Cake"))
-			.andExpect(jsonPath("$.items[0].auditStatus").value("pending"));
+			.andExpect(jsonPath("$.items[0].auditStatus").value("approved"));
 	}
 
 	@Test
@@ -232,7 +239,7 @@ class FoodSearchControllerTests {
 				.content(
 					"""
 					{
-					  "userId": 2,
+					  "userId": 999,
 					  "name": "Mango Cake",
 					  "itemType": "packaged_product",
 					  "category": "snack",

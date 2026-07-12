@@ -7,6 +7,7 @@ import com.snk.server.domain.food.CreateManualFoodItemCommand;
 import com.snk.server.domain.food.FoodSearchResult;
 import com.snk.server.domain.food.FoodSearchService;
 import com.snk.server.domain.food.ManualFoodItemService;
+import com.snk.server.infrastructure.security.CurrentUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
@@ -31,16 +32,17 @@ public class FoodSearchController {
 
 	private final FoodSearchService foodSearchService;
 	private final ManualFoodItemService manualFoodItemService;
+	private final CurrentUser currentUser;
 
-	public FoodSearchController(FoodSearchService foodSearchService, ManualFoodItemService manualFoodItemService) {
+	public FoodSearchController(FoodSearchService foodSearchService, ManualFoodItemService manualFoodItemService, CurrentUser currentUser) {
 		this.foodSearchService = foodSearchService;
 		this.manualFoodItemService = manualFoodItemService;
+		this.currentUser = currentUser;
 	}
 
 	@GetMapping("/search")
 	public FoodSearchResponse search(
-		@RequestParam("q") String query,
-		@RequestParam(value = "userId", required = false) Long userId
+		@RequestParam("q") String query
 	) {
 		String normalizedQuery = query == null ? "" : query.trim();
 		if (normalizedQuery.isBlank()) {
@@ -49,9 +51,7 @@ public class FoodSearchController {
 		if (normalizedQuery.length() > MAX_SEARCH_QUERY_LENGTH) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "query must be 128 characters or fewer");
 		}
-		FoodSearchResult result = userId == null
-			? foodSearchService.search(normalizedQuery)
-			: foodSearchService.search(normalizedQuery, userId);
+		FoodSearchResult result = foodSearchService.search(normalizedQuery);
 		List<FoodSearchItemResponse> items = result.items().stream()
 			.map(FoodSearchItemResponse::from)
 			.toList();
@@ -83,7 +83,7 @@ public class FoodSearchController {
 	public FoodSearchItemResponse createManualFoodItem(@Valid @RequestBody CreateManualFoodItemRequest request) {
 		var item = manualFoodItemService.createPendingItem(
 			new CreateManualFoodItemCommand(
-				request.userId(),
+				currentUser.requiredUserId(),
 				request.name(),
 				request.itemType(),
 				request.category(),
