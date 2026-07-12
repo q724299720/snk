@@ -1,8 +1,6 @@
 package com.snk.app.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,13 +13,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.food.FoodSearchResult
 import java.util.Locale
@@ -164,31 +158,12 @@ private fun ItemCard(
 
 @Composable
 private fun FoodCover(item: FoodSearchItem) {
-    val shape = RoundedCornerShape(16.dp)
-    if (!item.coverImageUrl.isNullOrBlank()) {
-        AsyncImage(
-            model = item.coverImageUrl,
-            contentDescription = item.name,
-            modifier = Modifier
-                .size(96.dp)
-                .clip(shape),
-            contentScale = ContentScale.Crop,
-        )
-        return
-    }
-
-    Box(
-        modifier = Modifier
-            .size(96.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = "暂无图片",
-            style = MaterialTheme.typography.bodySmall,
-        )
-    }
+    ProductImage(
+        imageUrl = item.coverImageUrl,
+        productName = item.name,
+        imageKind = ProductImageKind.PRODUCT,
+        size = 96.dp,
+    )
 }
 
 private fun Double?.toRatingLabel(): String {

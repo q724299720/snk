@@ -42,6 +42,10 @@ App 搜索、历史记录和手动创建 API 已移除分类字段；手动创�
 
 Android 搜索、记录历史和手动创建 DTO 已移除分类字段；手动创建、搜索候选、创建记录、编辑记录、首页记录和草稿卡片均不展示分类。Room 草稿兼容列仅供历史迁移与补传使用，新草稿写入 `none/null`。新增 Compose 仪器测试，确保手动创建页无分类输入。
 
+### Task 4 实施状态（2026-07-12）
+
+新增统一 `ProductImage` 组件，搜索与发现页均使用一致的裁剪、加载/失败回退和无障碍描述。发现页按记录缩略图、记录原图、产品主图的顺序取图；无图或加载失败时显示不重复朗读的“暂无图片”占位。已覆盖优先级单元测试、Compose 测试和真机仪器测试。
+
 **Files:**
 - Modify: `server/src/main/java/com/snk/server/api/dto/FoodSearchItemResponse.java`
 - Modify: `server/src/main/java/com/snk/server/api/dto/FoodRecordHistoryResponse.java`
@@ -149,3 +153,4 @@ Android 搜索、记录历史和手动创建 DTO 已移除分类字段；手动�
 | 2026-07-12 | Codex | 完成 Task 1 无分类、自动审核与搜索可见性 | 落实所有产品不分类、新产品自动审核和后台隐藏恢复 |
 | 2026-07-12 | Codex | 完成 Task 2 API 去分类字段与默认公开 | 将 App API 契约收敛为无分类，记录创建默认公开 |
 | 2026-07-12 | Codex | 完成 Task 3 Android 去分类模型与界面 | 移除客户端分类输入、展示与 DTO 字段，保留草稿迁移兼容 |
+| 2026-07-12 | Codex | 完成 Task 4 搜索与发现图片展示 | 统一产品图片回退、发现页图片展示与无障碍描述 |

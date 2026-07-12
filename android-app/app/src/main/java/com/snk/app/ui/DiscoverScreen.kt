@@ -115,9 +115,19 @@ private fun DiscoverRecordCard(record: FoodRecordHistoryItem, onLiked: (Int) -> 
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFDF8F2)),
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(record.foodName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text("${record.rating}/5 · ${record.foodBrand ?: "待补充品牌"}")
-            record.comment?.takeIf(String::isNotBlank)?.let { Text(it) }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ProductImage(
+                    imageUrl = record.preferredDiscoverImageUrl(),
+                    productName = record.foodName,
+                    imageKind = ProductImageKind.RECORD,
+                    size = 96.dp,
+                )
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(record.foodName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("${record.rating}/5 · ${record.foodBrand ?: "待补充品牌"}")
+                    record.comment?.takeIf(String::isNotBlank)?.let { Text(it) }
+                }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = {
                     scope.launch {
@@ -135,3 +145,8 @@ private fun DiscoverRecordCard(record: FoodRecordHistoryItem, onLiked: (Int) -> 
         }
     }
 }
+
+internal fun FoodRecordHistoryItem.preferredDiscoverImageUrl(): String? =
+    images.firstOrNull()?.thumbnailUrl
+        ?: images.firstOrNull()?.imageUrl
+        ?: foodCoverImageUrl
