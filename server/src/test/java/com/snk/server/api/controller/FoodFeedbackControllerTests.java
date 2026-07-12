@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.snk.server.domain.food.FoodFeedbackService;
 import com.snk.server.infrastructure.storage.StorageProperties;
+import com.snk.server.infrastructure.security.CurrentUser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -32,6 +33,12 @@ class FoodFeedbackControllerTests {
 
 	@MockBean
 	private FoodFeedbackService foodFeedbackService;
+
+	@MockBean
+	private CurrentUser currentUser;
+
+	@org.junit.jupiter.api.BeforeEach
+	void useTrustedAccountIdentity() { when(currentUser.requiredUserId()).thenReturn(2L); }
 
 	@TestConfiguration
 	static class ControllerTestConfiguration {
@@ -53,7 +60,7 @@ class FoodFeedbackControllerTests {
 				.content(
 					"""
 					{
-					  "userId": 2,
+					  "userId": 999,
 					  "reason": "识别错误"
 					}
 					"""
