@@ -21,6 +21,7 @@ import com.snk.server.domain.record.FoodRecordImageValue;
 import com.snk.server.domain.record.FoodRecordCreateCommand;
 import com.snk.server.domain.record.QuickFoodRecordCreateCommand;
 import com.snk.server.infrastructure.storage.StorageProperties;
+import com.snk.server.infrastructure.security.CurrentUser;
 import java.time.OffsetDateTime;
 import java.util.List;
 import org.mockito.ArgumentCaptor;
@@ -43,6 +44,14 @@ class FoodRecordControllerTests {
 
 	@MockBean
 	private FoodRecordService foodRecordService;
+
+	@MockBean
+	private CurrentUser currentUser;
+
+	@org.junit.jupiter.api.BeforeEach
+	void useTrustedAccountIdentity() {
+		when(currentUser.requiredUserId()).thenReturn(100L);
+	}
 
 	@TestConfiguration
 	static class ControllerTestConfiguration {
@@ -160,11 +169,11 @@ class FoodRecordControllerTests {
 	}
 
 	@Test
-	void shouldRejectDeleteWhenUserIdIsNotPositive() throws Exception {
+	void shouldIgnoreDeleteUserIdQueryParameter() throws Exception {
 		mockMvc.perform(
 			delete("/api/records/1").param("userId", "0")
 		)
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isNoContent());
 	}
 
 	@Test
@@ -266,9 +275,9 @@ class FoodRecordControllerTests {
 	}
 
 	@Test
-	void shouldRejectRecentRecordsWhenUserIdIsNotPositive() throws Exception {
+	void shouldIgnoreRecentRecordsUserIdQueryParameter() throws Exception {
 		mockMvc.perform(get("/api/records").param("userId", "0"))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isOk());
 	}
 
 	@Test
@@ -306,7 +315,7 @@ class FoodRecordControllerTests {
 				.content("""
 					{
 					  "clientRequestId": "b462a65b-b346-4a6d-bd87-c2022897544a",
-					  "userId": 100,
+					  "userId": 999,
 					  "foodItemId": 200,
 					  "sourceType": "text_search",
 					  "isPublic": false,
@@ -334,6 +343,7 @@ class FoodRecordControllerTests {
 		verify(foodRecordService).createRecord(commandCaptor.capture());
 		org.assertj.core.api.Assertions.assertThat(commandCaptor.getValue().clientRequestId())
 			.isEqualTo(java.util.UUID.fromString("b462a65b-b346-4a6d-bd87-c2022897544a"));
+		org.assertj.core.api.Assertions.assertThat(commandCaptor.getValue().userId()).isEqualTo(100L);
 	}
 
 	@Test

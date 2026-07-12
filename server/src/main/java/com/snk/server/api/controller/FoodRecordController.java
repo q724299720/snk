@@ -14,6 +14,7 @@ import com.snk.server.domain.record.FoodRecordResult;
 import com.snk.server.domain.record.FoodRecordService;
 import com.snk.server.domain.record.FoodRecordUpdateCommand;
 import com.snk.server.domain.record.QuickFoodRecordCreateCommand;
+import com.snk.server.infrastructure.security.CurrentUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -39,18 +40,19 @@ public class FoodRecordController {
 	private static final Set<String> ALLOWED_SOURCE_TYPES = Set.of("text_search", "manual");
 
 	private final FoodRecordService foodRecordService;
+	private final CurrentUser currentUser;
 
-	public FoodRecordController(FoodRecordService foodRecordService) {
+	public FoodRecordController(FoodRecordService foodRecordService, CurrentUser currentUser) {
 		this.foodRecordService = foodRecordService;
+		this.currentUser = currentUser;
 	}
 
 	@GetMapping
 	public List<FoodRecordHistoryResponse> listRecentRecords(
-		@RequestParam("userId") @Positive Long userId,
 		@RequestParam(value = "page", defaultValue = "0") @PositiveOrZero int page,
 		@RequestParam(value = "limit", defaultValue = "20") @Positive int limit
 	) {
-		return foodRecordService.listRecentRecords(userId, page, limit).stream()
+		return foodRecordService.listRecentRecords(currentUser.requiredUserId(), page, limit).stream()
 			.map(FoodRecordHistoryResponse::from)
 			.toList();
 	}
@@ -66,10 +68,9 @@ public class FoodRecordController {
 
 	@GetMapping("/{recordId}")
 	public FoodRecordResponse getRecord(
-		@PathVariable @Positive Long recordId,
-		@RequestParam("userId") @Positive Long userId
+		@PathVariable @Positive Long recordId
 	) {
-		return toResponse(foodRecordService.getRecordForUser(recordId, userId));
+		return toResponse(foodRecordService.getRecordForUser(recordId, currentUser.requiredUserId()));
 	}
 
 	@PostMapping
@@ -77,7 +78,7 @@ public class FoodRecordController {
 	public FoodRecordResponse createRecord(@Valid @RequestBody CreateFoodRecordRequest request) {
 			FoodRecordResult result = foodRecordService.createRecord(
 			new FoodRecordCreateCommand(
-				request.userId(),
+				currentUser.requiredUserId(),
 				request.foodItemId(),
 				validateSourceType(request.sourceType()),
 				request.isPublic(),
@@ -100,7 +101,7 @@ public class FoodRecordController {
 			foodRecordService.createQuickRecord(
 				new QuickFoodRecordCreateCommand(
 					request.clientRequestId(),
-					request.userId(),
+					currentUser.requiredUserId(),
 					request.name(),
 					request.isPublic(),
 					(short) request.rating(),
@@ -123,7 +124,7 @@ public class FoodRecordController {
 			foodRecordService.updateRecord(
 				new FoodRecordUpdateCommand(
 					recordId,
-					request.userId(),
+					currentUser.requiredUserId(),
 					(short) request.rating(),
 					request.comment(),
 					request.isPublic(),
@@ -138,10 +139,9 @@ public class FoodRecordController {
 	@DeleteMapping("/{recordId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void deleteRecord(
-		@PathVariable @Positive Long recordId,
-		@RequestParam("userId") @Positive Long userId
+		@PathVariable @Positive Long recordId
 	) {
-		foodRecordService.deleteRecord(recordId, userId);
+		foodRecordService.deleteRecord(recordId, currentUser.requiredUserId());
 	}
 
 	private String validateSourceType(String sourceType) {
@@ -176,7 +176,7 @@ public class FoodRecordController {
 		@Valid @RequestBody CreateFoodRecordCommentRequest request
 	) {
 		return FoodRecordCommentResponse.from(
-			foodRecordService.createComment(recordId, request.userId(), request.content())
+			foodRecordService.createComment(recordId, currentUser.requiredUserId(), request.content())
 		);
 	}
 
