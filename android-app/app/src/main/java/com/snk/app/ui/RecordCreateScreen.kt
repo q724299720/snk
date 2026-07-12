@@ -72,6 +72,7 @@ fun RecordCreateScreen(
     onSwitchRecommendedFood: (FoodSearchItem) -> Unit,
     onBackToSearch: () -> Unit,
     onOpenDrafts: () -> Unit,
+    onSaved: () -> Unit,
 ) {
     val application = LocalContext.current.applicationContext as SnkApplication
     val context = LocalContext.current
@@ -400,6 +401,7 @@ fun RecordCreateScreen(
                     interactionMessage = null
                     if (result is FoodRecordSubmissionResult.Submitted) {
                         likeCount = result.likeCount
+                        onSaved()
                     }
                     isSubmitting = false
                 }

@@ -246,6 +246,7 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                 composable(SnkDestination.Gallery.route) {
                     GalleryScreen(
                         sessionUserId = sessionState.userIdOrNull(),
+                        refreshToken = recordRefreshToken,
                         onEditRecord = ::openRecordEdit,
                     )
                 }
@@ -306,6 +307,7 @@ private fun AuthenticatedSnkApp(account: AuthenticatedAccount, authViewModel: Au
                                 navController.popBackStack()
                                 navController.navigate(SnkDestination.Gallery.route)
                             },
+                            onSaved = { recordRefreshToken++ },
                         )
                     }
                 }

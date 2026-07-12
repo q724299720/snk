@@ -53,6 +53,7 @@ private const val PAGE_SIZE = 20
 @Composable
 fun GalleryScreen(
     sessionUserId: Long?,
+    refreshToken: Int,
     onEditRecord: (FoodRecordHistoryItem) -> Unit,
 ) {
     val application = LocalContext.current.applicationContext as SnkApplication
@@ -98,10 +99,8 @@ fun GalleryScreen(
         return
     }
 
-    LaunchedEffect(sessionUserId) {
-        if (items.isEmpty()) {
-            loadPage(0)
-        }
+    LaunchedEffect(sessionUserId, refreshToken) {
+        loadPage(0)
     }
 
     val gridState = rememberLazyStaggeredGridState()

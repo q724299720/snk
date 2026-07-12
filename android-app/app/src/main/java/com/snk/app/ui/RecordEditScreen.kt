@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -45,6 +46,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.snk.app.SnkApplication
 import com.snk.app.data.record.FoodRecordHistoryItem
@@ -53,6 +55,8 @@ import com.snk.app.data.record.FoodRecordUpdateResult
 import com.snk.app.data.record.RecordImageUploadResult
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.util.UUID
 
 @Composable
 fun RecordEditScreen(
@@ -73,6 +77,8 @@ fun RecordEditScreen(
     var selectedImageUri by remember(record.id) { mutableStateOf<Uri?>(null) }
     var imageUploadMessage by remember(record.id) { mutableStateOf<String?>(null) }
     var isUploadingImage by remember(record.id) { mutableStateOf(false) }
+    var pendingCameraUri by remember(record.id) { mutableStateOf<Uri?>(null) }
+    var cameraPermanentlyDenied by remember(record.id) { mutableStateOf(false) }
     val commentValidation = validateRecordCommentForUi(comment)
     val feedback = buildRecordEditFeedback(updateResult)
     val imageSaveValidation = validateRecordImageForSave(
@@ -112,6 +118,56 @@ fun RecordEditScreen(
             isUploadingImage = false
         }
     }
+
+    fun uploadCapturedImage(uri: Uri) {
+        selectedImageUri = uri
+        currentImages = emptyList()
+        imageUploadMessage = "图片上传中..."
+        updateResult = null
+        coroutineScope.launch {
+            isUploadingImage = true
+            imageUploadMessage = try {
+                val payload = readEditableRecordImagePayload(context, uri)
+                when (
+                    val result = application.container.foodRecordRepository.uploadRecordImage(
+                        imageBytes = payload.bytes,
+                        fileName = payload.fileName,
+                        contentType = payload.contentType,
+                    )
+                ) {
+                    is RecordImageUploadResult.Success -> {
+                        currentImages = listOf(result.image)
+                        "图片已上传，保存修改后会替换原图片。"
+                    }
+                    is RecordImageUploadResult.Failure -> result.message
+                }
+            } catch (exception: Exception) {
+                "图片读取失败，请重新拍照。"
+            }
+            isUploadingImage = false
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        val uri = pendingCameraUri
+        if (success && uri != null) uploadCapturedImage(uri)
+    }
+    fun launchCamera() {
+        val uri = createTempRecordEditCameraImageUri(context)
+        pendingCameraUri = uri
+        cameraLauncher.launch(uri)
+    }
+    val cameraPermission = rememberCameraPermissionController(
+        onGranted = ::launchCamera,
+        onDenied = { kind ->
+            cameraPermanentlyDenied = kind == CameraDenialKind.PERMANENT
+            imageUploadMessage = if (cameraPermanentlyDenied) {
+                "相机权限已被永久拒绝，可去系统设置，或继续从相册选择图片。"
+            } else {
+                "未获得相机权限，可以从相册选择图片。"
+            }
+        },
+    )
 
     Column(
         modifier = Modifier
@@ -160,6 +216,9 @@ fun RecordEditScreen(
             currentImages = currentImages,
             imageUploadMessage = imageUploadMessage,
             isUploadingImage = isUploadingImage,
+            cameraPermanentlyDenied = cameraPermanentlyDenied,
+            onTakePhoto = cameraPermission.request,
+            onOpenCameraSettings = cameraPermission.openSettings,
             onPickImage = {
                 imagePickerLauncher.launch(
                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
@@ -313,6 +372,9 @@ private fun EditableRecordImagesCard(
     currentImages: List<FoodRecordImageAttachment>,
     imageUploadMessage: String?,
     isUploadingImage: Boolean,
+    cameraPermanentlyDenied: Boolean,
+    onTakePhoto: () -> Unit,
+    onOpenCameraSettings: () -> Unit,
     onPickImage: () -> Unit,
     onRemoveImage: () -> Unit,
 ) {
@@ -377,11 +439,21 @@ private fun EditableRecordImagesCard(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button(
+                    onClick = onTakePhoto,
+                    shape = RoundedCornerShape(16.dp),
+                    enabled = !isUploadingImage,
+                ) {
+                    Text("拍照")
+                }
+                Button(
                     onClick = onPickImage,
                     shape = RoundedCornerShape(16.dp),
                     enabled = !isUploadingImage,
                 ) {
                     Text(if (isUploadingImage) "上传中..." else "选择新图片")
+                }
+                if (cameraPermanentlyDenied) {
+                    TextButton(onClick = onOpenCameraSettings) { Text("去系统设置") }
                 }
                 if (previewImages.isNotEmpty() || selectedImageUri != null) {
                     Button(
@@ -417,6 +489,12 @@ private data class EditableRecordImagePayload(
     val fileName: String,
     val contentType: String,
 )
+
+private fun createTempRecordEditCameraImageUri(context: Context): Uri {
+    val imageDirectory = File(context.cacheDir, "record-edit-camera").apply { mkdirs() }
+    val imageFile = File(imageDirectory, "camera-${UUID.randomUUID()}.jpg")
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", imageFile)
+}
 
 private fun readEditableRecordImagePayload(context: Context, imageUri: Uri): EditableRecordImagePayload {
     val bitmap = decodeEditableRecordBitmap(context, imageUri)

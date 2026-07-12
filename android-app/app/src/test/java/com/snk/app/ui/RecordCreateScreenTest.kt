@@ -142,4 +142,26 @@ class RecordCreateScreenTest {
         assertEquals("记录已保存。", buildRecordSubmitFeedback(submitted, hasUploadedImage = false))
         assertEquals("保存失败", buildRecordSubmitFeedback(failure, hasUploadedImage = false))
     }
+
+    @Test
+    fun `record create notifies navigation after remote save so image lists refresh`() {
+        val createSource = sourceOf("RecordCreateScreen.kt")
+        val appSource = sourceOf("SnkApp.kt")
+        val gallerySource = sourceOf("GalleryScreen.kt")
+
+        assertTrue(createSource.contains("onSaved: () -> Unit"))
+        assertTrue(createSource.contains("onSaved()"))
+        assertTrue(appSource.contains("onSaved = { recordRefreshToken++ }"))
+        assertTrue(appSource.contains("refreshToken = recordRefreshToken"))
+        assertTrue(gallerySource.contains("refreshToken: Int"))
+        assertTrue(gallerySource.contains("LaunchedEffect(sessionUserId, refreshToken)"))
+    }
+
+    private fun sourceOf(fileName: String): String {
+        val sourcePath = listOf(
+            Path.of("src/main/java/com/snk/app/ui/$fileName"),
+            Path.of("app/src/main/java/com/snk/app/ui/$fileName"),
+        ).first(Files::exists)
+        return String(Files.readAllBytes(sourcePath))
+    }
 }

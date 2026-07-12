@@ -100,4 +100,30 @@ class RecordEditScreenTest {
         assertTrue(source.contains("onClick = onEditRecord"))
         assertTrue(source.contains("Role.Button"))
     }
+
+    @Test
+    fun `record edit supports taking a replacement photo after removal`() {
+        val sourcePath = listOf(
+            Path.of("src/main/java/com/snk/app/ui/RecordEditScreen.kt"),
+            Path.of("app/src/main/java/com/snk/app/ui/RecordEditScreen.kt"),
+        ).first(Files::exists)
+        val source = String(Files.readAllBytes(sourcePath))
+
+        assertTrue(source.contains("ActivityResultContracts.TakePicture()"))
+        assertTrue(source.contains("rememberCameraPermissionController"))
+        assertTrue(source.contains("onTakePhoto"))
+        assertTrue(source.contains("Text(\"拍照\")"))
+        assertTrue(source.contains("createTempRecordEditCameraImageUri"))
+    }
+
+    @Test
+    fun `record edit camera cache is exposed through file provider`() {
+        val pathsFile = listOf(
+            Path.of("src/main/res/xml/file_paths.xml"),
+            Path.of("app/src/main/res/xml/file_paths.xml"),
+        ).first(Files::exists)
+        val paths = String(Files.readAllBytes(pathsFile))
+
+        assertTrue(paths.contains("path=\"record-edit-camera/\""))
+    }
 }

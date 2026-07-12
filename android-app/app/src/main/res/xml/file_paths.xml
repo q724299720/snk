@@ -7,6 +7,9 @@
         name="record_camera_cache"
         path="record-camera/" />
     <cache-path
+        name="record_edit_camera_cache"
+        path="record-edit-camera/" />
+    <cache-path
         name="manual_camera_cache"
         path="manual-camera/" />
 </paths>
