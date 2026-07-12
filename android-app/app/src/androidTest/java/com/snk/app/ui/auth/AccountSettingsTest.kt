@@ -17,7 +17,7 @@ class AccountSettingsTest {
             ProfileScreen(
                 account = AuthenticatedAccount(7, "alice", "USER", false),
                 sessionState = SessionUiState.Authenticated(7),
-                onChangePassword = {}, onLogout = {},
+                onChangePassword = {}, onClaimLegacyHistory = {}, onLogout = {},
             )
         }
         compose.onNodeWithText("alice").assertIsDisplayed()

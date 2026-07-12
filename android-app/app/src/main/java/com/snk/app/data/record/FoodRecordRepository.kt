@@ -45,7 +45,6 @@ class FoodRecordRepository(
             val response = api.createQuickRecord(
                 CreateQuickFoodRecordRequest(
                     clientRequestId = clientRequestId,
-                    userId = userId,
                     name = normalizedName,
                     rating = rating,
                     comment = normalizedComment.ifBlank { null },
@@ -77,7 +76,7 @@ class FoodRecordRepository(
 
         return try {
             FoodRecordHistoryResult.Success(
-                api.listRecentRecords(userId, page, limit).map(FoodRecordHistoryResponse::toModel),
+                api.listRecentRecords(page, limit).map(FoodRecordHistoryResponse::toModel),
             )
         } catch (exception: Exception) {
             FoodRecordHistoryResult.Failure(exception.asHistoryMessage())
@@ -122,7 +121,6 @@ class FoodRecordRepository(
             val response = api.createRecord(
                 CreateFoodRecordRequest(
                     clientRequestId = clientRequestId,
-                    userId = userId,
                     foodItemId = foodItemId,
                     sourceType = sourceType,
                     isPublic = isPublic,
@@ -172,7 +170,6 @@ class FoodRecordRepository(
             val response = api.updateRecord(
                 recordId = recordId,
                 request = UpdateFoodRecordRequest(
-                    userId = userId,
                     rating = rating,
                     comment = normalizedComment.ifBlank { null },
                     isPublic = isPublic,
@@ -204,7 +201,7 @@ class FoodRecordRepository(
         }
 
         return try {
-            api.deleteRecord(recordId, userId)
+            api.deleteRecord(recordId)
             FoodRecordDeleteResult.Success
         } catch (exception: Exception) {
             FoodRecordDeleteResult.Failure(exception.asDeleteMessage())
@@ -263,7 +260,6 @@ class FoodRecordRepository(
                 api.createRecordComment(
                     recordId = recordId,
                     request = CreateFoodRecordCommentRequest(
-                        userId = userId,
                         content = normalizedContent,
                     ),
                 ).toModel(),

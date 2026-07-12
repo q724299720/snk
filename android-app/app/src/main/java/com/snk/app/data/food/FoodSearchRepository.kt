@@ -19,7 +19,7 @@ class FoodSearchRepository(
         }
 
         return try {
-            val response = api.searchFoods(normalizedQuery, userId)
+            val response = api.searchFoods(normalizedQuery)
             FoodSearchResult.Success(
                 items = response.items.map(FoodSearchItemResponse::toModel),
                 qualitySignal = response.qualitySignal,
@@ -48,7 +48,6 @@ class FoodSearchRepository(
             ManualFoodCreateResult.Success(
                 api.createManualFoodItem(
                     CreateManualFoodItemRequest(
-                        userId = userId,
                         name = normalizedName,
                         itemType = itemType.trim(),
                         category = category.trim(),
@@ -77,7 +76,6 @@ class FoodSearchRepository(
             val response = api.reportFoodItem(
                 foodItemId = foodItemId,
                 request = CreateFoodReportRequest(
-                    userId = userId,
                     reason = reason.trim().ifBlank { null },
                 ),
             )

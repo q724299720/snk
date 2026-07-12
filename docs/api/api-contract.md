@@ -23,6 +23,17 @@
 | --- | --- | --- | --- |
 | 2026-07-11 | Codex | 落地 Bearer 鉴权、OWNER 路由授权和一次性历史身份认领 | Task 5 消除客户端 userId 授权风险，并提供旧游客数据迁移通道 |
 
+### Task 6 已落地约束（2026-07-12）
+
+- 所有 Android 业务请求不再发送 `userId`：记录、评论、搜索、手动创建产品和纠错均由服务端从 Bearer Token 解析身份。
+- `GET /api/foods/search` 只接受 `q`；任何客户端传入的身份参数均不参与待审核或私有数据可见性判断。
+- `POST /api/upload/image` 必须携带 Bearer Token；服务端在 `uploaded_objects` 中记录当前账号、对象键、缩略图键、内容类型和大小。
+- 元数据写入失败时服务端会回收已经保存的原图和缩略图；回收失败不会掩盖原始写库异常。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-12 | Codex | 固化业务身份来源与上传对象补偿契约 | Task 6 防止客户端伪造身份，并避免上传失败产生孤儿文件 |
+
 ### Task 4 已落地约束（2026-07-11）
 
 - `POST /api/auth/login` 只允许 `ACTIVE` 账号，响应为 RSA-SHA256 JWT 与 256-bit 随机 Refresh Token。
@@ -46,7 +57,7 @@
 
 ### 食物搜索
 
-- `GET /api/foods/search?q=&userId=`
+- `GET /api/foods/search?q=`
 - `GET /api/foods/{foodItemId}/related`
 - `POST /api/foods/manual`
 - `GET /api/foods/{id}`

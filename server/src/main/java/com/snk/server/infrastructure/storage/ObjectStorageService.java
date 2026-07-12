@@ -5,4 +5,6 @@ import org.springframework.web.multipart.MultipartFile;
 public interface ObjectStorageService {
 
 	StoredObject storeImage(MultipartFile file);
+
+	void delete(StoredObject storedObject);
 }

@@ -80,6 +80,30 @@ public class LocalObjectStorageService implements ObjectStorageService {
 		return new StoredObject(objectKey, resourceUrl, thumbnailObjectKey, thumbnailResourceUrl, file.getContentType(), file.getSize());
 	}
 
+	@Override
+	public void delete(StoredObject storedObject) {
+		if (storedObject == null) {
+			return;
+		}
+		deleteObject(storedObject.objectKey());
+		if (storedObject.thumbnailObjectKey() != null && !storedObject.thumbnailObjectKey().equals(storedObject.objectKey())) {
+			deleteObject(storedObject.thumbnailObjectKey());
+		}
+	}
+
+	private void deleteObject(String objectKey) {
+		Path targetFile = rootPath.resolve(objectKey).normalize();
+		if (!targetFile.startsWith(rootPath)) {
+			throw new IllegalArgumentException("Invalid storage target path.");
+		}
+		try {
+			Files.deleteIfExists(targetFile);
+		}
+		catch (IOException exception) {
+			throw new IllegalStateException("Failed to delete stored image.", exception);
+		}
+	}
+
 	private void createThumbnail(Path sourceFile, Path thumbnailFile, String formatName) throws IOException {
 		BufferedImage sourceImage = ImageIO.read(sourceFile.toFile());
 		if (sourceImage == null) {

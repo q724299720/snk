@@ -15,7 +15,6 @@ interface FoodSearchApi {
     @GET("/api/foods/search")
     suspend fun searchFoods(
         @Query("q") query: String,
-        @Query("userId") userId: Long? = null,
     ): FoodSearchResponse
 
     @GET("/api/foods/{foodItemId}/related")
@@ -53,8 +52,6 @@ data class FoodSearchResponse(
 
 @Serializable
 data class CreateManualFoodItemRequest(
-    @SerialName("userId")
-    val userId: Long,
     @SerialName("name")
     val name: String,
     @SerialName("itemType")
@@ -111,8 +108,6 @@ data class OcrRecognitionResponse(
 
 @Serializable
 data class CreateFoodReportRequest(
-    @SerialName("userId")
-    val userId: Long,
     @SerialName("reason")
     val reason: String? = null,
 )

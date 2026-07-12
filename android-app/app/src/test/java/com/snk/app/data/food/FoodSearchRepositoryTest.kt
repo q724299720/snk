@@ -11,6 +11,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -85,7 +86,7 @@ class FoodSearchRepositoryTest {
     }
 
     @Test
-    fun `search sends user id when available so backend can include own pending items`() = runTest {
+    fun `search does not send user id because backend resolves the bearer identity`() = runTest {
         server.enqueue(
             MockResponse()
                 .setHeader("Content-Type", "application/json")
@@ -116,7 +117,7 @@ class FoodSearchRepositoryTest {
         assertTrue(result is FoodSearchResult.Success)
         val success = result as FoodSearchResult.Success
         assertEquals("pending", success.items.first().auditStatus)
-        assertEquals("/api/foods/search?q=Mango%20Cake&userId=2", server.takeRequest().path)
+        assertEquals("/api/foods/search?q=Mango%20Cake", server.takeRequest().path)
     }
 
     @Test
@@ -175,6 +176,7 @@ class FoodSearchRepositoryTest {
         assertEquals("/api/foods/manual", request.path)
         val body = Buffer().write(request.body.readByteArray()).readUtf8()
         assertTrue(body.contains("\"barcode\":\"6900000000099\""))
+        assertFalse("business identity must come from the bearer token", body.contains("\"userId\""))
     }
 
     @Test
@@ -208,7 +210,7 @@ class FoodSearchRepositoryTest {
         val request = server.takeRequest()
         assertEquals("/api/foods/18/report", request.path)
         val body = Buffer().write(request.body.readByteArray()).readUtf8()
-        assertTrue(body.contains("\"userId\":2"))
+        assertFalse("business identity must come from the bearer token", body.contains("\"userId\""))
     }
 
     @Test

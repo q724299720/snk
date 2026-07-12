@@ -40,13 +40,24 @@ public class UploadController {
 	@ResponseStatus(HttpStatus.CREATED)
 	public UploadImageResponse uploadImage(@RequestPart("file") MultipartFile file) {
 		StoredObject storedObject = objectStorageService.storeImage(file);
-		UploadedObjectEntity metadata = new UploadedObjectEntity();
-		metadata.setObjectKey(storedObject.objectKey());
-		metadata.setThumbnailObjectKey(storedObject.thumbnailObjectKey());
-		metadata.setOwner(users.getReferenceById(currentUser.requiredUserId()));
-		metadata.setContentType(storedObject.contentType());
-		metadata.setSizeBytes(storedObject.size());
-		uploadedObjects.save(metadata);
+		try {
+			UploadedObjectEntity metadata = new UploadedObjectEntity();
+			metadata.setObjectKey(storedObject.objectKey());
+			metadata.setThumbnailObjectKey(storedObject.thumbnailObjectKey());
+			metadata.setOwner(users.getReferenceById(currentUser.requiredUserId()));
+			metadata.setContentType(storedObject.contentType());
+			metadata.setSizeBytes(storedObject.size());
+			uploadedObjects.save(metadata);
+		}
+		catch (RuntimeException exception) {
+			try {
+				objectStorageService.delete(storedObject);
+			}
+			catch (RuntimeException cleanupException) {
+				exception.addSuppressed(cleanupException);
+			}
+			throw exception;
+		}
 		return new UploadImageResponse(
 			storedObject.objectKey(),
 			storedObject.resourceUrl(),

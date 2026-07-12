@@ -137,6 +137,10 @@
 - [ ] 运行 `./gradlew test --tests '*AuthenticatedBusinessApiTests'`、`./gradlew test`，并用 curl 对本地登录→上传→创建记录链路回归。
 - [ ] 提交并推送：`refactor: derive business identity from bearer token`
 
+### Task 6 实施状态（2026-07-12）
+
+服务端记录、评论、反馈、搜索、识别和上传接口已经统一使用 `CurrentUser`，请求 DTO 与 Android 网络 DTO 均不再传递 `userId`。V14 上传对象元数据保留 owner、对象键、缩略图、类型和大小；元数据失败时，存储层补偿删除原图与缩略图。`AuthenticatedBusinessApiTests` 验证未认证记录/上传请求返回 401，且伪造请求 `userId` 不会改变 Token 对应的记录归属。完整生产发布仍受 Task 7/8 的 OWNER 治理和总回归门禁约束。
+
 ## Task 7: OWNER 后台账号治理与双重保护
 
 **Files:**
@@ -178,3 +182,4 @@
 | 2026-07-11 | Codex | 完成 Task 1 文档契约、认证依赖与配置绑定 | 正式启动必须登录与 OWNER 审核方案的服务端实施 |
 | 2026-07-11 | Codex | 完成 Task 2 V12/V13 迁移与认证持久化模型 | 建立账号、审批票据、Refresh 会话、认领和审计的数据约束与仓库 |
 | 2026-07-11 | Codex | 完成 Task 3 注册、密码管理与 Bootstrap OWNER | 建立待审核注册、审批查询、可信改密和紧急 OWNER 恢复能力 |
+| 2026-07-12 | Codex | 完成 Task 6 业务身份收口、上传归属与孤儿对象回收 | 移除客户端 userId 信任并为强制登录发布准备客户端与服务端契约 |

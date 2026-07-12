@@ -9,6 +9,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -74,6 +75,7 @@ class FoodRecordRepositoryTest {
         assertTrue(body.contains("\"name\":\"麦当劳薯条\""))
         assertTrue(body.contains("\"rating\":5"))
         assertTrue(body.contains("\"isPublic\":false"))
+        assertFalse("business identity must come from the bearer token", body.contains("\"userId\""))
     }
 
     @Test
@@ -128,6 +130,7 @@ class FoodRecordRepositoryTest {
         assertTrue(requestBody.contains("\"clientRequestId\":\"b462a65b-b346-4a6d-bd87-c2022897544a\""))
         assertTrue(requestBody.contains("\"images\""))
         assertTrue(requestBody.contains("https://snk.qiuxinmin.cn/uploads/records/noodle.jpg"))
+        assertFalse("business identity must come from the bearer token", requestBody.contains("\"userId\""))
     }
 
     @Test
@@ -217,7 +220,7 @@ class FoodRecordRepositoryTest {
         assertEquals("/api/records/55", request.path)
         assertEquals("PUT", request.method)
         val requestBody = request.body.readUtf8()
-        assertTrue(requestBody.contains("\"userId\":100"))
+        assertFalse("business identity must come from the bearer token", requestBody.contains("\"userId\""))
         assertTrue(requestBody.contains("\"rating\":5"))
         assertTrue(requestBody.contains("\"comment\":\"better after edit\""))
         assertTrue(requestBody.contains("\"isPublic\":true"))

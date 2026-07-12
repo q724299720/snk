@@ -16,7 +16,6 @@ import retrofit2.http.Query
 interface FoodRecordApi {
     @GET("/api/records")
     suspend fun listRecentRecords(
-        @Query("userId") userId: Long,
         @Query("page") page: Int = 0,
         @Query("limit") limit: Int = 20,
     ): List<FoodRecordHistoryResponse>
@@ -45,7 +44,6 @@ interface FoodRecordApi {
     @DELETE("/api/records/{recordId}")
     suspend fun deleteRecord(
         @Path("recordId") recordId: Long,
-        @Query("userId") userId: Long,
     )
 
     @POST("/api/records/{recordId}/like")
@@ -76,8 +74,6 @@ interface FoodRecordApi {
 data class CreateFoodRecordRequest(
     @SerialName("clientRequestId")
     val clientRequestId: String,
-    @SerialName("userId")
-    val userId: Long,
     @SerialName("foodItemId")
     val foodItemId: Long,
     @SerialName("sourceType")
@@ -96,8 +92,6 @@ data class CreateFoodRecordRequest(
 data class CreateQuickFoodRecordRequest(
     @SerialName("clientRequestId")
     val clientRequestId: String,
-    @SerialName("userId")
-    val userId: Long,
     @SerialName("name")
     val name: String,
     @SerialName("rating")
@@ -120,8 +114,6 @@ data class FoodRecordImageRequest(
 
 @Serializable
 data class UpdateFoodRecordRequest(
-    @SerialName("userId")
-    val userId: Long,
     @SerialName("rating")
     val rating: Int,
     @SerialName("comment")
@@ -134,8 +126,6 @@ data class UpdateFoodRecordRequest(
 
 @Serializable
 data class CreateFoodRecordCommentRequest(
-    @SerialName("userId")
-    val userId: Long,
     @SerialName("content")
     val content: String,
 )
