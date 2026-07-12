@@ -77,6 +77,14 @@
 - [ ] 运行 Compose 测试、`testDebugUnitTest`、`assembleDebug`，ADB 覆盖注册→待审核→后台审核→登录。
 - [ ] 提交并推送：`feat(android): require login and approval`
 
+### Task 3 实施状态（2026-07-12）
+
+已完成顶层 `AuthUiState`、启动 Refresh 恢复、登录/注册/待审核/拒绝/禁用页面和前台审核轮询。游客初始化已从应用入口移除，只有 `Authenticated` 正式账号能够进入业务导航；审核页在 `STARTED` 生命周期内立即检查并每 10 秒轮询，ViewModel 使用互斥锁合并手动与自动检查。现有业务页面暂通过只含正式账号 userId 的兼容会话对象工作，待 Task 5 再完成草稿 owner 隔离。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-12 | Codex | 标记 Android 认证计划 Task 3 完成 | 建立必须登录、注册审核和长期会话恢复的用户入口 |
+
 ## Task 4: 我的页账号、修改密码与主动退出
 
 **Files:**

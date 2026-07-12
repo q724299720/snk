@@ -10,15 +10,18 @@ import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -26,15 +29,26 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.snk.app.SnkApplication
-import com.snk.app.data.auth.AnonymousSessionResult
+import com.snk.app.data.auth.AuthenticatedAccount
 import com.snk.app.data.food.FoodSearchItem
 import com.snk.app.data.record.FoodRecordHistoryItem
+import com.snk.app.ui.auth.AuthUiState
+import com.snk.app.ui.auth.AuthViewModel
+import com.snk.app.ui.auth.LoginScreen
+import com.snk.app.ui.auth.PendingApprovalScreen
+import com.snk.app.ui.auth.RegisterScreen
 
 private sealed class SnkDestination(
     val route: String,
@@ -67,7 +81,58 @@ internal val flatTopLevelNavigationStatePolicy = TopLevelNavigationStatePolicy(
 @Composable
 fun SnkApp() {
     val application = LocalContext.current.applicationContext as SnkApplication
-    var retryToken by remember { mutableIntStateOf(0) }
+    val authViewModel: AuthViewModel = viewModel {
+        AuthViewModel(application.container.authRepository, application.container.authenticatedSessionManager)
+    }
+    val authState by authViewModel.state.collectAsState()
+    var showRegistration by remember { mutableStateOf(false) }
+    LaunchedEffect(authState) {
+        if (authState is AuthUiState.SignedOut && (authState as AuthUiState.SignedOut).message != null) {
+            showRegistration = false
+        }
+    }
+    when (val state = authState) {
+        AuthUiState.Restoring -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        is AuthUiState.SignedOut -> if (showRegistration) {
+            RegisterScreen(onRegister = authViewModel::register, onBack = { showRegistration = false })
+        } else {
+            LoginScreen(
+                onLogin = authViewModel::login,
+                onOpenRegistration = { showRegistration = true },
+                message = state.message,
+            )
+        }
+        is AuthUiState.Pending -> PendingApprovalScreen(
+            onCheckNow = authViewModel::checkApproval,
+            onBackToLogin = { authViewModel.backToLogin() },
+        )
+        AuthUiState.Rejected -> AuthStatusScreen("注册申请已被拒绝", "请联系主账户确认后重新注册。") {
+            authViewModel.backToLogin()
+        }
+        AuthUiState.Disabled -> AuthStatusScreen("账号已停用", "请联系主账户恢复账号。") {
+            authViewModel.backToLogin()
+        }
+        is AuthUiState.MustChangePassword -> AuthStatusScreen("需要修改密码", "请在下一步账号设置中完成密码修改。", null)
+        is AuthUiState.Authenticated -> AuthenticatedSnkApp(state.account)
+    }
+}
+
+@Composable
+private fun AuthStatusScreen(title: String, message: String, onBack: (() -> Unit)?) {
+    Column(
+        Modifier.fillMaxSize().padding(28.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(title, style = androidx.compose.material3.MaterialTheme.typography.headlineSmall)
+        Text(message)
+        if (onBack != null) Button(onBack, modifier = Modifier.fillMaxWidth()) { Text("返回登录") }
+    }
+}
+
+@Composable
+private fun AuthenticatedSnkApp(account: AuthenticatedAccount) {
+    val application = LocalContext.current.applicationContext as SnkApplication
     var selectedFood: FoodSearchItem? by remember { mutableStateOf(null) }
     var selectedEditRecord: FoodRecordHistoryItem? by remember { mutableStateOf(null) }
     var recordRefreshToken by remember { mutableIntStateOf(0) }
@@ -75,16 +140,7 @@ fun SnkApp() {
     var manualCreateSeedName by remember { mutableStateOf("") }
     var searchQuerySeed by remember { mutableStateOf<String?>(null) }
     var searchSuggestedQueries by remember { mutableStateOf<List<String>>(emptyList()) }
-    val sessionState by produceState<SessionUiState>(
-        initialValue = SessionUiState.Loading,
-        key1 = retryToken,
-    ) {
-        value = when (val result = application.container.anonymousSessionRepository.ensureSession()) {
-            is AnonymousSessionResult.Remote -> SessionUiState.Remote(result.session)
-            is AnonymousSessionResult.Cached -> SessionUiState.Cached(result.session, result.reason)
-            is AnonymousSessionResult.Failure -> SessionUiState.Failure(result.reason)
-        }
-    }
+    val sessionState = remember(account.userId) { SessionUiState.Authenticated(account.userId) }
     val navController = rememberNavController()
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentRoute = navBackStackEntry?.destination?.route
@@ -180,7 +236,7 @@ fun SnkApp() {
                 composable(SnkDestination.Profile.route) {
                     ProfileScreen(
                         sessionState = sessionState,
-                        onRetry = { retryToken++ },
+                        onRetry = {},
                     )
                 }
                 composable("record_create") {

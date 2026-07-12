@@ -412,6 +412,14 @@
 - Backend update replaces the complete image list for the record after owner validation.
 - Record create and edit must normalize selected device media to `image/jpeg` before calling `POST /api/upload/image`, so HEIC/WEBP/PNG gallery formats do not fail server-side thumbnail generation.
 
+### 2026-07-12 Android 认证 Task 3 实施状态
+
+Android 顶层入口已切换为正式账号状态机：冷启动恢复、登录、注册、前台每 10 秒审核轮询、拒绝和禁用状态均有独立界面，游客初始化不再执行。生产服务尚未发布新鉴权配置，因此本增量只做本地/真机界面与状态验证，不执行正式域名注册审批写操作。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-12 | Codex | 标记 Android 登录与审核 UI Task 3 完成 | 让强制登录发布具备客户端入口，同时保留生产部署门禁 |
+
 ### 2026-07-11 Android 认证 Task 2 实施状态
 
 Android 已建立 public/business 双网络客户端、自动 Bearer、并发安全 Refresh、替代令牌先持久化后发布和明确的会话异常状态。当前尚未提供登录/注册/审核等待界面，必须继续完成 Android Task 3 后才能让用户进入正式账号流程。

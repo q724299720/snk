@@ -3,6 +3,7 @@ package com.snk.app.ui
 import com.snk.app.data.auth.AnonymousSession
 
 sealed interface SessionUiState {
+    data class Authenticated(val userId: Long) : SessionUiState
     data object Loading : SessionUiState
     data class Remote(val session: AnonymousSession) : SessionUiState
     data class Cached(val session: AnonymousSession, val reason: String) : SessionUiState
@@ -10,6 +11,7 @@ sealed interface SessionUiState {
 }
 
 fun SessionUiState.userIdOrNull(): Long? = when (this) {
+    is SessionUiState.Authenticated -> userId
     is SessionUiState.Remote -> session.userId
     is SessionUiState.Cached -> session.userId
     SessionUiState.Loading -> null

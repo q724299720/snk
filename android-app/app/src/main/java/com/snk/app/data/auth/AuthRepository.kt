@@ -15,6 +15,8 @@ class AuthRepository(
 
     fun currentAccessToken(): String? = sessionManager?.currentAccessToken() ?: accessToken
 
+    suspend fun pendingApprovalTicket(): String? = tokenStore.readApprovalTicket()
+
     suspend fun register(username: String, password: String): AuthResult<RegistrationResponse> = call {
         api.register(RegisterRequest(username.trim(), password)).also {
             tokenStore.saveApprovalTicket(it.approvalTicket)

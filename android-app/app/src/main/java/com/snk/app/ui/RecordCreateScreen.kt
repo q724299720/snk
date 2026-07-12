@@ -402,6 +402,7 @@ fun RecordCreateScreen(
         Button(
             onClick = {
                 val userId = when (sessionState) {
+                    is SessionUiState.Authenticated -> sessionState.userId
                     is SessionUiState.Remote -> sessionState.session.userId
                     is SessionUiState.Cached -> sessionState.session.userId
                     else -> null

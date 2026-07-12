@@ -32,7 +32,7 @@ fun ProfileScreen(sessionState: SessionUiState, onRetry: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text("我的", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        ProfileInfoCard("游客模式", "无需注册即可记录；数据使用本机游客身份与服务端同步。")
+        ProfileInfoCard("账号模式", "当前使用正式账号，记录与图片将同步到服务器。")
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
@@ -41,6 +41,7 @@ fun ProfileScreen(sessionState: SessionUiState, onRetry: () -> Unit) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("同步状态", fontWeight = FontWeight.SemiBold)
                 when (sessionState) {
+                    is SessionUiState.Authenticated -> Text("已登录，记录会自动同步。")
                     SessionUiState.Loading -> Text("正在连接服务端…")
                     is SessionUiState.Remote -> Text("已连接，记录会自动同步。")
                     is SessionUiState.Cached -> Text("当前离线，记录会先保存在本机并等待补传。")
