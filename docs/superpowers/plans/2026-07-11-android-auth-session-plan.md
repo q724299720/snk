@@ -128,6 +128,16 @@
 - [ ] 运行迁移测试、Worker 测试、全量测试和 `assembleDebug`。
 - [ ] 提交并推送：`feat(android): isolate drafts by account owner`
 
+### Task 5 实施状态（2026-07-12）
+
+Room 已升级到 v5：草稿以非空 `draft_owner_user_id` 和 owner+更新时间索引分区，v4 旧草稿保留其原 `user_id` 作为待认领的 legacy owner。所有草稿读取、删除、状态更新和 WorkManager 作业均携带 owner；同步任务在启动、上传图片和提交记录前都校验当前账号，未登录、切换账号或 401 时仅暂停重试，不会把其他账号的草稿提交或标记为失败。一次性认领后可调用受控的 owner 迁移查询，将旧 owner 的本地草稿转为当前账号。
+
+自动化验证：新增所有者策略单元测试和 v4→v5 迁移/DAO 隔离设备测试；`testDebugUnitTest`、`assembleDebug`、`assembleDebugAndroidTest` 已通过。华为 CET-AL00（Android 12）在 Gradle UTP 与直接 ADB instrumentation 启动后均未返回测试回执，APK 安装/测试通道被设备阻塞，需在 Task 7 总回归时复测。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-12 | Codex | 标记 Android Room v5 多账号草稿隔离 Task 5 完成 | 防止离线草稿在账号切换、失效或重试时串号 |
+
 ## Task 6: 一次性历史数据认领
 
 **Files:**

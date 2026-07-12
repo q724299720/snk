@@ -462,6 +462,14 @@ Task 4 已完成 JWT 登录、Refresh Token 单次轮换与 60 秒弱网宽限�
 | --- | --- | --- | --- |
 | 2026-07-11 | Codex | 标记后端认证计划 Task 4 完成 | 固定 Task 5 的鉴权接入前置条件，同时保留旧 APK 兼容发布门禁 |
 
+### 2026-07-12 Android 认证 Task 5 实施状态
+
+Android 本地草稿数据库已升级为 Room v5。所有草稿的读取、状态更新、删除和 WorkManager 作业都按 `draft_owner_user_id` 限定；v4 草稿保留旧身份作为 legacy owner，等待 Task 6 的一次性认领后再迁移。当前用户缺失、账号切换或服务端 401 时同步任务改为可恢复的等待重试，不会提交到错误账号或将草稿误标为失败。
+
+| 日期 | 修改人 | 变更范围 | 原因 |
+| --- | --- | --- | --- |
+| 2026-07-12 | Codex | 标记 Android 多账号草稿隔离 Task 5 完成 | 为账号切换与历史认领建立本地数据边界 |
+
 ## Phase 5 Addendum: Quick Personal Record UX Overhaul
 
 Implementation order is fixed:

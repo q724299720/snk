@@ -1,5 +1,5 @@
 package com.snk.app.sync
 
 interface DraftSyncTrigger {
-    fun scheduleDraftSync(draftId: Long)
+    fun scheduleDraftSync(draftId: Long, ownerUserId: Long)
 }

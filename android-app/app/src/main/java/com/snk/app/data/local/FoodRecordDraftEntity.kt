@@ -3,13 +3,19 @@ package com.snk.app.data.local
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Index
 
-@Entity(tableName = "food_record_drafts")
+@Entity(
+    tableName = "food_record_drafts",
+    indices = [Index(value = ["draft_owner_user_id", "updated_at"])],
+)
 data class FoodRecordDraftEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     @ColumnInfo(name = "user_id")
     val userId: Long,
+    @ColumnInfo(name = "draft_owner_user_id")
+    val draftOwnerUserId: Long,
     @ColumnInfo(name = "food_item_id")
     val foodItemId: Long?,
     @ColumnInfo(name = "food_name")

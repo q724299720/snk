@@ -106,6 +106,7 @@ private class FakeDraftSaver : DraftRecordSaver {
         val draft = FoodRecordDraft(
             id = (savedDrafts.size + 1).toLong(),
             userId = request.userId,
+            ownerUserId = request.userId,
             foodItemId = request.foodItemId,
             foodName = request.foodName,
             category = request.category,
@@ -134,7 +135,7 @@ private class FakeDraftSaver : DraftRecordSaver {
 private class FakeDraftSyncTrigger : DraftSyncTrigger {
     val scheduledDraftIds = mutableListOf<Long>()
 
-    override fun scheduleDraftSync(draftId: Long) {
+    override fun scheduleDraftSync(draftId: Long, ownerUserId: Long) {
         scheduledDraftIds += draftId
     }
 }

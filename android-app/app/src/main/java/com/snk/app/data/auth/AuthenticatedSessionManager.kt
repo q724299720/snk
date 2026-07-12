@@ -22,6 +22,8 @@ class AuthenticatedSessionManager(
     fun currentAccessToken(): String? = accessToken
     fun currentAccount(): AuthenticatedAccount? = account
     fun currentState(): SessionState = state
+    fun currentUserId(): Long? = account?.userId
+    fun requireUserId(): Long = requireNotNull(currentUserId()) { "A signed-in account is required." }
 
     suspend fun restoreSession(): SessionState {
         refreshAfterUnauthorized(null)

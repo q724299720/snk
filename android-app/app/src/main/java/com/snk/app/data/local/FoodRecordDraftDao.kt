@@ -8,11 +8,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FoodRecordDraftDao {
-    @Query("SELECT * FROM food_record_drafts ORDER BY updated_at DESC")
-    fun observeAll(): Flow<List<FoodRecordDraftEntity>>
+    @Query("SELECT * FROM food_record_drafts WHERE draft_owner_user_id = :ownerUserId ORDER BY updated_at DESC")
+    fun observeAll(ownerUserId: Long): Flow<List<FoodRecordDraftEntity>>
 
-    @Query("SELECT * FROM food_record_drafts WHERE id = :draftId LIMIT 1")
-    suspend fun findById(draftId: Long): FoodRecordDraftEntity?
+    @Query("SELECT * FROM food_record_drafts WHERE id = :draftId AND draft_owner_user_id = :ownerUserId LIMIT 1")
+    suspend fun findById(draftId: Long, ownerUserId: Long): FoodRecordDraftEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: FoodRecordDraftEntity): Long
@@ -25,11 +25,12 @@ interface FoodRecordDraftDao {
             failure_reason = :failureReason,
             failure_message = :failureMessage,
             updated_at = :updatedAt
-        WHERE id = :draftId
+        WHERE id = :draftId AND draft_owner_user_id = :ownerUserId
         """,
     )
     suspend fun updateSyncState(
         draftId: Long,
+        ownerUserId: Long,
         syncStatus: String,
         retryCount: Int,
         failureReason: String?,
@@ -47,11 +48,12 @@ interface FoodRecordDraftDao {
             remote_record_id = :remoteRecordId,
             remote_record_time = :remoteRecordTime,
             updated_at = :updatedAt
-        WHERE id = :draftId
+        WHERE id = :draftId AND draft_owner_user_id = :ownerUserId
         """,
     )
     suspend fun markSynced(
         draftId: Long,
+        ownerUserId: Long,
         syncStatus: String,
         retryCount: Int,
         remoteRecordId: Long,
@@ -59,9 +61,14 @@ interface FoodRecordDraftDao {
         updatedAt: Long,
     )
 
-    @Query("DELETE FROM food_record_drafts WHERE id = :draftId")
-    suspend fun deleteById(draftId: Long)
+    @Query("DELETE FROM food_record_drafts WHERE id = :draftId AND draft_owner_user_id = :ownerUserId")
+    suspend fun deleteById(draftId: Long, ownerUserId: Long)
 
-    @Query("DELETE FROM food_record_drafts WHERE sync_status = :syncStatus")
-    suspend fun deleteAllByStatus(syncStatus: String)
+    @Query("DELETE FROM food_record_drafts WHERE sync_status = :syncStatus AND draft_owner_user_id = :ownerUserId")
+    suspend fun deleteAllByStatus(syncStatus: String, ownerUserId: Long)
+
+    @Query(
+        "UPDATE food_record_drafts SET draft_owner_user_id = :targetOwnerUserId, user_id = :targetOwnerUserId WHERE draft_owner_user_id = :legacyOwnerUserId",
+    )
+    suspend fun reassignOwner(legacyOwnerUserId: Long, targetOwnerUserId: Long): Int
 }

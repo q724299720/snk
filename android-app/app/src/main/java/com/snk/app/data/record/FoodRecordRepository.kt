@@ -294,7 +294,10 @@ class FoodRecordRepository(
                 ),
             )
         } catch (exception: Exception) {
-            RecordImageUploadResult.Failure(exception.asImageUploadMessage())
+            RecordImageUploadResult.Failure(
+                message = exception.asImageUploadMessage(),
+                isAuthenticationFailure = exception is HttpException && exception.code() == 401,
+            )
         }
     }
 }
@@ -364,10 +367,14 @@ sealed interface FoodRecordHistoryResult {
 sealed interface RecordImageUploadResult {
     data class Success(val image: FoodRecordImageAttachment) : RecordImageUploadResult
 
-    data class Failure(val message: String) : RecordImageUploadResult
+    data class Failure(
+        val message: String,
+        val isAuthenticationFailure: Boolean = false,
+    ) : RecordImageUploadResult
 }
 
 enum class FoodRecordCreateFailureReason {
+    AUTH,
     NETWORK,
     SERVER,
     UNKNOWN,
@@ -483,7 +490,7 @@ private fun Exception.asHistoryMessage(): String = when (this) {
 
 private fun Exception.asFailureReason(): FoodRecordCreateFailureReason = when (this) {
     is IOException -> FoodRecordCreateFailureReason.NETWORK
-    is HttpException -> FoodRecordCreateFailureReason.SERVER
+    is HttpException -> if (code() == 401) FoodRecordCreateFailureReason.AUTH else FoodRecordCreateFailureReason.SERVER
     else -> FoodRecordCreateFailureReason.UNKNOWN
 }
 

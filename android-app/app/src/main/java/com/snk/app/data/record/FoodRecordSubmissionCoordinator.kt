@@ -59,7 +59,7 @@ class FoodRecordSubmissionCoordinator(
                             clientRequestId = clientRequestId,
                         ),
                     )
-                    draftSyncTrigger.scheduleDraftSync(draft.id)
+                    draftSyncTrigger.scheduleDraftSync(draft.id, draft.ownerUserId)
                     FoodRecordSubmissionResult.SavedToDraft(draft)
                 } else {
                     FoodRecordSubmissionResult.Failure(result.message)

@@ -3,6 +3,7 @@ package com.snk.app.data.draft
 data class FoodRecordDraft(
     val id: Long,
     val userId: Long,
+    val ownerUserId: Long,
     val foodItemId: Long?,
     val foodName: String,
     val category: String,
@@ -53,6 +54,7 @@ data class FoodRecordDraftCreateRequest(
 data class FoodRecordDraftPayload(
     val id: Long,
     val userId: Long,
+    val ownerUserId: Long,
     val foodItemId: Long?,
     val foodName: String,
     val rating: Int?,
@@ -74,6 +76,7 @@ enum class DraftSyncStatus {
 }
 
 enum class DraftFailureReason {
+    AUTH,
     NETWORK,
     IMAGE,
     SERVICE,
@@ -81,6 +84,7 @@ enum class DraftFailureReason {
 }
 
 fun DraftFailureReason.toUserFacingText(): String = when (this) {
+    DraftFailureReason.AUTH -> "请重新登录原账号后再补传。"
     DraftFailureReason.NETWORK -> "网络不稳定，等待自动补传。"
     DraftFailureReason.IMAGE -> "图片资源不可用，需要重新选择。"
     DraftFailureReason.SERVICE -> "服务端暂时拒绝了这条草稿。"

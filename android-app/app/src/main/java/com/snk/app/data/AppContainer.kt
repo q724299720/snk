@@ -76,7 +76,12 @@ class AppContainer(context: Context) {
         SnkDatabase::class.java,
         "snk-local.db",
     )
-        .addMigrations(SnkDatabase.MIGRATION_1_2, SnkDatabase.MIGRATION_2_3, SnkDatabase.MIGRATION_3_4)
+        .addMigrations(
+            SnkDatabase.MIGRATION_1_2,
+            SnkDatabase.MIGRATION_2_3,
+            SnkDatabase.MIGRATION_3_4,
+            SnkDatabase.MIGRATION_4_5,
+        )
         .build()
     private val draftSyncScheduler = DraftSyncScheduler(context)
 
@@ -104,6 +109,7 @@ class AppContainer(context: Context) {
 
     val draftRecordRepository = DraftRecordRepository(
         draftDao = database.foodRecordDraftDao(),
+        sessionManager = authenticatedSessionManager,
     )
 
     val foodRecordSubmissionCoordinator = FoodRecordSubmissionCoordinator(
@@ -113,6 +119,8 @@ class AppContainer(context: Context) {
     )
 
     fun scheduleDraftRetry(draftId: Long) {
-        draftSyncScheduler.scheduleDraftSync(draftId)
+        authenticatedSessionManager.currentUserId()?.let { ownerUserId ->
+            draftSyncScheduler.scheduleDraftSync(draftId, ownerUserId)
+        }
     }
 }

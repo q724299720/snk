@@ -7,7 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [FoodRecordDraftEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class SnkDatabase : RoomDatabase() {
@@ -75,6 +75,22 @@ abstract class SnkDatabase : RoomDatabase() {
                 )
                 db.execSQL("DROP TABLE food_record_drafts")
                 db.execSQL("ALTER TABLE food_record_drafts_new RENAME TO food_record_drafts")
+            }
+        }
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE food_record_drafts ADD COLUMN draft_owner_user_id INTEGER NOT NULL DEFAULT 0",
+                )
+                // V4 stored the only available identity in user_id. Keep it as a legacy owner
+                // until the explicit one-time claim flow assigns the formal account.
+                db.execSQL(
+                    "UPDATE food_record_drafts SET draft_owner_user_id = user_id WHERE draft_owner_user_id = 0",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_food_record_drafts_draft_owner_user_id_updated_at " +
+                        "ON food_record_drafts (draft_owner_user_id, updated_at)",
+                )
             }
         }
     }
