@@ -1,5 +1,7 @@
 package com.snk.server;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.snk.server.infrastructure.persistence.food.FoodItemRepository;
 import com.snk.server.infrastructure.persistence.food.FoodItemReportRepository;
 import com.snk.server.infrastructure.persistence.review.ReviewConfigWordAuditLogRepository;
@@ -12,13 +14,18 @@ import com.snk.server.infrastructure.persistence.user.UserRepository;
 import com.snk.server.domain.food.FoodSearchService;
 import com.snk.server.domain.recognition.ImageRecognitionTaskProvider;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.env.Environment;
 
 @SpringBootTest(properties = {
 	"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration"
 })
 class ServerApplicationTests {
+
+	@Autowired
+	private Environment environment;
 
 	@MockBean
 	private UserRepository userRepository;
@@ -55,6 +62,15 @@ class ServerApplicationTests {
 
 	@Test
 	void contextLoads() {
+	}
+
+	@Test
+	void usesResourceConsciousSingleNodeDefaults() {
+		assertThat(environment.getProperty("server.tomcat.threads.max", Integer.class)).isEqualTo(24);
+		assertThat(environment.getProperty("server.tomcat.threads.min-spare", Integer.class)).isEqualTo(2);
+		assertThat(environment.getProperty("server.tomcat.max-connections", Integer.class)).isEqualTo(64);
+		assertThat(environment.getProperty("spring.datasource.hikari.maximum-pool-size", Integer.class)).isEqualTo(3);
+		assertThat(environment.getProperty("spring.datasource.hikari.minimum-idle", Integer.class)).isZero();
 	}
 
 }
